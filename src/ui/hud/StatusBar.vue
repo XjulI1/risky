@@ -33,6 +33,9 @@ const reserveText = computed(() => {
 })
 
 const hint = computed(() => {
+  if (player.value?.kind === 'ai' && props.state.phase.kind !== 'gameOver') {
+    return `${player.value.name} réfléchit…`
+  }
   if (props.state.phase.kind === 'attack') {
     return props.view.interaction.kind === 'idle' ? "Choisissez un territoire d'où attaquer." : 'Choisissez la cible.'
   }
@@ -57,6 +60,7 @@ const hint = computed(() => {
     </p>
     <p
       v-if="hint"
+      data-testid="status-hint"
       class="text-sm text-parchment/80"
     >
       {{ hint }}

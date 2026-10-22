@@ -1,12 +1,12 @@
 import { invalidArmyCount, notOwner, tradeRequired, wrongPhase } from './errors'
 import { mapOf, territoriesOf } from './state'
-import type { Action, GameEvent, GameState, PlayerId, RuleError } from './types'
+import type { Action, GameEvent, GameState, PlayerId, PublicState, RuleError } from './types'
 
 const MIN_REINFORCEMENT = 3
 const TERRITORIES_PER_ARMY = 3
 
 /** Armies a player receives at the start of a turn: territories / 3 (minimum 3) plus continent bonuses. */
-export function reinforcementCount(state: GameState, playerId: PlayerId): number {
+export function reinforcementCount(state: PublicState, playerId: PlayerId): number {
   const map = mapOf(state)
   const territoryArmies = Math.max(
     MIN_REINFORCEMENT,

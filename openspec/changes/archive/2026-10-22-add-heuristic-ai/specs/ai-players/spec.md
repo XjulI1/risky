@@ -11,19 +11,46 @@ cachée.
 ### Requirement: Déclaration des joueurs IA
 
 Le formulaire de création SHALL permettre de choisir pour chaque joueur le type « Humain » ou « IA »,
-et pour une IA son niveau parmi facile, normal et difficile. Par défaut, le premier joueur SHALL être
-humain et les autres des IA de niveau normal. Une partie sans aucun humain SHALL être autorisée et se
-dérouler sans intervention.
+et un niveau unique, parmi facile, normal et difficile, commun à toutes les IA de la partie. Par
+défaut, le premier joueur SHALL être humain et les autres des IA, au niveau normal. Une partie sans
+aucun humain SHALL être autorisée et se dérouler sans intervention.
 
 #### Scenario: Valeurs par défaut
 
 - **WHEN** l'écran de création s'ouvre
 - **THEN** le joueur 1 est humain et les joueurs 2 et 3 sont des IA de niveau normal
 
+#### Scenario: Niveau commun
+
+- **WHEN** l'utilisateur choisit le niveau difficile, puis transforme un joueur humain en IA et ajoute un joueur
+- **THEN** toutes les IA de la partie, y compris ces deux joueurs, sont de niveau difficile
+
 #### Scenario: Partie entre IA
 
 - **WHEN** l'utilisateur lance une partie dont tous les joueurs sont des IA
 - **THEN** la partie se déroule seule jusqu'à la victoire et l'utilisateur peut la regarder
+
+### Requirement: Noms des IA
+
+Chaque IA SHALL recevoir un nom tiré au hasard dans une liste prédéfinie d'une vingtaine de
+personnages historiques liés à l'armée, aux batailles ou à la guerre. Deux joueurs d'une même partie
+SHALL NOT porter le même nom. Un joueur humain SHALL garder un nom numéroté (« Joueur 2 »), et le nom
+de chaque joueur SHALL rester modifiable.
+
+#### Scenario: Noms distincts
+
+- **WHEN** l'écran de création s'ouvre, puis l'utilisateur ajoute trois joueurs
+- **THEN** chaque IA porte un nom de la liste et aucun nom n'est porté par deux joueurs
+
+#### Scenario: Changement de type
+
+- **WHEN** l'utilisateur transforme un joueur humain en IA
+- **THEN** ce joueur reçoit un nom de la liste qu'aucun autre joueur ne porte
+
+#### Scenario: Retour à un humain
+
+- **WHEN** l'utilisateur transforme en humain l'IA du joueur 2
+- **THEN** ce joueur s'appelle « Joueur 2 »
 
 ### Requirement: Tour automatique
 

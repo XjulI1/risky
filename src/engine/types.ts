@@ -23,14 +23,17 @@ export type GameMap = {
   continents: Record<ContinentId, Continent>
 }
 
-export type PlayerKind = 'human' | 'ai'
+export type AiLevel = 'easy' | 'normal' | 'hard'
+
+export type PlayerControl = { kind: 'human' } | { kind: 'ai'; level: AiLevel }
+
+export type PlayerKind = PlayerControl['kind']
 
 export type PlayerConfig = {
   id: PlayerId
   name: string
   color: string
-  kind: PlayerKind
-}
+} & PlayerControl
 
 export type Player = PlayerConfig & {
   isNeutral: boolean
@@ -101,6 +104,21 @@ export type GameState = {
   winner: PlayerId | null
 }
 
+/** The part of the game state every player can see: no deck, discard, hands or generator state. */
+export type PublicState = Pick<
+  GameState,
+  | 'settings'
+  | 'mapId'
+  | 'players'
+  | 'territories'
+  | 'firstPlayerIndex'
+  | 'currentPlayerIndex'
+  | 'phase'
+  | 'tradeCount'
+  | 'conqueredThisTurn'
+  | 'winner'
+>
+
 export type Action =
   | { type: 'claimTerritory'; playerId: PlayerId; territory: TerritoryId }
   | { type: 'placeInitialArmy'; playerId: PlayerId; territory: TerritoryId }
@@ -152,6 +170,7 @@ export type GameEvent =
 
 export type RuleErrorCode =
   | 'INVALID_PLAYER_COUNT'
+  | 'INVALID_PLAYER'
   | 'DUPLICATE_PLAYER'
   | 'INVALID_SETTING'
   | 'GAME_OVER'

@@ -6,8 +6,9 @@ réglable, qui respectent les mêmes règles que le joueur et ne trichent pas.
 
 ## What Changes
 
-- **Joueurs IA** sélectionnables à la création d'une partie, avec un niveau : facile, normal ou
-  difficile. Par défaut : le premier joueur est humain, les autres sont des IA de niveau normal.
+- **Joueurs IA** sélectionnables à la création d'une partie, avec un niveau commun à toutes les IA
+  de la partie : facile, normal ou difficile. Par défaut : le premier joueur est humain, les autres
+  sont des IA de niveau normal.
 - **Tour automatique** : quand c'est au tour d'une IA, elle enchaîne seule ses actions (mise en
   place manuelle comprise) à travers le même point d'entrée que les humains, à un rythme lisible qui
   suit la vitesse d'animation, avec mise en avant de l'origine et de la cible de chaque attaque.
@@ -29,7 +30,7 @@ réglable, qui respectent les mêmes règles que le joueur et ne trichent pas.
 
 ### Modified Capabilities
 
-(aucune)
+- `game-creation` : liste des joueurs par défaut (un humain et deux IA nommées), retrait d'un joueur par une croix, une ligne par joueur.
 
 ## Hors périmètre
 
@@ -43,7 +44,7 @@ réglable, qui respectent les mêmes règles que le joueur et ne trichent pas.
 - Nouveau module `src/ai/` (pur, sans Vue ni Three.js, soumis à la même règle d'isolement ESLint que
   le moteur).
 - Moteur : le type de joueur IA porte désormais un niveau ; aucune règle ne change.
-- Interface : formulaire de création (type et niveau par joueur), pilotage des tours IA dans la
+- Interface : formulaire de création (type par joueur, niveau commun des IA), pilotage des tours IA dans la
   session de jeu.
 - Aucune nouvelle dépendance.
 - Dépend de `add-classic-rules-engine` et `add-game-ui`. Ce change suppose que ces deux changes ont

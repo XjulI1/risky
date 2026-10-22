@@ -2,12 +2,12 @@ import { invalidArmyCount, notOwner, unknownTerritory } from './errors'
 import { areAdjacent } from './maps/classic'
 import { mapOf, ruleError } from './state'
 import { endTurn } from './turn'
-import type { Action, GameEvent, GameState, PlayerId, RuleError, TerritoryId } from './types'
+import type { Action, GameEvent, GameState, PlayerId, PublicState, RuleError, TerritoryId } from './types'
 
 type FortifyAction = Extract<Action, { type: 'fortify' }>
 
 /** Territories reachable from `from` through a chain of adjacent territories owned by `playerId`. */
-export function connectedTerritories(state: GameState, playerId: PlayerId, from: TerritoryId): Set<TerritoryId> {
+export function connectedTerritories(state: PublicState, playerId: PlayerId, from: TerritoryId): Set<TerritoryId> {
   const map = mapOf(state)
   const reached = new Set<TerritoryId>([from])
   const queue = [from]

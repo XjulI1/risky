@@ -2,15 +2,15 @@ import { isValidSet } from './cards'
 import { connectedTerritories } from './fortification'
 import { reinforcementCount } from './reinforcement'
 import { mapOf, territoriesOf } from './state'
-import type { Card, GameState, PlayerId, TerritoryId } from './types'
+import type { Card, PlayerId, PublicState, TerritoryId } from './types'
 
 /** Reserve the player would receive if a turn started now. */
-export function expectedReinforcement(state: GameState, playerId: PlayerId): number {
+export function expectedReinforcement(state: PublicState, playerId: PlayerId): number {
   return reinforcementCount(state, playerId)
 }
 
 /** Enemy neighbors that can be attacked from `from` (empty when it holds fewer than 2 armies). */
-export function attackTargets(state: GameState, from: TerritoryId): TerritoryId[] {
+export function attackTargets(state: PublicState, from: TerritoryId): TerritoryId[] {
   const origin = state.territories[from]
   if (origin === undefined || origin.armies < 2) {
     return []
@@ -21,12 +21,12 @@ export function attackTargets(state: GameState, from: TerritoryId): TerritoryId[
 }
 
 /** Territories of the player from which an attack is currently possible. */
-export function attackOrigins(state: GameState, playerId: PlayerId): TerritoryId[] {
+export function attackOrigins(state: PublicState, playerId: PlayerId): TerritoryId[] {
   return territoriesOf(state, playerId).filter((territory) => attackTargets(state, territory).length > 0)
 }
 
 /** Valid fortification destinations from `from`, according to the fortify mode of the game. */
-export function fortifyDestinations(state: GameState, from: TerritoryId): TerritoryId[] {
+export function fortifyDestinations(state: PublicState, from: TerritoryId): TerritoryId[] {
   const origin = state.territories[from]
   if (origin === undefined || origin.armies < 2) {
     return []

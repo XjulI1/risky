@@ -1,11 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { classicMap, createGame, type GameState, type PlayerKind } from '../engine'
+import { classicMap, createGame, type GameState, type PlayerControl } from '../engine'
+import { ANIMATION_DURATIONS } from './animationSpeed'
 import { createGameSession } from './useGameSession'
 
-function attackingGame(kinds: PlayerKind[] = ['human', 'human', 'human']): GameState {
+const HUMAN: PlayerControl = { kind: 'human' }
+const AI: PlayerControl = { kind: 'ai', level: 'normal' }
+
+function attackingGame(controls: PlayerControl[] = [HUMAN, HUMAN, HUMAN]): GameState {
   const created = createGame({
     seed: 12,
-    players: kinds.map((kind, i) => ({ id: `p${i + 1}`, name: `Joueur ${i + 1}`, color: ['#d64541', '#3a7bd5', '#3fa34d'][i] ?? '#000', kind })),
+    players: controls.map((control, i) => ({
+      id: `p${i + 1}`,
+      name: `Joueur ${i + 1}`,
+      color: ['#d64541', '#3a7bd5', '#3fa34d'][i] ?? '#000',
+      ...control,
+    })),
   })
   if (!created.ok) throw new Error(created.error.message)
   const state = created.state
@@ -92,21 +101,102 @@ describe('createGameSession', () => {
 })
 
 describe('hand-off between humans', () => {
-  function endTurn(kinds: PlayerKind[]) {
-    const session = createGameSession(attackingGame(kinds), { speed: 'instant' })
+  function endTurn(controls: PlayerControl[]) {
+    const session = createGameSession(attackingGame(controls), { speed: 'instant' })
     session.input({ kind: 'endAttack' })
     session.input({ kind: 'skipFortify' })
     return session
   }
 
   it('asks the next human to take the device', () => {
-    const session = endTurn(['human', 'human', 'human'])
+    const session = endTurn([HUMAN, HUMAN, HUMAN])
     expect(session.handoffTo.value?.id).toBe('p2')
     session.acknowledgeHandoff()
     expect(session.handoffTo.value).toBeNull()
   })
 
   it('does not interrupt a game with a single human', () => {
-    expect(endTurn(['human', 'ai', 'ai']).handoffTo.value).toBeNull()
+    expect(endTurn([HUMAN, AI, AI]).handoffTo.value).toBeNull()
+  })
+})
+
+describe('AI turns', () => {
+  function reinforcingGame(controls: PlayerControl[]): GameState {
+    const state = attackingGame(controls)
+    state.phase = { kind: 'reinforce', reserve: 3 }
+    return state
+  }
+
+  const currentId = (state: GameState) => state.players[state.currentPlayerIndex]?.id
+
+  it('plays the actions of an AI on its own until a human must play', async () => {
+    const initial = reinforcingGame([AI, HUMAN, AI])
+    const session = createGameSession(initial, { speed: 'instant' })
+    await vi.runAllTimersAsync()
+    expect(session.engineState.value).not.toBe(initial)
+    expect(currentId(session.engineState.value)).toBe('p2')
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('waits for the delay of the speed before each action', () => {
+    const initial = reinforcingGame([AI, HUMAN, HUMAN])
+    const session = createGameSession(initial, { speed: 'normal' })
+    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction - 1)
+    expect(session.engineState.value).toBe(initial)
+    vi.advanceTimersByTime(1)
+    expect(session.engineState.value).not.toBe(initial)
+  })
+
+  it('plays without delay at the instant speed', () => {
+    const initial = reinforcingGame([AI, HUMAN, HUMAN])
+    const session = createGameSession(initial, { speed: 'instant' })
+    vi.advanceTimersByTime(0)
+    expect(session.engineState.value).not.toBe(initial)
+  })
+
+  it('highlights the origin and the target of an attack before rolling the dice', () => {
+    const session = createGameSession(attackingGame([AI, HUMAN, HUMAN]), { speed: 'normal' })
+    const focus = session.aiFocus.value
+    expect(focus?.from).toBe('north_africa')
+    expect(session.lastEvents.value).toEqual([])
+    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction)
+    expect(session.aiFocus.value).toBeNull()
+    expect(session.lastEvents.value[0]).toMatchObject({ type: 'diceRolled', from: focus?.from, to: focus?.to })
+  })
+
+  it('names the AI that is playing and ignores the input of the humans meanwhile', () => {
+    const initial = attackingGame([AI, HUMAN, HUMAN])
+    const session = createGameSession(initial, { speed: 'normal' })
+    expect(session.thinkingPlayer.value?.id).toBe('p1')
+    session.input({ kind: 'endAttack' })
+    expect(session.engineState.value).toBe(initial)
+  })
+
+  it('does not name any AI during the turn of a human', () => {
+    expect(createGameSession(attackingGame(), { speed: 'normal' }).thinkingPlayer.value).toBeNull()
+  })
+
+  it('stops playing when the game is left', () => {
+    const initial = reinforcingGame([AI, HUMAN, HUMAN])
+    const session = createGameSession(initial, { speed: 'normal' })
+    session.dispose()
+    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction * 10)
+    expect(session.engineState.value).toBe(initial)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('waits for the human to close the notice of the card drawn before the AI plays', () => {
+    const session = createGameSession(attackingGame([HUMAN, AI, AI]), { speed: 'instant' })
+    session.dispatch(attack)
+    session.input({ kind: 'confirm', amount: 3 })
+    session.input({ kind: 'endAttack' })
+    session.input({ kind: 'skipFortify' })
+    expect(session.drawnCard.value).not.toBeNull()
+    const afterHumanTurn = session.engineState.value
+    vi.advanceTimersByTime(1000)
+    expect(session.engineState.value).toBe(afterHumanTurn)
+    session.acknowledgeDrawnCard()
+    vi.advanceTimersByTime(0)
+    expect(session.engineState.value).not.toBe(afterHumanTurn)
   })
 })

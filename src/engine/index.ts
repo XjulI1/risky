@@ -69,8 +69,10 @@ export function applyAction(state: GameState, action: Action): ActionResult {
 }
 
 export { bonusTerritory, isValidSet, tradeValue } from './cards'
+export { resolveRoll } from './combat'
 export { areAdjacent, classicMap } from './maps/classic'
 export { attackOrigins, attackTargets, expectedReinforcement, fortifyDestinations, tradeableSets } from './queries'
-export { mustTrade } from './reinforcement'
+export { FORCED_TRADE_HAND_SIZE, mustTrade } from './reinforcement'
+export { nextFloat, nextInt } from './rng'
 export { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 export type * from './types'

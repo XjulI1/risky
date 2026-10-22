@@ -3,15 +3,18 @@
 Jeu Risk en application web, avec un plateau en 3D vu du haut, jouable seul contre l'ordinateur
 sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 
-> **État du projet** : en phase de conception. Le plan est rédigé sous forme de changes OpenSpec
-> (voir [Feuille de route](#feuille-de-route)) ; l'implémentation n'a pas encore commencé.
+> **État du projet** : en développement. On peut déjà jouer une partie complète aux règles
+> classiques, sur le plateau 3D, entre humains ou contre des IA de trois niveaux. La sauvegarde, le
+> journal de partie et les variantes (missions secrètes, capitales) restent à faire. Avancement
+> détaillé : [Feuille de route](#feuille-de-route).
 
 ## Le jeu
 
 - **Règles classiques** : 42 territoires, 6 continents, renforts, attaques aux dés menées jusqu'à la
   conquête ou à l'épuisement de l'attaquant, fortification, cartes territoire.
 - **2 à 6 joueurs**, avec une armée neutre à 2 joueurs.
-- **Adversaires IA** en trois niveaux : facile, normal, difficile.
+- **Adversaires IA** en trois niveaux : facile, normal, difficile. Leur façon de jouer est décrite
+  dans [`docs/ia.md`](docs/ia.md).
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
   défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
   au choix, placement des armées aléatoire ou un par un.
@@ -44,7 +47,7 @@ détail : [`data/maps/classic/SOURCE.md`](data/maps/classic/SOURCE.md).
 
 ## Démarrage
 
-Une fois le socle du projet en place (premier change), les commandes seront :
+Les commandes du projet :
 
 ```bash
 pnpm install       # installer les dépendances
@@ -61,15 +64,17 @@ Le projet est planifié avec [OpenSpec](https://github.com/Fission-AI/OpenSpec).
 change dans `openspec/changes/`, avec sa proposition, ses spécifications, son design et ses tâches.
 Les changes doivent être appliqués dans l'ordre :
 
-| # | Change | Contenu |
-|---|---|---|
-| 1 | `add-classic-rules-engine` | Socle du projet et moteur de règles classique |
-| 2 | `add-3d-board` | Plateau 3D : carte, pions, caméra, sélection |
-| 3 | `add-game-ui` | Écrans, interface de jeu, dés animés, cartes |
-| 4 | `add-heuristic-ai` | Adversaires IA à trois niveaux |
-| 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques |
-| 6 | `add-secret-missions` | Variante missions secrètes |
-| 7 | `add-capitals-mode` | Variante capitales |
+| # | Change | Contenu | État |
+|---|---|---|---|
+| 1 | `add-classic-rules-engine` | Socle du projet et moteur de règles classique | Terminé |
+| 2 | `add-3d-board` | Plateau 3D : carte, pions, caméra, sélection | Terminé |
+| 3 | `add-game-ui` | Écrans, interface de jeu, dés animés, cartes | Terminé |
+| 4 | `add-heuristic-ai` | Adversaires IA à trois niveaux | Terminé |
+| 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques | À faire |
+| 6 | `add-secret-missions` | Variante missions secrètes | À faire |
+| 7 | `add-capitals-mode` | Variante capitales | À faire |
+
+Les changes terminés sont archivés dans `openspec/changes/archive/`.
 
 ## Travailler avec OpenSpec
 

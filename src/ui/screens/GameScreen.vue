@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import type { Highlights } from '../../board/boardViewModel'
 import GameBoard, { type BoardTransit } from '../../board/GameBoard.vue'
 import { classicMap, type GameState, type TerritoryId } from '../../engine'
@@ -33,7 +33,20 @@ const emit = defineEmits<{
 const session = createGameSession(props.initialState)
 provideGameSession(session)
 
-const { displayedState, engineState, isPresenting, currentStep, view, speed, handoffTo, drawnCard, error } = session
+const {
+  displayedState,
+  engineState,
+  isPresenting,
+  currentStep,
+  view,
+  speed,
+  handoffTo,
+  drawnCard,
+  error,
+  thinkingPlayer,
+  aiFocus,
+} = session
+onUnmounted(() => session.dispose())
 const confirmingQuit = ref(false)
 
 const currentPlayer = computed(() => displayedState.value.players[displayedState.value.currentPlayerIndex])
@@ -45,7 +58,15 @@ const presentationHighlights = computed<Highlights>(() => {
   const step = currentStep.value
   return step === null ? {} : { [step.event.from]: 'selected', [step.event.to]: 'target' }
 })
-const highlights = computed(() => (isPresenting.value ? presentationHighlights.value : view.value.highlights))
+const highlights = computed<Highlights>(() => {
+  if (isPresenting.value) {
+    return presentationHighlights.value
+  }
+  if (aiFocus.value !== null) {
+    return { [aiFocus.value.from]: 'selected', [aiFocus.value.to]: 'target' }
+  }
+  return thinkingPlayer.value === null ? view.value.highlights : {}
+})
 
 const rollStep = computed(() =>
   currentStep.value?.kind === 'roll' && speed.value !== 'instant' ? currentStep.value : null,
@@ -163,7 +184,7 @@ function trade(cardIds: [number, number, number]) {
       />
       <PlayersPanel :state="displayedState" />
 
-      <template v-if="!isPresenting && !winner">
+      <template v-if="!isPresenting && !winner && !thinkingPlayer">
         <AmountPicker
           v-if="amountPanel"
           :key="amountKey"

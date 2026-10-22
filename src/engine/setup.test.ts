@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { classicMap } from './maps/classic'
 import { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 import { armiesOf, claimAll, createTestGame, ownedBy, testPlayers } from './testUtils'
+import type { PlayerConfig } from './types'
 
 describe('createGame', () => {
   it('creates a game with the players in the given order', () => {
@@ -28,6 +29,24 @@ describe('createGame', () => {
     players[2] = { ...players[2]!, color: players[0]!.color }
     const result = createGame({ players, seed: 1 })
     expect(result).toMatchObject({ ok: false, error: { code: 'DUPLICATE_PLAYER' } })
+  })
+
+  it('accepts AI players of every level', () => {
+    const players = testPlayers(3)
+    players[1] = { ...players[1]!, kind: 'ai', level: 'easy' }
+    players[2] = { ...players[2]!, kind: 'ai', level: 'hard' }
+    const result = createGame({ players, seed: 1 })
+    expect(result.ok && result.state.players.slice(1)).toMatchObject([
+      { kind: 'ai', level: 'easy' },
+      { kind: 'ai', level: 'hard' },
+    ])
+  })
+
+  it('rejects an unknown AI level', () => {
+    const players: unknown[] = testPlayers(3)
+    players[1] = { ...testPlayers(3)[1], kind: 'ai', level: 'expert' }
+    const result = createGame({ players: players as PlayerConfig[], seed: 1 })
+    expect(result).toMatchObject({ ok: false, error: { code: 'INVALID_PLAYER' } })
   })
 
   it('rejects the identifier reserved for the neutral army', () => {

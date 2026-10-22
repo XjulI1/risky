@@ -63,8 +63,13 @@ décision ; aucune donnée cachée n'entre dans la graine.
 `combatOdds` calcule d'abord la distribution exacte des pertes d'un lancer pour chaque couple
 (dés attaquant, dés défenseur) par énumération des 6^n combinaisons, puis la probabilité de conquête
 « jusqu'au bout » par programmation dynamique sur (armées attaquantes, armées défensives), avec les
-dés maximaux de la partie. La table est calculée à la demande jusqu'à 60 × 60 et mémorisée par jeu
-de réglages de dés. Au-delà, l'IA borne à 60.
+dés maximaux de la partie. La table est calculée à la demande jusqu'à 100 × 100 et mémorisée par jeu
+de réglages de dés ; la borne de 100 est arbitraire, elle limite seulement la taille de la table.
+Au-delà, les deux effectifs sont réduits dans le même rapport pour que le plus grand vaille 100
+(2000 contre 600 est évalué comme 100 contre 30). Un simple plafond ramènerait 2000 contre 600 à
+100 contre 100 : l'IA dominante n'attaquerait plus un adversaire retranché et la partie ne finirait
+pas. La réduction est une approximation prudente : à rapport égal, de grosses armées ont des issues
+plus tranchées que de petites, donc l'IA sous-estime légèrement ses chances dans ces grosses batailles.
 
 ### Structure d'une décision
 
@@ -101,8 +106,14 @@ partie est finie. Quitter la partie annule le délai en attente.
 ### Moteur et création de partie
 
 Le type de joueur du moteur devient `{ kind: 'human' } | { kind: 'ai'; level: AiLevel }`. Le
-formulaire de création ajoute pour chaque joueur un choix Humain / IA et un niveau. L'écran de
-passage de main n'apparaît qu'entre deux humains, comme déjà spécifié.
+formulaire de création ajoute pour chaque joueur un choix Humain / IA, et un seul choix de niveau,
+appliqué à toutes les IA de la partie. Chaque IA reçoit un nom tiré au hasard dans une liste
+d'une vingtaine de chefs de guerre historiques (`AI_NAMES` dans `src/game/gameForm.ts`), parmi les
+noms qu'aucun joueur ne porte encore ; le tirage se fait dans le formulaire, avec un générateur
+injectable pour les tests. Le moteur garde un niveau par joueur : le tournoi de référence
+et le test de robustesse font s'affronter des niveaux différents dans une même partie ; c'est le
+formulaire qui impose un niveau commun. L'écran de passage de main n'apparaît qu'entre deux humains,
+comme déjà spécifié.
 
 ## Risks / Trade-offs
 

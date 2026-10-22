@@ -7,6 +7,7 @@ export type AnimationDurations = {
   nextRoll: number
   conquest: number
   armyMove: number
+  aiAction: number
 }
 
 type SpeedStorage = {
@@ -26,9 +27,9 @@ export const SPEED_LABELS: Record<AnimationSpeed, string> = {
 
 /** Durations of every animation step for each speed. */
 export const ANIMATION_DURATIONS: Record<AnimationSpeed, AnimationDurations> = {
-  normal: { firstRoll: 1100, nextRoll: 550, conquest: 450, armyMove: 600 },
-  fast: { firstRoll: 600, nextRoll: 250, conquest: 250, armyMove: 300 },
-  instant: { firstRoll: 0, nextRoll: 0, conquest: 0, armyMove: 0 },
+  normal: { firstRoll: 1100, nextRoll: 550, conquest: 450, armyMove: 600, aiAction: 700 },
+  fast: { firstRoll: 600, nextRoll: 250, conquest: 250, armyMove: 300, aiAction: 300 },
+  instant: { firstRoll: 0, nextRoll: 0, conquest: 0, armyMove: 0, aiAction: 0 },
 }
 
 /** Key under which the chosen speed is remembered on the device. */

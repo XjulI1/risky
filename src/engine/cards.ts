@@ -7,6 +7,7 @@ import type {
   GameEvent,
   GameState,
   PlayerId,
+  PublicState,
   RuleError,
   TerritoryId,
 } from './types'
@@ -60,14 +61,14 @@ export function tradeValue(cards: Card[], scale: CardTradeScale, tradeCount: num
   return scale === 'progressive' ? progressiveValue(tradeCount) : fixedValue(cards)
 }
 
-function facesEnemy(state: GameState, playerId: PlayerId, territory: TerritoryId): boolean {
+function facesEnemy(state: PublicState, playerId: PlayerId, territory: TerritoryId): boolean {
   return (mapOf(state).territories[territory]?.neighbors ?? []).some(
     (neighbor) => state.territories[neighbor]?.owner !== playerId,
   )
 }
 
 /** Territory receiving the +2 bonus: the first owned card territory facing an enemy, else the first owned one. */
-export function bonusTerritory(state: GameState, playerId: PlayerId, cards: Card[]): TerritoryId | null {
+export function bonusTerritory(state: PublicState, playerId: PlayerId, cards: Card[]): TerritoryId | null {
   const owned = cards.flatMap((card) =>
     card.territory !== null && state.territories[card.territory]?.owner === playerId ? [card.territory] : [],
   )

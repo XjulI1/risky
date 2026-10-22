@@ -2,6 +2,7 @@ import { classicMap } from './maps/classic'
 import { placeRemainingArmiesAtRandom } from './placement'
 import { rollInt, ruleError, shuffleWithState } from './state'
 import type {
+  AiLevel,
   Card,
   CardSymbol,
   CreateGameResult,
@@ -35,6 +36,7 @@ const INITIAL_ARMIES: Record<number, number> = { 2: 40, 3: 35, 4: 30, 5: 25, 6: 
 const NEUTRAL_TERRITORY_COUNT = 14
 const CARD_SYMBOLS: CardSymbol[] = ['infantry', 'cavalry', 'artillery']
 const JOKER_COUNT = 2
+const AI_LEVELS: readonly AiLevel[] = ['easy', 'normal', 'hard']
 
 const ALLOWED_VALUES: { [K in keyof GameSettings]?: readonly GameSettings[K][] } = {
   territoryDistribution: ['random', 'choice'],
@@ -43,9 +45,16 @@ const ALLOWED_VALUES: { [K in keyof GameSettings]?: readonly GameSettings[K][] }
   fortifyMode: ['connected', 'adjacent'],
 }
 
+function hasValidControl(player: PlayerConfig): boolean {
+  return player.kind === 'human' || (player.kind === 'ai' && AI_LEVELS.includes(player.level))
+}
+
 function validatePlayers(players: PlayerConfig[]): RuleError | null {
   if (players.length < MIN_PLAYERS || players.length > MAX_PLAYERS) {
     return ruleError('INVALID_PLAYER_COUNT', 'Une partie se joue de 2 à 6 joueurs.')
+  }
+  if (!players.every(hasValidControl)) {
+    return ruleError('INVALID_PLAYER', "Le type ou le niveau d'un joueur est invalide.")
   }
   const ids = players.map((player) => player.id)
   if (new Set(ids).size !== ids.length || ids.includes(NEUTRAL_PLAYER_ID)) {
@@ -98,6 +107,7 @@ function neutralPlayer(): Player {
     name: 'Neutre',
     color: NEUTRAL_COLOR,
     kind: 'ai',
+    level: 'easy',
     isNeutral: true,
     eliminated: false,
   }

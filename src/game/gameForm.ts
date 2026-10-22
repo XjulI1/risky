@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type GameSettings, type PlayerConfig } from '../engine'
+import { DEFAULT_SETTINGS, type AiLevel, type GameSettings, type PlayerConfig, type PlayerControl } from '../engine'
 
 /** Players and rules of a game, without the random seed: enough to start it again. */
 export type GameSetup = {
@@ -13,20 +13,82 @@ export const MIN_FORM_PLAYERS = 2
 export const MAX_FORM_PLAYERS = 6
 export const MAX_NAME_LENGTH = 20
 
-function newPlayer(index: number, color: string): PlayerConfig {
-  return { id: `player-${index + 1}`, name: `Joueur ${index + 1}`, color, kind: 'human' }
+/** Levels offered for an AI player, easiest first. */
+export const AI_LEVELS: AiLevel[] = ['easy', 'normal', 'hard']
+
+/** French labels of the AI levels. */
+export const AI_LEVEL_LABELS: Record<AiLevel, string> = {
+  easy: 'Facile',
+  normal: 'Normal',
+  hard: 'Difficile',
 }
 
-/** The form as it opens: 3 human players and the default rules. */
-export function defaultSetup(): GameSetup {
-  return {
-    players: [0, 1, 2].map((index) => newPlayer(index, PLAYER_PALETTE[index] ?? '#000000')),
-    settings: { ...DEFAULT_SETTINGS },
-  }
+/** Historical war leaders the AI players are named after. */
+export const AI_NAMES = [
+  'Jules César',
+  'Hannibal',
+  'Attila',
+  'Léonidas',
+  'Sun Tzu',
+  'Vercingétorix',
+  'Boudica',
+  'Zénobie',
+  'Charlemagne',
+  'Saladin',
+  'Gengis Khan',
+  'Jeanne d\'Arc',
+  'Tokugawa Ieyasu',
+  'Vauban',
+  'Napoléon',
+  'Wellington',
+  'Chaka',
+  'Foch',
+  'De Gaulle',
+  'Joukov',
+]
+
+/** A source of random numbers in [0, 1), like `Math.random`. */
+export type RandomSource = () => number
+
+const HUMAN: PlayerControl = { kind: 'human' }
+const DEFAULT_AI: PlayerControl = { kind: 'ai', level: 'normal' }
+
+function humanName(id: string): string {
+  return `Joueur ${id.replace('player-', '')}`
 }
 
-/** Adds a player with the next free number and color, up to 6 players. */
-export function addPlayer(players: PlayerConfig[]): PlayerConfig[] {
+function freeAiName(players: PlayerConfig[], random: RandomSource): string {
+  const used = new Set(players.map((player) => player.name.trim().toLowerCase()))
+  const free = AI_NAMES.filter((name) => !used.has(name.toLowerCase()))
+  return free[Math.floor(random() * free.length)] ?? `IA ${players.length + 1}`
+}
+
+function newPlayer(
+  players: PlayerConfig[],
+  index: number,
+  color: string,
+  control: PlayerControl,
+  random: RandomSource,
+): PlayerConfig {
+  const id = `player-${index + 1}`
+  const name = control.kind === 'ai' ? freeAiName(players, random) : humanName(id)
+  return { id, name, color, ...control }
+}
+
+/** The form as it opens: a human player, two normal AIs named at random and the default rules. */
+export function defaultSetup(random: RandomSource = Math.random): GameSetup {
+  const players = [0, 1, 2].reduce<PlayerConfig[]>(
+    (created, index) => [
+      ...created,
+      newPlayer(created, index, PLAYER_PALETTE[index] ?? '#000000', index === 0 ? HUMAN : DEFAULT_AI, random),
+    ],
+    [],
+  )
+  return { players, settings: { ...DEFAULT_SETTINGS } }
+}
+
+/** Adds a normal AI with the next free number and color and a free historical name, up to 6 players. */
+export function addPlayer(players: PlayerConfig[], random: RandomSource = Math.random): PlayerConfig[] {
   if (players.length >= MAX_FORM_PLAYERS) {
     return players
   }
@@ -37,7 +99,37 @@ export function addPlayer(players: PlayerConfig[]): PlayerConfig[] {
   while (usedIds.has(`player-${index + 1}`)) {
     index += 1
   }
-  return [...players, newPlayer(index, color)]
+  return [...players, newPlayer(players, index, color, DEFAULT_AI, random)]
+}
+
+/** Gives `level` to every AI player, so that all the AIs of a game play at the same level. */
+export function applyAiLevel(players: PlayerConfig[], level: AiLevel): PlayerConfig[] {
+  return players.map((player) => (player.kind === 'ai' ? { ...player, level } : player))
+}
+
+/**
+ * Makes a player human or an AI of the given level. A player changing kind is renamed: a free
+ * historical name for a new AI, a numbered name for a new human.
+ */
+export function chooseControl(
+  players: PlayerConfig[],
+  id: string,
+  control: PlayerControl,
+  random: RandomSource = Math.random,
+): PlayerConfig[] {
+  const others = players.filter((player) => player.id !== id)
+  return players.map((player) => {
+    if (player.id !== id) {
+      return player
+    }
+    const name =
+      player.kind === control.kind
+        ? player.name
+        : control.kind === 'ai'
+          ? freeAiName(others, random)
+          : humanName(player.id)
+    return { id: player.id, name, color: player.color, ...control }
+  })
 }
 
 /** Removes a player, down to 2 players. */

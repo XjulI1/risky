@@ -1,8 +1,15 @@
 import { computed, inject, provide, ref, shallowRef, type ComputedRef, type InjectionKey, type Ref, type ShallowRef } from 'vue'
-import { applyAction, type Action, type Card, type GameEvent, type GameState, type Player } from '../engine'
+import { NEW_TURN, nextAiAction, progressAfter, type TurnProgress } from '../ai'
+import { applyAction, type Action, type Card, type GameEvent, type GameState, type Player, type TerritoryId } from '../engine'
 import { ANIMATION_DURATIONS, readSpeedPreference, writeSpeedPreference, type AnimationSpeed } from './animationSpeed'
 import { IDLE, reduceInteraction, viewOf, type Interaction, type InteractionInput, type InteractionView } from './interaction'
 import { presentationSteps, projectStep, stepDuration, type PresentationStep } from './presentation'
+
+/** The attack an AI is about to launch, shown on the board before the dice are rolled. */
+export type AiFocus = {
+  from: TerritoryId
+  to: TerritoryId
+}
 
 /** A running game as seen by the interface: engine truth, what is on screen and what the player is doing. */
 export type GameSession = {
@@ -17,6 +24,8 @@ export type GameSession = {
   speed: Ref<AnimationSpeed>
   handoffTo: ShallowRef<Player | null>
   drawnCard: ShallowRef<Card | null>
+  thinkingPlayer: ComputedRef<Player | null>
+  aiFocus: ShallowRef<AiFocus | null>
   dispatch: (action: Action) => void
   input: (input: InteractionInput) => void
   skipAnimation: () => void
@@ -24,6 +33,7 @@ export type GameSession = {
   acknowledgeHandoff: () => void
   acknowledgeDrawnCard: () => void
   setSpeed: (speed: AnimationSpeed) => void
+  dispose: () => void
 }
 
 type SessionOptions = {
@@ -38,6 +48,11 @@ function wait(milliseconds: number): Promise<void> {
 
 function currentPlayerOf(state: GameState): Player | undefined {
   return state.players[state.currentPlayerIndex]
+}
+
+function aiPlayerOf(state: GameState): Player | null {
+  const player = currentPlayerOf(state)
+  return player?.kind === 'ai' && state.phase.kind !== 'gameOver' ? player : null
 }
 
 function needsHandoff(before: GameState, after: GameState): Player | null {
@@ -86,13 +101,34 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   const speed = ref<AnimationSpeed>(options.speed ?? readSpeedPreference())
   const handoffTo = shallowRef<Player | null>(null)
   const drawnCard = shallowRef<Card | null>(null)
+  const aiFocus = shallowRef<AiFocus | null>(null)
   let presentationRun = 0
+  let turnProgress: TurnProgress = NEW_TURN
+  let aiTimer: ReturnType<typeof setTimeout> | null = null
+  let disposed = false
+
+  const scheduleAiAction = () => {
+    if (disposed || aiTimer !== null || isPresenting.value || drawnCard.value !== null) {
+      return
+    }
+    const action = nextAiAction(engineState.value, turnProgress)
+    if (action === null) {
+      return
+    }
+    aiFocus.value = action.type === 'attack' && speed.value !== 'instant' ? { from: action.from, to: action.to } : null
+    aiTimer = setTimeout(() => {
+      aiTimer = null
+      aiFocus.value = null
+      dispatch(action)
+    }, ANIMATION_DURATIONS[speed.value].aiAction)
+  }
 
   const finishPresentation = () => {
     presentationRun += 1
     currentStep.value = null
     isPresenting.value = false
     displayedState.value = engineState.value
+    scheduleAiAction()
   }
 
   const present = async (steps: PresentationStep[]) => {
@@ -125,6 +161,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
       return
     }
     error.value = null
+    turnProgress = progressAfter(turnProgress, action, result.events)
     engineState.value = result.state
     lastEvents.value = result.events
     drawnCard.value = drawnCardOf(result.state, result.events)
@@ -132,8 +169,10 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     void present(presentationSteps(result.events))
   }
 
+  const thinkingPlayer = computed(() => aiPlayerOf(engineState.value))
+
   const input = (gesture: InteractionInput) => {
-    if (isPresenting.value || handoffTo.value !== null) {
+    if (isPresenting.value || handoffTo.value !== null || thinkingPlayer.value !== null) {
       return
     }
     const step = reduceInteraction(engineState.value, interaction.value, gesture)
@@ -142,6 +181,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
       dispatch(step.action)
     }
   }
+
+  scheduleAiAction()
 
   return {
     engineState,
@@ -155,6 +196,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     speed,
     handoffTo,
     drawnCard,
+    thinkingPlayer,
+    aiFocus,
     dispatch,
     input,
     skipAnimation: () => {
@@ -170,10 +213,19 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     },
     acknowledgeDrawnCard: () => {
       drawnCard.value = null
+      scheduleAiAction()
     },
     setSpeed: (next: AnimationSpeed) => {
       speed.value = next
       writeSpeedPreference(next)
+    },
+    dispose: () => {
+      disposed = true
+      presentationRun += 1
+      if (aiTimer !== null) {
+        clearTimeout(aiTimer)
+        aiTimer = null
+      }
     },
   }
 }

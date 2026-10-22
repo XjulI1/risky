@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { createGame, type GameSettings, type GameState } from '../../engine'
+import { createGame, type AiLevel, type GameSettings, type GameState } from '../../engine'
 import {
   addPlayer,
+  AI_LEVEL_LABELS,
+  AI_LEVELS,
+  applyAiLevel,
   chooseColor,
+  chooseControl,
   defaultSetup,
   MAX_FORM_PLAYERS,
   MAX_NAME_LENGTH,
@@ -20,16 +24,35 @@ const emit = defineEmits<{
 }>()
 
 const setup = ref<GameSetup>(defaultSetup())
+const aiLevel = ref<AiLevel>('normal')
 const engineError = ref<string | null>(null)
 
 const errors = computed(() => nameErrors(setup.value.players))
 const canStart = computed(() => Object.keys(errors.value).length === 0)
 const withNeutral = computed(() => setup.value.players.length === MIN_FORM_PLAYERS)
+const hasAi = computed(() => setup.value.players.some((player) => player.kind === 'ai'))
 
 const diceChoices = [1, 2, 3]
 
 function updateName(id: string, name: string) {
   setup.value.players = setup.value.players.map((player) => (player.id === id ? { ...player, name } : player))
+}
+
+function updateKind(id: string, kind: string) {
+  setup.value.players = chooseControl(
+    setup.value.players,
+    id,
+    kind === 'ai' ? { kind: 'ai', level: aiLevel.value } : { kind: 'human' },
+  )
+}
+
+function updateAiLevel(level: AiLevel) {
+  aiLevel.value = level
+  setup.value.players = applyAiLevel(setup.value.players, level)
+}
+
+function addAiPlayer() {
+  setup.value.players = applyAiLevel(addPlayer(setup.value.players), aiLevel.value)
 }
 
 function updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
@@ -72,16 +95,16 @@ function start() {
           :key="player.id"
           data-testid="player-row"
           :data-color="player.color"
-          class="flex flex-wrap items-center gap-3 rounded-xl bg-ink/60 p-3"
+          class="flex flex-nowrap items-center gap-2 rounded-xl bg-ink/60 p-3"
         >
           <span
             class="size-6 shrink-0 rounded-full border-2 border-parchment/70"
             :style="{ backgroundColor: player.color }"
           />
-          <div class="flex min-w-48 flex-1 flex-col">
+          <div class="flex min-w-0 flex-1 flex-col">
             <input
               data-testid="player-name"
-              class="min-h-11 rounded-lg bg-ink px-3 text-parchment outline-none ring-accent focus:ring-2"
+              class="min-h-11 w-full min-w-0 rounded-lg bg-ink px-3 text-parchment outline-none ring-accent focus:ring-2"
               :value="player.name"
               :maxlength="MAX_NAME_LENGTH + 5"
               :aria-label="`Nom du joueur`"
@@ -92,7 +115,21 @@ function start() {
               class="mt-1 text-sm text-danger"
             >{{ errors[player.id] }}</span>
           </div>
-          <div class="flex gap-1">
+          <select
+            data-testid="player-kind"
+            class="select-field min-h-11 shrink-0 rounded-lg bg-ink px-3"
+            aria-label="Type du joueur"
+            :value="player.kind"
+            @change="updateKind(player.id, ($event.target as HTMLSelectElement).value)"
+          >
+            <option value="human">
+              Humain
+            </option>
+            <option value="ai">
+              IA
+            </option>
+          </select>
+          <div class="flex shrink-0 gap-1">
             <button
               v-for="color in PLAYER_PALETTE"
               :key="color"
@@ -108,11 +145,13 @@ function start() {
           <button
             type="button"
             data-testid="remove-player"
-            class="min-h-11 rounded-lg px-3 text-parchment/80 hover:text-parchment disabled:opacity-30"
+            class="size-11 shrink-0 rounded-lg text-lg text-parchment/80 hover:bg-ink/60 hover:text-parchment disabled:opacity-30"
+            :aria-label="`Retirer ${player.name}`"
+            :title="`Retirer ${player.name}`"
             :disabled="setup.players.length <= MIN_FORM_PLAYERS"
             @click="setup.players = removePlayer(setup.players, player.id)"
           >
-            Retirer
+            ✕
           </button>
         </div>
         <button
@@ -120,10 +159,30 @@ function start() {
           data-testid="add-player"
           class="min-h-11 rounded-lg border border-parchment/40 px-4 hover:bg-ink/60 disabled:opacity-30"
           :disabled="setup.players.length >= MAX_FORM_PLAYERS"
-          @click="setup.players = addPlayer(setup.players)"
+          @click="addAiPlayer"
         >
           Ajouter un joueur
         </button>
+        <label
+          v-if="hasAi"
+          class="flex max-w-xs flex-col gap-1"
+        >
+          <span class="text-sm text-parchment/80">Niveau des IA</span>
+          <select
+            data-testid="ai-level"
+            class="select-field min-h-11 rounded-lg bg-ink px-3"
+            :value="aiLevel"
+            @change="updateAiLevel(($event.target as HTMLSelectElement).value as AiLevel)"
+          >
+            <option
+              v-for="level in AI_LEVELS"
+              :key="level"
+              :value="level"
+            >
+              {{ AI_LEVEL_LABELS[level] }}
+            </option>
+          </select>
+        </label>
         <p
           v-if="withNeutral"
           class="text-sm text-parchment/80"
