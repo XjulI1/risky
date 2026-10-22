@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Langue : rédiger TOUS les artefacts (proposal, design, specs, tasks) en français.
+  Exception : conserver en anglais les marqueurs structurels parsés par l'outillage OpenSpec —
+  en-têtes de delta (## ADDED/MODIFIED/REMOVED/RENAMED Requirements), préfixes
+  "### Requirement:" / "#### Scenario:", mots-clés **WHEN**/**THEN**/**AND** et SHALL/SHALL NOT,
+  ainsi que le format des cases à cocher "- [ ] X.Y".
+
+  Produit : jeu Risk en web app, projet perso non publié. Solo contre IA (2 à 6 joueurs, humain
+  + IA heuristique à 3 niveaux). Règles classiques (42 territoires, 6 continents) avec variantes
+  activables : missions secrètes, mode capitales, réglages numériques (barème d'échange des
+  cartes, dés, fortification, placement initial). Interface en français en dur, pas d'i18n.
+
+  Rendu : vue du haut inclinée en 3D (zoom/pan, pas d'orbite libre), style plateau low-poly :
+  territoires issus de chemins SVG extrudés, pion 3D + compteur par territoire, dés animés
+  avec mode blitz et vitesse réglable. Jouable au tactile (mobile/tablette).
+
+  Stack : Vite + Vue 3 SPA (`<script setup lang="ts">`, Composition API), TypeScript strict,
+  TresJS (Three.js), Tailwind CSS + composants maison pour le HUD, Vitest. Gestionnaire de
+  paquets : pnpm ; ne jamais lancer d'install, l'utilisateur les fait lui-même.
+
+  Architecture : moteur de règles pur et sérialisable (aucune dépendance à Vue ni à Three.js),
+  testé en TDD ; le rendu 3D et l'UI consomment son état. L'IA s'appuie sur le même moteur.
+  Sauvegarde automatique en localStorage et journal des actions.
+
+  Conventions de code : identifiants et code en anglais ; aucun commentaire dans le code
+  (seule exception : JSDoc sur l'API exportée) ; `type` plutôt qu'`interface` ; pas d'`any`.
+
+rules:
+  proposal:
+    - Rédiger en français (sauf marqueurs structurels OpenSpec)
+    - Inclure une section « Hors périmètre » listant ce qui est reporté à un change ultérieur
+  design:
+    - Rédiger en français (sauf marqueurs structurels OpenSpec)
+  specs:
+    - Rédiger le contenu en français ; garder les en-têtes de delta, "Requirement:"/"Scenario:", WHEN/THEN et SHALL en anglais
+    - Les scénarios doivent être directement traduisibles en tests Vitest
+  tasks:
+    - Rédiger les descriptions de tâches en français ; conserver le format "- [ ] X.Y"
+    - Ordonner en TDD pour la logique de jeu, le test précède l'implémentation
+    - Toute tâche nécessitant un `pnpm install` / `pnpm add` le signale explicitement pour que l'utilisateur le lance

@@ -1,0 +1,137 @@
+# Spec Delta
+
+## Purpose
+
+Guider le joueur pendant son tour : lui montrer où il en est, ne lui proposer que des actions
+légales sur le plateau et dans le HUD, et transmettre ses choix au moteur.
+
+## ADDED Requirements
+
+### Requirement: Bandeau d'état
+
+Le HUD SHALL afficher en permanence le joueur courant (nom et couleur), la phase courante en
+français, la réserve d'armées quand elle existe, et pour chaque joueur son nombre de territoires,
+d'armées et de cartes. Les joueurs éliminés SHALL apparaître barrés.
+
+#### Scenario: Phase de renforts
+
+- **WHEN** c'est le tour d'Alice en phase de renforts avec 7 armées en réserve
+- **THEN** le HUD affiche « Alice — Renforts » et « 7 armées à placer »
+
+#### Scenario: Joueur éliminé
+
+- **WHEN** Bob est éliminé
+- **THEN** Bob apparaît barré dans la liste des joueurs
+
+### Requirement: Seules les actions légales sont proposées
+
+À chaque étape, le plateau SHALL mettre en avant uniquement les territoires sur lesquels une action
+légale est possible, et les boutons du HUD correspondant à une action illégale SHALL être désactivés.
+Si le moteur rejette malgré tout une action, son message SHALL être affiché sans modifier l'état.
+
+#### Scenario: Origines d'attaque
+
+- **WHEN** la phase d'attaque commence
+- **THEN** seuls les territoires du joueur ayant au moins 2 armées et un voisin adverse sont sélectionnables
+
+#### Scenario: Rejet inattendu
+
+- **WHEN** le moteur rejette une action
+- **THEN** son message d'erreur s'affiche dans une notification et l'état affiché ne change pas
+
+### Requirement: Mise en place manuelle
+
+En placement manuel, le joueur courant SHALL revendiquer un territoire libre en le touchant pendant
+la revendication, puis placer une armée en touchant un de ses territoires pendant le placement.
+
+#### Scenario: Revendication
+
+- **WHEN** pendant la revendication le joueur courant touche un territoire libre
+- **THEN** le territoire lui est attribué et la main passe au joueur suivant
+
+### Requirement: Déploiement des renforts
+
+En phase de renforts, toucher un de ses territoires SHALL ouvrir un sélecteur de quantité entre 1 et
+la réserve (1 par défaut, boutons + et −, raccourci « tout »). La validation SHALL déployer cette
+quantité sur le territoire.
+
+#### Scenario: Déployer trois armées
+
+- **WHEN** le joueur touche son territoire, règle la quantité à 3 et valide
+- **THEN** le territoire gagne 3 armées et la réserve diminue de 3
+
+### Requirement: Parcours d'attaque
+
+En phase d'attaque, toucher un territoire d'origine valide SHALL le sélectionner et marquer ses
+voisins adverses comme cibles. Toucher une cible SHALL ouvrir le panneau d'attaque : choix du nombre
+de dés (maximum légal par défaut), bouton « Attaquer » et bouton « Blitz ». Toucher l'origine à
+nouveau ou l'océan SHALL annuler la sélection. Un bouton « Terminer les attaques » SHALL passer à la
+fortification.
+
+#### Scenario: Choix d'une cible
+
+- **WHEN** le joueur touche son territoire de 5 armées voisin de deux territoires adverses
+- **THEN** ce territoire est marqué sélectionné et les deux territoires adverses comme cibles
+
+#### Scenario: Panneau d'attaque
+
+- **WHEN** le joueur touche une des cibles
+- **THEN** le panneau d'attaque s'ouvre avec 3 dés présélectionnés
+
+#### Scenario: Annulation
+
+- **WHEN** une origine est sélectionnée et que le joueur touche l'océan
+- **THEN** la sélection est annulée et les origines possibles sont de nouveau mises en avant
+
+#### Scenario: Attaque enchaînée
+
+- **WHEN** une attaque se termine sans conquête et que l'origine a encore au moins 2 armées
+- **THEN** l'origine et la cible restent sélectionnées pour permettre de relancer
+
+### Requirement: Déplacement après conquête
+
+Après une conquête, le HUD SHALL afficher un sélecteur borné par le minimum et le maximum imposés par
+le moteur, réglé par défaut sur le maximum, et aucune autre action ne SHALL être proposée avant sa
+validation.
+
+#### Scenario: Déplacement par défaut
+
+- **WHEN** le joueur conquiert un territoire et valide le sélecteur sans le modifier
+- **THEN** le nombre maximal d'armées autorisé est déplacé
+
+### Requirement: Parcours de fortification
+
+En phase de fortification, toucher un de ses territoires d'au moins 2 armées SHALL marquer les
+destinations valides selon le mode de fortification ; toucher une destination SHALL ouvrir un
+sélecteur de quantité. Un bouton « Passer » SHALL terminer le tour sans fortifier.
+
+#### Scenario: Destinations en mode adjacent
+
+- **WHEN** en mode adjacent le joueur touche son territoire de 4 armées
+- **THEN** seuls ses territoires voisins sont marqués comme destinations
+
+#### Scenario: Passer
+
+- **WHEN** le joueur touche « Passer »
+- **THEN** le tour passe au joueur suivant
+
+### Requirement: Passage de main entre humains
+
+Quand le tour passe d'un humain à un autre humain, l'application SHALL afficher un écran
+intermédiaire « Au tour de <nom> » qui masque le plateau et les cartes jusqu'à ce que le joueur
+touche « Je suis prêt ». Cet écran SHALL être omis quand un seul humain participe.
+
+#### Scenario: Deux humains
+
+- **WHEN** dans une partie entre Alice et Bob le tour d'Alice se termine
+- **THEN** l'écran « Au tour de Bob » s'affiche et la main de Bob n'est visible qu'après « Je suis prêt »
+
+### Requirement: Utilisable au doigt
+
+Le HUD SHALL s'afficher en panneau latéral en paysage et en volet bas repliable en portrait, et toute
+commande SHALL offrir une zone tactile d'au moins 44 × 44 pixels CSS.
+
+#### Scenario: Portrait sur téléphone
+
+- **WHEN** l'écran de partie s'affiche en 390 × 844
+- **THEN** le HUD est un volet bas et le plateau occupe le reste de l'écran
