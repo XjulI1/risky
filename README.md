@@ -83,6 +83,11 @@ Le projet intègre les commandes OpenSpec pour [Claude Code](https://claude.com/
 En ligne de commande, `openspec list` affiche l'avancement des changes et
 `openspec validate --all --strict` vérifie leur format.
 
+## Licence
+
+Le code est distribué sous licence MIT, à l'exception des données de la carte
+(`data/maps/classic/`), qui gardent leurs propres licences. Voir [`LICENSE.md`](LICENSE.md).
+
 ## Conventions
 
 - Code, identifiants et messages de commit en anglais ; documentation et interface en français.
