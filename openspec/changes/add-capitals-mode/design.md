@@ -107,6 +107,7 @@ chevauchement. Le calcul du décalage est une fonction pure testée sur tous les
 - [Bonus de défense qui rend les capitales imprenables et allonge les parties] → mesurer la durée des
   parties du tournoi en mode capitales ; le bonus ne porte que sur un dé.
 - [Marqueur de capitale et pion qui se chevauchent sur les petits territoires] → test du décalage
-  sur les 42 territoires et corrections manuelles possibles via `anchorOverrides`.
+  sur les 42 territoires ; le décalage part du pôle d'inaccessibilité, qui laisse le plus de place
+  autour du pion.
 - [IA trop défensive qui ne termine pas les parties] → plafond de 500 tours du test de robustesse
   appliqué aussi au mode capitales.

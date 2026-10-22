@@ -7,15 +7,16 @@ Le moteur (`add-classic-rules-engine`) expose un `GameState` sérialisable et la
 contient déjà toute la géométrie nécessaire au plateau (provenance et licences dans `SOURCE.md`) :
 
 - `territories.json` : `viewBox` `[23, 18, 709, 466]` et, pour chaque territoire, son contour en
-  données de chemin SVG (`d`) et un point d'ancrage d'étiquette (`cx`, `cy`) ;
+  données de chemin SVG (`d`) et un point d'ancrage d'étiquette (`cx`, `cy`, non utilisé, voir plus
+  bas) ;
 - `sea-routes.json` : 21 liaisons maritimes avec le point le plus proche sur chaque côte (`pa`,
   `pb`), et deux amorces de bord de carte (`wrap`) pour Alaska–Kamtchatka ;
 - `continent-labels.json` : position en mer de l'étiquette de chaque continent.
 
 Constats faits sur ces données : les contours n'utilisent que les commandes `M`, `L`, `C` et `z` en
 coordonnées absolues ; l'Indonésie compte 4 sous-chemins et la Grande-Bretagne 2, tous des îles
-pleines (aucun trou) ; le point d'ancrage de la Grande-Bretagne tombe en mer, tous les autres sont
-à l'intérieur de leur territoire.
+pleines (aucun trou) ; les points d'ancrage `cx`, `cy` sont souvent excentrés, et celui de la
+Grande-Bretagne tombe en mer.
 
 Motivation : voir proposal.md ; exigences : `specs/`.
 
@@ -42,12 +43,17 @@ src/
   board/
     geometry/pathData.ts       données de chemin SVG → contours (pur)
     geometry/mapGeometry.ts    territories.json → formes en coordonnées monde (pur)
-    geometry/anchors.ts        point d'ancrage du pion (pur)
+    geometry/anchors.ts        point d'ancrage du pion, pôle d'inaccessibilité (pur)
     geometry/seaRoutes.ts      sea-routes.json → segments en coordonnées monde (pur)
     boardViewModel.ts          GameState + surbrillances → données d'affichage (pur)
-    tapDetector.ts             distinction toucher bref / glisser (pur)
-    GameBoard.vue              TresCanvas, caméra, lumières, océan
+    geometry/polygon.ts        point dans un polygone, aire, distance au contour (pur)
+    tapDetector.ts             distinction toucher bref / glisser, territoire le plus proche (pur)
+    cameraFraming.ts           cadrage, bornes de zoom, cible contrainte (pur)
+    GameBoard.vue              TresCanvas, caméra, lumières, assemblage du plateau
+    BoardControls.vue          contrôles de caméra, sélection et survol
+    OceanPlane.vue
     TerritoryMesh.vue
+    territoryBorders.ts        liseré des frontières
     ArmyPawn.vue
     SeaLink.vue
     ContinentLabel.vue
@@ -74,18 +80,33 @@ dans un autre).
 `mapGeometry.ts` convertit les coordonnées du `viewBox` vers le plan XZ : la carte est ramenée à
 100 unités de large, centrée sur l'origine, l'axe Y du SVG (vers le bas) devenant l'axe Z. La même
 fonction de conversion sert aux contours, aux ancrages, aux liaisons maritimes et aux étiquettes de
-continent. Chaque forme est extrudée en `ExtrudeGeometry` peu profonde avec un léger biseau.
+continent. Chaque forme est extrudée en `ExtrudeGeometry` peu profonde, sans biseau.
 
-### Ancrage des pions : données + corrections
+### Frontières : liseré plutôt que biseau
 
-Le point d'ancrage d'un pion est le couple `cx`, `cy` de `territories.json`, sauf correction déclarée
-dans `anchorOverrides` (constante de `anchors.ts`). La Grande-Bretagne, dont l'ancrage tombe en mer,
-y reçoit un point à l'intérieur de sa plus grande île. Un test vérifie que chacun des 42 ancrages
-retenus est à l'intérieur de la forme de son territoire (sur son plus grand morceau pour les
-territoires en plusieurs îles).
+Un biseau d'extrusion décale les sommets le long de leurs normales ; sur les frontières très dentelées
+(Inde–Chine), les angles rentrants le font déborder chez le voisin, et les deux biseaux se croisent à
+la même profondeur, ce qui produit un scintillement en stries (z-fighting). Sans biseau, deux voisins
+partagent exactement les mêmes sommets et ne se recouvrent plus.
 
-Alternative écartée : recalculer tous les ancrages avec `polylabel` (pôle d'inaccessibilité). Une
-dépendance de plus pour corriger un seul territoire.
+Le biseau rendait pourtant visibles les frontières entre deux territoires de même couleur. Elles sont
+désormais tracées par un liseré (`territoryBorders.ts`) : le contour de chaque morceau, dessiné juste
+au-dessus de la tuile, dans une couleur sombre et semi-transparente commune à toute la carte. La
+couleur commune évite que les deux traits superposés d'une frontière partagée ne scintillent à leur
+tour.
+
+### Ancrage des pions : pôle d'inaccessibilité
+
+Le pion d'un territoire se place au point de son plus grand morceau le plus éloigné des bords (pôle
+d'inaccessibilité), calculé dans `geometry/polygon.ts` avec l'algorithme de `polylabel` (découpage en
+cellules explorées par ordre de potentiel), réécrit en quelques dizaines de lignes plutôt qu'ajouté en
+dépendance. Les 42 ancrages sont calculés une fois au chargement, en quelques millisecondes. Un test
+vérifie que chaque ancrage est à l'intérieur du territoire et à au moins 90 % de la meilleure
+distance aux bords trouvée par une recherche exhaustive.
+
+Alternative écartée après essai : reprendre les points `cx`, `cy` de `territories.json`. Ce sont des
+ancrages d'étiquettes du projet d'origine, souvent collés à une frontière (Afrique de l'Est, Alberta,
+Territoires du Nord-Ouest) et même hors du territoire pour la Grande-Bretagne.
 
 ### Liaisons maritimes : données telles quelles
 
@@ -126,6 +147,9 @@ de vue change sont mis à jour.
 
 ### Caméra
 
+Les calculs purs (position selon l'inclinaison, distance de cadrage, distance de zoom maximal, cible
+contrainte) vivent dans `cameraFraming.ts` ; `useBoardCamera.ts` ne fait que configurer les contrôles.
+
 `PerspectiveCamera` à 50° de champ, inclinée à 55°. Contrôle par `MapControls` (addons de Three.js),
 rotation désactivée, zoom vers le curseur activé, distance bornée. Le centre visé est contraint dans
 la boîte de la carte à chaque changement. Le cadrage initial calcule la distance nécessaire pour faire
@@ -134,11 +158,16 @@ une fonction pure testée.
 
 ### Sélection
 
-Les événements de pointeur TresJS sur les maillages donnent le territoire touché. `tapDetector`
-compare position et durée entre appui et relâchement : au-delà de 6 px ou de 500 ms, c'est un geste
-de caméra, pas une sélection. Quand le contact tombe sur l'océan avec un pointeur tactile, le
-territoire dont le contour est le plus proche du point projeté au sol, dans un rayon de 1,5 unité
-monde, est retenu.
+`BoardControls` écoute directement les événements de pointeur du canevas plutôt que les événements
+TresJS de chaque maillage. `tapDetector` compare position et durée entre appui et relâchement : au-delà
+de 6 px, de 500 ms ou si plusieurs doigts ont touché l'écran, c'est un geste de caméra, pas une
+sélection. Le point touché est projeté sur le plan du dessus des tuiles, puis `nearestTerritory`
+retient le territoire qui le contient ou, au tactile, le plus proche dans un rayon de 1,5 unité monde.
+Un seul chemin couvre ainsi la souris, le tactile, les îles et l'océan, avec la même fonction testée.
+Le survol (souris uniquement) utilise la même projection.
+
+Alternative écartée : les événements de pointeur TresJS par maillage. Ils ne voient pas l'océan, ce
+qui oblige à un second mécanisme pour la tolérance tactile et la désélection.
 
 ### Écran de démonstration
 
@@ -149,7 +178,8 @@ surbrillances et les adjacences visuellement. Cet écran sera remplacé par `add
 ## Risks / Trade-offs
 
 - [Carte peu détaillée une fois en relief et zoomée] → contours d'une carte de plateau, pas d'une
-  carte géographique : c'est le style recherché ; le biseau et l'éclairage donnent le relief.
+  carte géographique : c'est le style recherché ; les murs latéraux, l'éclairage et le liseré
+  donnent le relief.
 - [Licence CC BY-SA 3.0 de la géométrie] → sans effet pour un projet personnel ; à respecter
   (attribution, même licence) si le projet est un jour diffusé. `SOURCE.md` porte l'attribution.
 - [Ombres et shader d'océan trop coûteux sur tablette] → réglage de qualité automatique selon

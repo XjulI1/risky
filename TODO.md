@@ -76,10 +76,10 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ### 2. `add-3d-board` — plateau 3D
 
-- [ ] Lancer `pnpm install` après l'ajout de three et TresJS (tâche 1.1).
-- [ ] Implémenter les [tâches](openspec/changes/add-3d-board/tasks.md).
-- [ ] Ajuster visuellement la teinte de l'océan et la palette des joueurs.
-- [ ] Archiver le change.
+- [x] Lancer `pnpm install` après l'ajout de three et TresJS (tâche 1.1).
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-22-add-3d-board/tasks.md).
+- [x] Ajuster visuellement la teinte de l'océan et la palette des joueurs.
+- [x] Archiver le change.
 
 ### 3. `add-game-ui` — interface de jeu
 
