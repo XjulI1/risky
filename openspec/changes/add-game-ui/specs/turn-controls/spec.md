@@ -39,15 +39,22 @@ Si le moteur rejette malgré tout une action, son message SHALL être affiché s
 - **WHEN** le moteur rejette une action
 - **THEN** son message d'erreur s'affiche dans une notification et l'état affiché ne change pas
 
-### Requirement: Mise en place manuelle
+### Requirement: Mise en place
 
-En placement manuel, le joueur courant SHALL revendiquer un territoire libre en le touchant pendant
-la revendication, puis placer une armée en touchant un de ses territoires pendant le placement.
+Pendant la revendication (répartition au choix), le joueur courant SHALL revendiquer un territoire
+libre en le touchant. Pendant la phase de placement, quel que soit le mode de répartition, il SHALL
+placer une armée en touchant un de ses territoires ; le HUD SHALL afficher le nombre d'armées qu'il
+lui reste à placer.
 
 #### Scenario: Revendication
 
 - **WHEN** pendant la revendication le joueur courant touche un territoire libre
 - **THEN** le territoire lui est attribué et la main passe au joueur suivant
+
+#### Scenario: Placement après une répartition aléatoire
+
+- **WHEN** une partie en répartition aléatoire démarre et que le joueur courant touche un de ses territoires
+- **THEN** le territoire gagne une armée, le nombre d'armées restant à placer diminue de 1 et la main passe au joueur suivant
 
 ### Requirement: Déploiement des renforts
 
@@ -63,9 +70,9 @@ quantité sur le territoire.
 ### Requirement: Parcours d'attaque
 
 En phase d'attaque, toucher un territoire d'origine valide SHALL le sélectionner et marquer ses
-voisins adverses comme cibles. Toucher une cible SHALL ouvrir le panneau d'attaque : choix du nombre
-de dés (maximum légal par défaut), bouton « Attaquer » et bouton « Blitz ». Toucher l'origine à
-nouveau ou l'océan SHALL annuler la sélection. Un bouton « Terminer les attaques » SHALL passer à la
+voisins adverses comme cibles. Toucher une cible SHALL ouvrir un panneau de confirmation rappelant
+l'origine, la cible et leurs armées, avec un bouton « Attaquer » qui lance l'attaque jusqu'au bout.
+Toucher l'origine à nouveau ou l'océan SHALL annuler la sélection. Un bouton « Terminer les attaques » SHALL passer à la
 fortification.
 
 #### Scenario: Choix d'une cible
@@ -75,18 +82,18 @@ fortification.
 
 #### Scenario: Panneau d'attaque
 
-- **WHEN** le joueur touche une des cibles
-- **THEN** le panneau d'attaque s'ouvre avec 3 dés présélectionnés
+- **WHEN** le joueur touche le Brésil (3 armées) depuis l'Afrique du Nord (5 armées)
+- **THEN** le panneau affiche « Attaquer Brésil (3) depuis Afrique du Nord (5) » et le bouton « Attaquer »
 
 #### Scenario: Annulation
 
 - **WHEN** une origine est sélectionnée et que le joueur touche l'océan
 - **THEN** la sélection est annulée et les origines possibles sont de nouveau mises en avant
 
-#### Scenario: Attaque enchaînée
+#### Scenario: Attaque épuisée
 
-- **WHEN** une attaque se termine sans conquête et que l'origine a encore au moins 2 armées
-- **THEN** l'origine et la cible restent sélectionnées pour permettre de relancer
+- **WHEN** une attaque se termine sans conquête, l'origine n'ayant plus qu'une armée
+- **THEN** la sélection est annulée et les origines possibles sont de nouveau mises en avant
 
 ### Requirement: Déplacement après conquête
 
@@ -126,12 +133,19 @@ touche « Je suis prêt ». Cet écran SHALL être omis quand un seul humain par
 - **WHEN** dans une partie entre Alice et Bob le tour d'Alice se termine
 - **THEN** l'écran « Au tour de Bob » s'affiche et la main de Bob n'est visible qu'après « Je suis prêt »
 
-### Requirement: Utilisable au doigt
+### Requirement: Mise en page desktop et tablette
 
-Le HUD SHALL s'afficher en panneau latéral en paysage et en volet bas repliable en portrait, et toute
-commande SHALL offrir une zone tactile d'au moins 44 × 44 pixels CSS.
+L'écran de partie SHALL être conçu pour des fenêtres en paysage d'au moins 1024 × 768 pixels CSS :
+plateau en plein écran et HUD en panneau latéral, toutes les commandes visibles sans défilement de la
+page. Toute commande SHALL offrir une zone tactile d'au moins 44 × 44 pixels CSS, pour la souris
+comme pour le doigt sur tablette.
 
-#### Scenario: Portrait sur téléphone
+#### Scenario: Tablette en paysage
 
-- **WHEN** l'écran de partie s'affiche en 390 × 844
-- **THEN** le HUD est un volet bas et le plateau occupe le reste de l'écran
+- **WHEN** l'écran de partie s'affiche en 1024 × 768
+- **THEN** le HUD est un panneau latéral, toutes ses commandes sont visibles sans défilement et le plateau occupe le reste de l'écran
+
+#### Scenario: Grand écran
+
+- **WHEN** l'écran de partie s'affiche en 1920 × 1080
+- **THEN** le HUD garde sa largeur et le plateau profite de l'espace supplémentaire

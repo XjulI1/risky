@@ -4,7 +4,7 @@
 
 - [ ] 1.1 Écrire les tests de `turnCounter` : incrément à chaque début de tour, aucun incrément pendant la mise en place.
 - [ ] 1.2 Implémenter `src/game/history/turnCounter.ts` ; vérifier que les tests 1.1 passent.
-- [ ] 1.3 Écrire les tests de `journal.ts` : une formulation par type d'événement du tableau de la spec, accord singulier et pluriel, en-tête de tour, blitz regroupé en une entrée dépliable avec pertes totales, carte piochée sans détail.
+- [ ] 1.3 Écrire les tests de `journal.ts` : une formulation par type d'événement du tableau de la spec, accord singulier et pluriel, en-tête de tour, attaque regroupée en une entrée dépliable avec nombre de lancers et pertes totales, détail de chaque lancer, carte piochée sans détail.
 - [ ] 1.4 Implémenter `src/game/history/journal.ts` ; vérifier que les tests 1.3 passent.
 
 ## 2. Statistiques
@@ -30,12 +30,12 @@
 
 ## 6. Journal dans le HUD
 
-- [ ] 6.1 Implémenter `JournalPanel` (repliable, groupé par tour, couleurs des joueurs, blitz dépliable, défilement automatique sauf lecture en cours, indicateur « Nouvelles actions », 200 dernières entrées puis chargement en remontant) ; vérifier à la main pendant une partie contre deux IA, en portrait et en paysage.
+- [ ] 6.1 Implémenter `JournalPanel` (repliable, groupé par tour, couleurs des joueurs, attaques dépliables, défilement automatique sauf lecture en cours, indicateur « Nouvelles actions », 200 dernières entrées puis chargement en remontant) ; vérifier à la main pendant une partie contre deux IA, en 1024 × 768 et en 1920 × 1080.
 
 ## 7. Statistiques de fin
 
 - [ ] 7.1 Écrire les tests des fonctions de graphique : bornes des axes, graduations entières, coordonnées des points, ordre de la légende.
-- [ ] 7.2 Implémenter `LineChart` et `StatisticsTab` (deux courbes, tableau ordonné vainqueur puis éliminations inverses) dans l'écran de fin ; vérifier que les tests 7.1 passent et vérifier à la main en 390 × 844 qu'il n'y a aucun défilement horizontal.
+- [ ] 7.2 Implémenter `LineChart` et `StatisticsTab` (deux courbes, tableau ordonné vainqueur puis éliminations inverses) dans l'écran de fin ; vérifier que les tests 7.1 passent et vérifier à la main en 1024 × 768 qu'il n'y a aucun défilement horizontal.
 
 ## 8. Vérification d'ensemble
 

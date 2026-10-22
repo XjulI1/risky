@@ -3,7 +3,7 @@
 ## Purpose
 
 Créer une partie de Risk prête à jouer : joueurs, armée neutre à deux joueurs, réglages, armées
-initiales et répartition des territoires, en mode aléatoire ou manuel.
+initiales, répartition des territoires (aléatoire ou au choix) et placement des armées restantes.
 
 ## ADDED Requirements
 
@@ -34,11 +34,11 @@ Une partie SHALL porter les réglages suivants, figés à la création, avec ces
 
 | Réglage | Valeurs | Défaut |
 |---|---|---|
-| Placement initial | aléatoire, manuel | aléatoire |
+| Répartition des territoires | aléatoire, au choix des joueurs | aléatoire |
 | Barème d'échange des cartes | progressif, fixe | progressif |
 | Dés maximum en attaque | 1 à 3 | 3 |
 | Dés maximum en défense | 1 à 3 | 2 |
-| Fortification | adjacente, chemin connexe | adjacente |
+| Fortification | chemin connexe, adjacente | chemin connexe |
 
 #### Scenario: Réglages par défaut
 
@@ -47,8 +47,8 @@ Une partie SHALL porter les réglages suivants, figés à la création, avec ces
 
 #### Scenario: Réglage partiel
 
-- **WHEN** on crée une partie en fournissant uniquement la fortification en chemin connexe
-- **THEN** la fortification vaut « chemin connexe » et les autres réglages leurs valeurs par défaut
+- **WHEN** on crée une partie en fournissant uniquement la fortification adjacente
+- **THEN** la fortification vaut « adjacente » et les autres réglages leurs valeurs par défaut
 
 #### Scenario: Réglage hors bornes
 
@@ -59,12 +59,13 @@ Une partie SHALL porter les réglages suivants, figés à la création, avec ces
 
 À 2 joueurs, le moteur SHALL ajouter un joueur neutre. Le neutre SHALL posséder des territoires et
 défendre normalement, mais SHALL NOT jouer de tour, recevoir de renforts ni de cartes. Il SHALL NOT
-compter pour la victoire.
+compter pour la victoire. Ses 14 territoires SHALL être tirés au hasard et ses armées SHALL être
+réparties au hasard sur ses territoires dès la création, quel que soit le mode de répartition.
 
 #### Scenario: Neutre ajouté à deux joueurs
 
 - **WHEN** on crée une partie avec 2 joueurs
-- **THEN** la partie contient en plus un joueur neutre
+- **THEN** la partie contient en plus un joueur neutre qui possède 14 territoires portant au total 40 armées
 
 #### Scenario: Pas de neutre à trois joueurs et plus
 
@@ -89,44 +90,40 @@ joueurs non neutres : 40 à 2, 35 à 3, 30 à 4, 25 à 5, 20 à 6.
 ### Requirement: Premier joueur
 
 Le premier joueur SHALL être tiré au sort parmi les joueurs non neutres à l'aide de la graine ;
-l'ordre de jeu suit ensuite l'ordre de la liste, de façon circulaire.
+l'ordre de jeu suit ensuite l'ordre de la liste, de façon circulaire. Cet ordre s'applique à la mise
+en place comme au jeu.
 
 #### Scenario: Tirage déterministe
 
 - **WHEN** on crée deux parties avec la même graine et les mêmes joueurs
 - **THEN** le premier joueur est le même dans les deux parties
 
-### Requirement: Mise en place aléatoire
+### Requirement: Répartition aléatoire des territoires
 
-En placement aléatoire, la création SHALL produire directement une partie au début du premier tour :
-les territoires sont distribués au hasard et à parts aussi égales que possible entre tous les joueurs
-(neutre compris), chaque territoire reçoit une armée, puis les armées restantes de chaque joueur sont
-réparties au hasard sur ses territoires.
+En répartition aléatoire, la création SHALL distribuer au hasard les territoires restants (hors
+neutre) entre les joueurs non neutres, à parts aussi égales que possible, avec une armée sur chacun,
+puis ouvrir la phase de placement.
 
 #### Scenario: Tous les territoires occupés
 
-- **WHEN** on crée une partie en placement aléatoire
+- **WHEN** on crée une partie en répartition aléatoire
 - **THEN** chacun des 42 territoires a un propriétaire et au moins une armée
 
 #### Scenario: Répartition équilibrée
 
-- **WHEN** on crée une partie à 4 joueurs en placement aléatoire
+- **WHEN** on crée une partie à 4 joueurs en répartition aléatoire
 - **THEN** chaque joueur possède 10 ou 11 territoires
 
-#### Scenario: La partie démarre en phase de renforts
+#### Scenario: Ouverture du placement
 
-- **WHEN** on crée une partie en placement aléatoire
-- **THEN** la partie est en phase de renforts du premier joueur
+- **WHEN** on crée une partie en répartition aléatoire
+- **THEN** la partie est en phase de placement, au tour du premier joueur
 
-### Requirement: Mise en place manuelle
+### Requirement: Répartition des territoires au choix
 
-En placement manuel, la partie SHALL commencer par une phase de revendication où, à tour de rôle
-à partir du premier joueur, chaque joueur non neutre choisit un territoire libre et y place une armée.
-À 2 joueurs, le neutre SHALL recevoir 14 territoires tirés au hasard avant la revendication, et ses
-armées restantes SHALL être réparties au hasard sur ses territoires. Quand tous les territoires sont
-pris, une phase de placement SHALL suivre où chaque joueur, à tour de rôle, place une armée sur un de
-ses territoires, jusqu'à épuisement de ses armées initiales. La partie passe alors en phase de
-renforts du premier joueur.
+En répartition au choix, la partie SHALL commencer par une phase de revendication où, à tour de rôle
+à partir du premier joueur, chaque joueur non neutre choisit un territoire libre et y place une
+armée. Quand tous les territoires sont pris, la phase de placement SHALL s'ouvrir.
 
 #### Scenario: Revendication d'un territoire libre
 
@@ -142,6 +139,12 @@ renforts du premier joueur.
 
 - **WHEN** le dernier territoire libre est revendiqué
 - **THEN** la partie passe en phase de placement
+
+### Requirement: Placement des armées restantes
+
+Pendant la phase de placement, chaque joueur non neutre SHALL, à tour de rôle à partir du premier
+joueur, placer une armée sur un de ses territoires, jusqu'à épuisement de ses armées initiales. La
+partie passe ensuite en phase de renforts du premier joueur.
 
 #### Scenario: Placement sur un territoire adverse
 

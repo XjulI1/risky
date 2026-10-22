@@ -7,7 +7,7 @@ en lecture) et le composant `GameBoard` (props état + surbrillances, événemen
 les relie et ajoute toute l'interface 2D. Motivation : proposal.md ; exigences : `specs/`.
 
 La difficulté principale n'est pas l'affichage mais la **coordination dans le temps** : le moteur
-calcule instantanément l'état final d'un blitz de 6 lancers, alors que l'écran doit montrer chaque
+calcule instantanément l'état final d'une attaque de 6 lancers, alors que l'écran doit montrer chaque
 lancer, puis la conquête, puis le déplacement, dans l'ordre.
 
 ## Goals / Non-Goals
@@ -95,7 +95,7 @@ rendu WebGL pour un élément d'interface.
 ### Vitesses d'animation
 
 Une table unique dans `animationSpeed.ts` donne, par vitesse, la durée d'un lancer, d'un lancer de
-blitz, d'une transition de conquête et d'un déplacement d'armées ; « instantanée » vaut 0 partout.
+lancer suivant d'une même attaque, d'une transition de conquête et d'un déplacement d'armées ; « instantanée » vaut 0 partout.
 La préférence est mémorisée dans `localStorage` (lecture et écriture protégées par `try/catch`,
 valeur par défaut si indisponible), avec repli sur `prefers-reduced-motion`.
 
@@ -109,7 +109,9 @@ tout. La carte piochée est montrée avant ce passage pour rester privée.
 
 Tailwind CSS v4 via `@tailwindcss/vite`. Les couleurs d'interface sont des variables CSS de thème ;
 les couleurs des joueurs viennent de la partie et sont appliquées en style en ligne. Mise en page :
-plateau en plein écran, HUD en position fixe, en volet bas sous 768 px de large en portrait.
+plateau en plein écran, HUD en panneau latéral fixe. La mise en page est conçue pour 1024 × 768 et
+plus en paysage ; aucune variante n'est prévue pour les écrans plus petits ou en portrait, où un
+bandeau refermable (`media query` sur la largeur et l'orientation) signale simplement l'écart.
 
 ### Tests
 
@@ -125,7 +127,8 @@ animations restent vérifiés visuellement.
   `engineState`, et le contrôle de développement rend toute divergence visible tout de suite.
 - [Interactions pendant une animation] → entrées ignorées pendant `isPresenting`, sauf passer
   l'animation.
-- [Volet bas trop haut sur petits téléphones] → volet repliable, plateau toujours manipulable
-  au-dessus.
+- [Panneau latéral trop encombrant en 1024 × 768] → largeur fixe modeste, sections du HUD
+  repliables (journal, main de cartes) ; le plateau reste manipulable à côté.
+- [Usage sur smartphone] → hors cible : bandeau d'avertissement, aucune adaptation ; c'est assumé.
 - [Hot-seat : informations privées visibles à l'autre joueur] → écran de passage de main ; c'est un
   confort plus qu'une garantie, acceptable pour un jeu local.

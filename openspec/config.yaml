@@ -10,11 +10,17 @@ context: |
   Produit : jeu Risk en web app, projet perso non publié. Solo contre IA (2 à 6 joueurs, humain
   + IA heuristique à 3 niveaux). Règles classiques (42 territoires, 6 continents) avec variantes
   activables : missions secrètes, mode capitales, réglages numériques (barème d'échange des
-  cartes, dés, fortification, placement initial). Interface en français en dur, pas d'i18n.
+  cartes, dés, fortification, répartition des territoires). Toute attaque est menée jusqu'au
+  bout (pas de lancer unique). Interface en français en dur, pas d'i18n.
 
   Rendu : vue du haut inclinée en 3D (zoom/pan, pas d'orbite libre), style plateau low-poly :
   territoires issus de chemins SVG extrudés, pion 3D + compteur par territoire, dés animés
-  avec mode blitz et vitesse réglable. Jouable au tactile (mobile/tablette).
+  avec vitesse réglable.
+
+  Écrans cibles : ordinateur et tablette en paysage, à partir de 1024 px de large (1024 × 768
+  minimum), à la souris comme au tactile. Le smartphone et le mode portrait ne sont pas des cibles :
+  l'application y reste accessible sans adaptation dédiée, et ils ne doivent jamais contraindre la
+  conception de l'interface.
 
   Stack : Vite + Vue 3 SPA (`<script setup lang="ts">`, Composition API), TypeScript strict,
   TresJS (Three.js), Tailwind CSS + composants maison pour le HUD, Vitest. Gestionnaire de

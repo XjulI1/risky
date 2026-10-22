@@ -42,7 +42,7 @@ src/
     types.ts            GameState, Action, GameEvent, RuleError, GameSettings
     rng.ts              générateur à graine
     maps/classic.ts     carte classique construite depuis data/maps/classic/, noms français
-    setup.ts            création, mise en place aléatoire et manuelle
+    setup.ts            création, répartition des territoires, placement initial
     reinforcement.ts
     combat.ts
     fortification.ts
@@ -66,9 +66,13 @@ type ActionResult =
 ```
 
 Les actions sont une union discriminée (`claimTerritory`, `placeInitialArmy`, `tradeCards`,
-`deploy`, `attack`, `blitz`, `moveAfterConquest`, `endAttack`, `fortify`, `skipFortify`), chacune
-portant le `playerId` de son auteur. Un seul point d'entrée qui aiguille sur `action.type` puis sur
-la phase courante.
+`deploy`, `attack`, `moveAfterConquest`, `endAttack`, `fortify`, `skipFortify`), chacune portant le
+`playerId` de son auteur. Un seul point d'entrée qui aiguille sur `action.type` puis sur la phase
+courante.
+
+`attack` ne porte que l'origine et la cible : le moteur enchaîne lui-même les lancers, avec le nombre
+maximal de dés à chaque fois, jusqu'à la conquête ou à l'épuisement de l'attaquant, et renvoie un
+événement par lancer. Il n'y a donc ni action de lancer unique ni choix du nombre de dés.
 
 Alternatives écartées :
 
@@ -78,7 +82,7 @@ Alternatives écartées :
   union discriminée suffit et reste du JSON.
 
 `RuleError` porte un `code` littéral (`NOT_YOUR_TURN`, `WRONG_PHASE`, `NOT_OWNER`,
-`NOT_ADJACENT`, `INVALID_ARMY_COUNT`, `INVALID_DICE_COUNT`, `INVALID_CARD_SET`, `GAME_OVER`, …) et
+`NOT_ADJACENT`, `INVALID_ARMY_COUNT`, `INVALID_CARD_SET`, `GAME_OVER`, …) et
 un message en français affichable tel quel.
 
 ### Immutabilité par copie à l'entrée
@@ -187,10 +191,13 @@ Tailwind et TresJS ne sont pas installés ici : ils arrivent avec les changes qu
 - [`structuredClone` à chaque action trop coûteux pour l'IA] → acceptable pour l'heuristique prévue ;
   si une IA par simulation arrivait, mesurer avant d'optimiser.
 - [Simplification des règles à deux joueurs : territoires et armées du neutre tirés au hasard au lieu
-  d'être placés par les joueurs] → choix assumé pour un jeu solo ; documenté dans la spec
+  d'être placés par les joueurs] → choix validé pour un jeu solo ; documenté dans la spec
   `game-setup`.
-- [Bonus de territoire placé automatiquement sur la première carte éligible au lieu d'un choix du
-  joueur] → simplification assumée, l'ordre des cartes dans l'action permet quand même de choisir.
+- [Bonus de territoire placé automatiquement au lieu d'un choix du joueur] → priorité au premier
+  territoire éligible voisin d'un adversaire, là où les armées servent ; simplification validée.
+- [Attaques toujours menées jusqu'au bout : le joueur ne peut plus s'arrêter après un lancer
+  défavorable] → choix validé ; il évite toute interruption et les probabilités de conquête restent
+  celles de l'attaque complète, que l'IA calcule exactement.
 
 ## Migration Plan
 

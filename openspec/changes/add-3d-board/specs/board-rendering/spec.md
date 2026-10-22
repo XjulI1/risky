@@ -91,9 +91,9 @@ sans recouvrir de territoire.
 
 ### Requirement: Fluidité
 
-Le plateau SHALL rester fluide sur un ordinateur portable récent comme sur une tablette ou un
-téléphone récents, et SHALL adapter sa résolution à la densité d'écran sans dépasser un rendu au
-double de la résolution CSS.
+Le plateau SHALL rester fluide sur un ordinateur portable récent comme sur une tablette récente, et
+SHALL adapter sa résolution à la densité d'écran sans dépasser un rendu au double de la résolution
+CSS.
 
 #### Scenario: Écran haute densité
 

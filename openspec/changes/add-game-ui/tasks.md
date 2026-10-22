@@ -14,14 +14,14 @@
 
 ## 3. Présentation des événements
 
-- [ ] 3.1 Écrire les tests de `presentation.ts` : un lancer devient une étape « dés » dont la projection retire les pertes des deux territoires ; une conquête devient une étape de changement de couleur ; un blitz de 4 lancers donne 4 étapes dans l'ordre ; la projection de toutes les étapes d'une action donne les mêmes territoires que l'état réel du moteur.
+- [ ] 3.1 Écrire les tests de `presentation.ts` : un lancer devient une étape « dés » dont la projection retire les pertes des deux territoires ; une conquête devient une étape de changement de couleur ; une attaque de 4 lancers donne 4 étapes dans l'ordre ; la projection de toutes les étapes d'une action donne les mêmes territoires que l'état réel du moteur.
 - [ ] 3.2 Implémenter `src/game/presentation.ts` ; vérifier que les tests 3.1 passent.
 
 ## 4. Contrôleur d'interaction
 
-- [ ] 4.1 Écrire les tests de `reduceInteraction` et `viewOf` pour la mise en place manuelle : territoires libres sélectionnables pendant la revendication, territoires du joueur pendant le placement, action moteur émise au toucher.
+- [ ] 4.1 Écrire les tests de `reduceInteraction` et `viewOf` pour la mise en place : territoires libres sélectionnables pendant la revendication, territoires du joueur pendant le placement (après une répartition aléatoire comme au choix), armées restant à placer, action moteur émise au toucher.
 - [ ] 4.2 Écrire les tests pour les renforts : territoires du joueur sélectionnables, sélecteur borné par la réserve, action `deploy` à la validation, aucun déploiement proposé tant qu'un échange est obligatoire.
-- [ ] 4.3 Écrire les tests pour l'attaque : origines légales seules, cibles adverses voisines, panneau avec maximum légal de dés, annulation par l'océan ou l'origine, sélection conservée après une attaque sans conquête, bouton « Terminer les attaques ».
+- [ ] 4.3 Écrire les tests pour l'attaque : origines légales seules, cibles adverses voisines, panneau de confirmation avec origine, cible et armées, action `attack` émise à la confirmation, annulation par l'océan ou l'origine, sélection annulée après une attaque épuisée, bouton « Terminer les attaques ».
 - [ ] 4.4 Écrire les tests pour le déplacement après conquête et la fortification : sélecteur borné et réglé au maximum, destinations selon le mode adjacent ou connexe, bouton « Passer ».
 - [ ] 4.5 Implémenter `src/game/interaction.ts` ; vérifier que les tests 4.1 à 4.4 passent.
 
@@ -43,15 +43,15 @@
 - [ ] 7.3 Écrire les tests de composant de `CardHand` : symboles et territoires, marque de bonus, bouton « Échanger (+n) » actif seulement sur série valide, suggestion présélectionnée, ouverture forcée avec message.
 - [ ] 7.4 Implémenter `CardHand` et l'affichage de la carte piochée ; vérifier que les tests 7.3 passent.
 - [ ] 7.5 Implémenter `HandoffScreen` et `Toast` ; vérifier à la main une partie à deux humains (écran de passage, main cachée) et l'affichage d'une erreur moteur.
-- [ ] 7.6 Rendre le HUD adaptatif (panneau latéral en paysage, volet bas repliable en portrait, zones tactiles de 44 px minimum) ; vérifier en émulation 390 × 844 et 1920 × 1080.
+- [ ] 7.6 Finaliser la mise en page (panneau latéral, sections repliables, zones tactiles de 44 px minimum) et le bandeau des écrans hors cible ; vérifier en 1024 × 768 (toutes les commandes visibles sans défilement) et en 1920 × 1080, puis vérifier en 390 × 844 que le bandeau s'affiche, se referme et ne bloque rien.
 
 ## 8. Combat
 
 - [ ] 8.1 Implémenter `DiceTray` (cubes CSS 3D, arrêt sur les valeurs de l'événement, tri et alignement par paires, pertes marquées) ; vérifier visuellement un lancer 3 contre 2 et 1 contre 1.
-- [ ] 8.2 Brancher le blitz (cadence accélérée, toucher pour passer), la transition de couleur de conquête et l'animation de déplacement des armées ; vérifier à la main un blitz de plusieurs lancers puis le passage d'animation.
+- [ ] 8.2 Brancher l'enchaînement des lancers d'une attaque (cadence accélérée après le premier, toucher pour passer), la transition de couleur de conquête et l'animation de déplacement des armées ; vérifier à la main une attaque de plusieurs lancers puis le passage d'animation.
 - [ ] 8.3 Ajouter le sélecteur de vitesse dans le HUD ; vérifier à la main les quatre vitesses, la mémorisation après rechargement et le texte de résultat en « instantanée ».
 
 ## 9. Vérification d'ensemble
 
-- [ ] 9.1 Jouer une partie complète à 3 humains en placement manuel et barème fixe, puis une partie à 2 humains avec neutre en placement aléatoire, jusqu'à la victoire ; noter et corriger tout écart avec les specs.
+- [ ] 9.1 Jouer une partie complète à 3 humains en répartition au choix et barème fixe, puis une partie à 2 humains avec neutre en répartition aléatoire, jusqu'à la victoire ; noter et corriger tout écart avec les specs.
 - [ ] 9.2 Lancer `pnpm lint`, `pnpm type-check`, `pnpm test` et `pnpm build` ; tout doit passer.

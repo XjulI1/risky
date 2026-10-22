@@ -116,7 +116,7 @@ de vue change sont mis à jour.
 - Matériaux `MeshStandardMaterial` mats, une instance par territoire pour colorer individuellement
   (42 objets : pas besoin d'instanciation).
 - Éclairage : lumière hémisphérique + une lumière directionnelle avec ombres douces (carte d'ombre
-  2048, réduite à 1024 sur mobile).
+  2048, réduite à 1024 sur tablette).
 - Océan : plan avec un shader simple de vaguelettes animées (déplacement de normales), sans
   réflexion.
 - Pions : géométrie low-poly générée en code (socle cylindrique + tête), aucun asset externe.
@@ -152,7 +152,7 @@ surbrillances et les adjacences visuellement. Cet écran sera remplacé par `add
   carte géographique : c'est le style recherché ; le biseau et l'éclairage donnent le relief.
 - [Licence CC BY-SA 3.0 de la géométrie] → sans effet pour un projet personnel ; à respecter
   (attribution, même licence) si le projet est un jour diffusé. `SOURCE.md` porte l'attribution.
-- [Ombres et shader d'océan trop coûteux sur téléphone] → réglage de qualité automatique selon
+- [Ombres et shader d'océan trop coûteux sur tablette] → réglage de qualité automatique selon
   `devicePixelRatio` et le type de pointeur ; ombres coupées si besoin.
 - [Éléments `Html` en DOM (42 compteurs + 6 étiquettes) qui ralentissent le déplacement de caméra] →
   si mesuré, basculer vers des sprites à texture canvas, sans changer l'API du composant.

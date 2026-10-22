@@ -6,72 +6,58 @@ change correspondant ; ce fichier ne suit que les grandes étapes et les points 
 ## Avant de commencer
 
 - [ ] Relire les artefacts des 7 changes dans `openspec/changes/`.
-- [ ] Valider chacune des [simplifications et adaptations de règles](#simplifications-et-adaptations-de-règles)
-  ci-dessous, ou demander sa correction dans la spec concernée.
+- [x] Valider les écarts de règles : voir [Décisions de règles](#décisions-de-règles) ci-dessous ;
+  les specs concernées sont à jour.
 - [x] Trouver la source de la carte du plateau : données récupérées dans `data/maps/classic/`
   (voir `SOURCE.md`).
 - [x] Adapter `add-classic-rules-engine` et `add-3d-board` à ces données.
 
-## Simplifications et adaptations de règles
+## Décisions de règles
 
-Écarts entre les specs et les règles officielles du Risk. Chaque point est à valider ; s'il est
-refusé, corriger la spec indiquée avant d'implémenter le change.
+Écarts entre les specs et les règles officielles du Risk, validés le 22 octobre 2026. Les specs
+indiquées reflètent ces décisions.
 
 ### Mise en place (`add-classic-rules-engine`, spec `game-setup`)
 
-- [ ] **Neutre à 2 joueurs** : ses 14 territoires sont tirés au hasard et ses armées réparties au
-  hasard. Règle officielle : les joueurs placent eux-mêmes les armées neutres, à tour de rôle.
-- [ ] **Placement aléatoire** : en plus des territoires, les armées restantes de chaque joueur sont
-  réparties au hasard. Règle officielle : seuls les territoires sont distribués (par les cartes),
-  chaque joueur place ensuite ses armées lui-même. Le placement manuel, lui, suit la règle officielle.
-- [ ] **Premier joueur** tiré au sort par le générateur de la partie. Règle officielle : le joueur
-  qui obtient le plus haut lancer de dé commence. Résultat équivalent.
+- [x] **Neutre à 2 joueurs** : 14 territoires et armées tirés au hasard à la création (officiel :
+  armées neutres placées par les joueurs).
+- [x] **Répartition aléatoire** : territoires distribués au hasard, puis chaque joueur place ses
+  armées restantes une à une, comme dans la règle officielle. La répartition au choix (revendication)
+  reste proposée.
+- [x] **Premier joueur** tiré au sort par la graine, sans animation (officiel : plus haut lancer de dé).
 
 ### Combat (`add-classic-rules-engine`, spec `combat`)
 
-- [ ] **Dés du défenseur choisis automatiquement** : il lance toujours le maximum autorisé.
-  Règle officielle : le défenseur choisit de lancer 1 ou 2 dés. Lancer moins n'est presque jamais
-  avantageux, mais c'est une décision qui disparaît.
-- [ ] **Attaque blitz** (enchaîner les lancers jusqu'à la conquête ou à l'épuisement) : facilité
-  propre aux versions numériques, absente de la règle officielle. Elle ne change pas les
-  probabilités.
+- [x] **Attaque toujours menée jusqu'au bout** : chaque attaque enchaîne les lancers avec le maximum
+  de dés jusqu'à la conquête ou jusqu'à ce que l'attaquant n'ait plus qu'une armée. Ni lancer unique
+  ni choix du nombre de dés (officiel : un lancer à la fois, dés au choix).
+- [x] **Dés du défenseur automatiques** : toujours le maximum autorisé (officiel : 1 ou 2 au choix).
 
 ### Cartes (`add-classic-rules-engine`, spec `territory-cards`)
 
-- [ ] **Bonus de +2 armées d'un échange** placé automatiquement sur le premier territoire éligible,
-  dans l'ordre des cartes fournies. Règle officielle : si plusieurs cartes désignent des territoires
-  possédés, le joueur choisit lequel reçoit le bonus.
-- [ ] **Barème fixe** (4, 6, 8, 10) : variante européenne, proposée en option ; le barème progressif
-  officiel reste la valeur par défaut. Une série avec joker vaut la meilleure valeur qu'elle permet
-  de former.
+- [x] **Bonus de +2 armées d'un échange** placé automatiquement sur le premier territoire éligible
+  voisin d'un adversaire, à défaut sur le premier éligible (officiel : au choix du joueur).
+- [x] **Barème fixe** (4, 6, 8, 10) proposé en option ; progressif par défaut. Une série avec joker
+  vaut sa meilleure valeur possible.
 
-### Fortification (`add-classic-rules-engine`, spec `fortification`)
+### Fortification (`add-classic-rules-engine`, spec `game-setup`)
 
-- [ ] **Mode adjacent par défaut** : règle des éditions classiques (un seul déplacement vers un
-  territoire voisin). Le mode « chemin connexe » des éditions récentes est proposé en option. Choix
-  de version plutôt que simplification.
+- [x] **Chemin connexe par défaut** (éditions récentes), mode adjacent en option.
 
 ### Missions secrètes (`add-secret-missions`, spec `secret-missions`)
 
-- [ ] **Missions d'élimination par joueur** : une mission « éliminer <joueur> » par joueur présent.
-  Règle officielle : une mission par couleur (6), y compris les couleurs absentes de la partie, qui
-  se convertissent alors en « 24 territoires ». La proportion de missions d'élimination est donc plus
-  élevée avec peu de joueurs.
-- [ ] **Déplacement minimal automatique** quand une mission est accomplie par une conquête, pour
-  qu'aucun territoire ne reste sans armée. Ajout technique, sans équivalent dans la règle officielle.
-- [ ] **Mission vérifiée seulement pour le joueur courant**, après chacune de ses actions : une
-  situation qui remplit la mission d'un autre joueur pendant le tour d'un adversaire ne le fait pas
-  gagner avant son propre tour.
+- [x] **Une mission « éliminer » par joueur présent** (officiel : une par couleur, six au total).
+- [x] **Déplacement minimal automatique** quand une mission est accomplie par une conquête.
+- [x] **Mission vérifiée pendant le tour de son détenteur seulement**, conforme à la règle officielle.
 
 ### Mode capitales (`add-capitals-mode`, spec `capitals-mode`)
 
-- [ ] **Choix des capitales à tour de rôle et public** : chaque joueur voit les capitales déjà
-  choisies avant de désigner la sienne. Règle officielle de 1993 (à vérifier) : choix en secret puis
-  révélation simultanée.
-- [ ] **Déplacement minimal automatique** quand la dernière capitale est prise par une conquête,
-  comme pour les missions.
-- [ ] **Aucun avantage lié à la capitale** (ni bonus de défense ni renforts), conformément à la
-  règle officielle ; les variantes non officielles qui en ajoutent sont écartées.
+- [x] **Choix secret puis révélation simultanée**, conforme à la règle officielle.
+- [x] **Bonus de défense** : +1 au dé le plus haut du défenseur d'une capitale, quel qu'en soit le
+  propriétaire. Ajout par rapport à la règle officielle.
+- [x] **Déplacement minimal automatique** quand la dernière capitale est prise par une conquête.
+- [x] **Pas de partie courte** (prendre 2 ou 3 capitales adverses seulement) : variante officielle
+  écartée.
 
 ## Implémentation
 
@@ -125,9 +111,10 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ## Fin de la V1
 
-- [ ] Jouer plusieurs parties complètes sur ordinateur, tablette et téléphone, avec chaque variante.
+- [ ] Jouer plusieurs parties complètes sur ordinateur et sur tablette en paysage, avec chaque variante.
 - [ ] Mettre à jour le README : fonctionnalités réellement livrées, captures d'écran.
-- [ ] Choisir un hébergement statique pour jouer depuis n'importe quel appareil.
+- [ ] Déployer sur le serveur personnel : `pnpm build` en local, puis copie manuelle du dossier
+  `dist/` ; régler l'option `base` de Vite si l'application est servie sous un sous-chemin.
 
 ## Pistes après la V1
 

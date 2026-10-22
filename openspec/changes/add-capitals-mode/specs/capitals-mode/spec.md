@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Règles de la variante capitales : chaque joueur désigne une capitale publique, et le premier à tenir
-toutes les capitales en même temps gagne.
+Règles de la variante capitales : chaque joueur désigne en secret une capitale, révélée en même
+temps que celles des autres ; une capitale se défend mieux, et le premier à tenir toutes les
+capitales en même temps gagne.
 
 ## ADDED Requirements
 
@@ -23,37 +24,65 @@ explicite.
 - **WHEN** on crée une partie avec le mode capitales et les missions secrètes activés
 - **THEN** la création échoue avec une erreur indiquant que les deux variantes s'excluent
 
-### Requirement: Choix des capitales
+### Requirement: Choix secret des capitales
 
-Quand le réglage est actif, la mise en place (aléatoire ou manuelle) SHALL être suivie d'une phase de
-choix des capitales : à tour de rôle à partir du premier joueur, chaque joueur non neutre désigne un
-territoire qu'il possède comme sa capitale. Le choix SHALL être définitif et public. La partie passe
-ensuite en phase de renforts du premier joueur.
+Quand le réglage est actif, la fin de la phase de placement SHALL ouvrir une phase de choix des
+capitales : à tour de rôle à partir du premier joueur, chaque joueur non neutre désigne un territoire
+qu'il possède comme sa capitale. Un choix SHALL être définitif et SHALL NOT être visible des autres
+joueurs avant la révélation. Quand le dernier joueur a choisi, toutes les capitales SHALL être
+révélées en même temps par un événement de révélation, puis la partie passe en phase de renforts du
+premier joueur.
 
-#### Scenario: Après une mise en place aléatoire
+#### Scenario: Ouverture du choix
 
-- **WHEN** on crée une partie à 3 joueurs en placement aléatoire avec le mode capitales
+- **WHEN** la phase de placement d'une partie en mode capitales se termine
 - **THEN** la partie est en phase de choix des capitales du premier joueur
 
 #### Scenario: Choix valide
 
 - **WHEN** le joueur courant désigne un de ses territoires pendant la phase de choix
-- **THEN** ce territoire devient sa capitale et la main passe au joueur suivant
+- **THEN** ce territoire est enregistré comme sa capitale et la main passe au joueur suivant
 
 #### Scenario: Territoire adverse
 
 - **WHEN** le joueur courant désigne un territoire qu'il ne possède pas
 - **THEN** l'action est rejetée
 
-#### Scenario: Fin du choix
+#### Scenario: Choix caché
 
-- **WHEN** le dernier joueur non neutre a choisi sa capitale
-- **THEN** la partie passe en phase de renforts du premier joueur
+- **WHEN** Alice a choisi sa capitale et que c'est au tour de Bob de choisir
+- **THEN** l'information visible de Bob ne contient pas la capitale d'Alice
+
+#### Scenario: Révélation simultanée
+
+- **WHEN** le dernier joueur non neutre choisit sa capitale
+- **THEN** un événement révèle toutes les capitales et la partie passe en phase de renforts du premier joueur
 
 #### Scenario: Neutre sans capitale
 
 - **WHEN** on crée une partie à 2 joueurs avec le mode capitales
 - **THEN** seules 2 capitales sont choisies et le neutre n'en a pas
+
+### Requirement: Bonus de défense des capitales
+
+Lors de chaque lancer contre un territoire capitale, quel qu'en soit le propriétaire, le dé le plus
+haut du défenseur SHALL être augmenté de 1 pour la comparaison (une valeur de 7 étant possible).
+Les autres dés et les règles d'égalité restent inchangés.
+
+#### Scenario: Bonus qui renverse une paire
+
+- **WHEN** l'attaquant obtient 6, 2 et que le défenseur d'une capitale obtient 5, 1
+- **THEN** le défenseur compte 6 et 1 : la première paire est une égalité gagnée par le défenseur, la seconde est gagnée par l'attaquant, et chaque camp perd 1 armée
+
+#### Scenario: Capitale prise par un autre joueur
+
+- **WHEN** Alice tient la capitale de Bob et que Carol l'attaque
+- **THEN** Alice bénéficie du bonus de défense
+
+#### Scenario: Territoire ordinaire
+
+- **WHEN** l'attaquant attaque un territoire qui n'est pas une capitale
+- **THEN** aucun bonus n'est appliqué
 
 ### Requirement: Capitale prise
 

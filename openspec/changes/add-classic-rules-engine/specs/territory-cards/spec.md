@@ -99,13 +99,24 @@ joker SHALL valoir la meilleure valeur qu'elle permet de former.
 ### Requirement: Bonus de territoire
 
 Si au moins une carte de la série désigne un territoire possédé par le joueur, 2 armées
-supplémentaires SHALL être placées directement sur le premier de ces territoires, dans l'ordre des
-cartes fournies. Ce bonus SHALL être accordé au plus une fois par échange.
+supplémentaires SHALL être placées directement sur un seul de ces territoires, sans passer par la
+réserve. Le territoire retenu SHALL être le premier, dans l'ordre des cartes fournies, qui est
+adjacent à un territoire adverse ; à défaut, le premier de ces territoires dans l'ordre des cartes.
 
 #### Scenario: Bonus accordé une seule fois
 
 - **WHEN** le joueur échange une série dont deux cartes désignent des territoires qu'il possède
-- **THEN** seul le territoire de la première de ces cartes reçoit 2 armées supplémentaires
+- **THEN** un seul de ces territoires reçoit 2 armées supplémentaires et la réserve n'augmente que de la valeur de la série
+
+#### Scenario: Priorité à la frontière
+
+- **WHEN** la première carte éligible désigne un territoire sans voisin adverse et la seconde un territoire voisin d'un adversaire
+- **THEN** le bonus va au territoire voisin d'un adversaire
+
+#### Scenario: Aucun territoire frontalier
+
+- **WHEN** aucun des territoires éligibles n'a de voisin adverse
+- **THEN** le bonus va au territoire de la première carte éligible
 
 ### Requirement: Échange forcé après élimination
 

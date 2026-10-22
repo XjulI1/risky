@@ -11,16 +11,16 @@ sur la carte, à la souris comme au tactile, sans jamais la perdre de vue.
 
 Au chargement, la caméra SHALL regarder la carte depuis le haut avec une inclinaison fixe comprise
 entre 45° et 60° par rapport à l'horizontale, et SHALL cadrer la carte entière dans la zone
-d'affichage, quel que soit le format de l'écran (paysage ou portrait).
+d'affichage, pour toute fenêtre en paysage d'au moins 1024 pixels CSS de large.
 
 #### Scenario: Carte entière visible en paysage
 
 - **WHEN** le plateau s'affiche dans une fenêtre 1920 × 1080
 - **THEN** les 42 territoires sont visibles
 
-#### Scenario: Carte entière visible en portrait
+#### Scenario: Carte entière visible sur tablette
 
-- **WHEN** le plateau s'affiche dans une fenêtre 390 × 844
+- **WHEN** le plateau s'affiche dans une fenêtre 1024 × 768
 - **THEN** les 42 territoires sont visibles
 
 #### Scenario: Redimensionnement

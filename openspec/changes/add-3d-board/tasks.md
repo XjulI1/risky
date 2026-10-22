@@ -21,7 +21,7 @@
 - [ ] 3.2 Implémenter `src/board/boardViewModel.ts` ; vérifier que les tests 3.1 passent.
 - [ ] 3.3 Écrire les tests de `tapDetector` : toucher bref accepté, déplacement au-delà de 6 px refusé, appui de plus de 500 ms refusé, territoire le plus proche retenu dans le rayon de tolérance tactile et rien au-delà.
 - [ ] 3.4 Implémenter `src/board/tapDetector.ts` ; vérifier que les tests 3.3 passent.
-- [ ] 3.5 Écrire les tests du cadrage initial : distance de caméra qui fait tenir la boîte de la carte en 16/9 et en portrait 390 × 844, centre visé contraint dans la boîte.
+- [ ] 3.5 Écrire les tests du cadrage initial : distance de caméra qui fait tenir la boîte de la carte en 16/9 (1920 × 1080) et en 4/3 (1024 × 768), centre visé contraint dans la boîte.
 - [ ] 3.6 Implémenter les fonctions pures de cadrage dans `src/board/useBoardCamera.ts` ; vérifier que les tests 3.5 passent.
 
 ## 4. Composants 3D
@@ -29,7 +29,7 @@
 - [ ] 4.1 Créer `GameBoard.vue` (TresCanvas, `dpr` borné à 2, lumières, ombres, océan animé) et `TerritoryMesh.vue` (extrusion, matériau piloté par le modèle de vue) ; vérifier visuellement que les 42 territoires apparaissent dans les couleurs de leur propriétaire.
 - [ ] 4.2 Créer `ArmyPawn.vue` (pion low-poly + compteur `Html`) positionné sur le point d'ancrage ; vérifier visuellement que chaque pion est dans son territoire et que le compteur reste lisible au zoom minimal et maximal.
 - [ ] 4.3 Créer `SeaLink.vue` (pointillés) et `ContinentLabel.vue` (nom français et bonus) ; vérifier visuellement les liaisons maritimes, dont Alaska–Kamtchatka aux bords, et les 6 étiquettes en mer sans recouvrement de territoire.
-- [ ] 4.4 Brancher `MapControls` (rotation désactivée, zoom vers le curseur, bornes) et la commande de recentrage dans `useBoardCamera.ts` ; vérifier à la souris et au tactile (outils de développement en émulation mobile) le zoom borné, le déplacement borné et l'absence de rotation.
+- [ ] 4.4 Brancher `MapControls` (rotation désactivée, zoom vers le curseur, bornes) et la commande de recentrage dans `useBoardCamera.ts` ; vérifier à la souris et au tactile (outils de développement en émulation tablette, ou une vraie tablette) le zoom borné, le déplacement borné et l'absence de rotation.
 - [ ] 4.5 Brancher la sélection (`tapDetector`, désélection sur l'océan, tolérance tactile) et le survol avec nom du territoire ; vérifier que glisser ne sélectionne pas et que l'Indonésie se sélectionne depuis n'importe laquelle de ses îles.
 
 ## 5. Écran de démonstration
@@ -38,5 +38,5 @@
 
 ## 6. Vérification d'ensemble
 
-- [ ] 6.1 Dérouler la check-list visuelle sur desktop (1920 × 1080) et en émulation mobile (390 × 844, densité 3) : carte entière au chargement, redimensionnement sans déformation, fluidité du zoom et du déplacement, densité de rendu plafonnée à 2.
+- [ ] 6.1 Dérouler la check-list visuelle sur desktop (1920 × 1080) et en émulation tablette en paysage (1024 × 768, densité 2) : carte entière au chargement, redimensionnement sans déformation, fluidité du zoom et du déplacement, densité de rendu plafonnée à 2.
 - [ ] 6.2 Vérifier que les fichiers de `data/maps/classic/` sont inchangés (`git diff --exit-code data/`) puis lancer `pnpm lint`, `pnpm type-check`, `pnpm test` et `pnpm build` ; tout doit passer, et la règle d'isolement du moteur ne doit signaler aucun import de Three.js dans `src/engine/`.

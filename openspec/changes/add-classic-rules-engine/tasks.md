@@ -20,12 +20,13 @@
 
 ## 4. Création et mise en place (`game-setup`)
 
-- [ ] 4.1 Écrire les tests de création : 2 à 6 joueurs, refus à 1 et à 7, refus des identifiants ou couleurs en double, réglages par défaut, réglage partiel, réglage hors bornes, neutre ajouté seulement à 2 joueurs, premier joueur déterministe pour une graine donnée.
+- [ ] 4.1 Écrire les tests de création : 2 à 6 joueurs, refus à 1 et à 7, refus des identifiants ou couleurs en double, réglages par défaut (fortification par chemin connexe), réglage partiel, réglage hors bornes, neutre ajouté seulement à 2 joueurs avec 14 territoires et 40 armées tirés au hasard, premier joueur déterministe pour une graine donnée.
 - [ ] 4.2 Écrire les tests du paquet de cartes à la création : 44 cartes, 14 par symbole, 2 jokers, un territoire par carte.
-- [ ] 4.3 Écrire les tests du placement aléatoire : tous les territoires occupés avec au moins une armée, 10 ou 11 territoires par joueur à 4, armées initiales exactes (25 à 5 joueurs, 40 pour chacun à 2 joueurs neutre compris), partie en renforts du premier joueur.
-- [ ] 4.4 Implémenter `createGame` et le placement aléatoire dans `src/engine/setup.ts` ; vérifier que les tests 4.1 à 4.3 passent.
-- [ ] 4.5 Écrire les tests du placement manuel : revendication d'un territoire libre, refus d'un territoire pris, 14 territoires neutres tirés au hasard à 2 joueurs, passage au placement, refus d'un placement sur territoire adverse, joueur sans armée restante sauté, passage en renforts du premier joueur.
-- [ ] 4.6 Implémenter les actions `claimTerritory` et `placeInitialArmy` ; vérifier que les tests 4.5 passent.
+- [ ] 4.3 Écrire les tests de la répartition aléatoire : tous les territoires occupés avec au moins une armée, 10 ou 11 territoires par joueur à 4, partie en phase de placement au tour du premier joueur.
+- [ ] 4.4 Implémenter `createGame` et la répartition aléatoire dans `src/engine/setup.ts` ; vérifier que les tests 4.1 à 4.3 passent.
+- [ ] 4.5 Écrire les tests de la répartition au choix : revendication d'un territoire libre, refus d'un territoire pris, territoires du neutre déjà attribués à 2 joueurs, passage au placement après le dernier territoire libre.
+- [ ] 4.6 Écrire les tests de la phase de placement : refus d'un placement sur territoire adverse, joueur sans armée restante sauté, armées initiales exactes en fin de mise en place (25 à 5 joueurs, 40 pour chacun à 2 joueurs neutre compris), passage en renforts du premier joueur.
+- [ ] 4.7 Implémenter les actions `claimTerritory` et `placeInitialArmy` ; vérifier que les tests 4.5 et 4.6 passent.
 
 ## 5. Point d'entrée, validation et phases (`turn-flow`)
 
@@ -41,10 +42,10 @@
 ## 7. Combat (`combat`)
 
 - [ ] 7.1 Écrire les tests de la résolution pure d'un lancer avec des dés fixés : 6-5-1 contre 4-4, égalité en faveur du défenseur, une seule paire comparée à 3 contre 1.
-- [ ] 7.2 Écrire les tests de l'action `attack` : origine à une armée, cible non adjacente, cible alliée, trop de dés en attaque, défense limitée par les armées, réglage à 3 dés en défense, événement de lancer produit.
+- [ ] 7.2 Écrire les tests des conditions de l'action `attack` : origine à une armée, cible non adjacente, cible alliée.
 - [ ] 7.3 Écrire les tests de la conquête : changement de propriétaire, phase de déplacement avec bornes min et max, refus d'un déplacement insuffisant, refus d'une autre action avant le déplacement, événements lancer puis conquête dans l'ordre.
-- [ ] 7.4 Écrire les tests de l'action `blitz` : blitz victorieux suivi du déplacement, blitz épuisé à une armée, un événement par lancer.
-- [ ] 7.5 Implémenter `src/engine/combat.ts` (`attack`, `blitz`, `moveAfterConquest`, `endAttack`) ; vérifier que les tests 7.1 à 7.4 passent.
+- [ ] 7.4 Écrire les tests de l'enchaînement des lancers : attaque victorieuse suivie du déplacement, attaque épuisée à une armée, un événement par lancer, dés de l'attaquant recalculés à chaque lancer (3 puis 2), défense limitée par les armées, réglage à 3 dés en défense.
+- [ ] 7.5 Implémenter `src/engine/combat.ts` (`attack`, `moveAfterConquest`, `endAttack`) ; vérifier que les tests 7.1 à 7.4 passent.
 
 ## 8. Fortification (`fortification`)
 
@@ -55,7 +56,7 @@
 
 - [ ] 9.1 Écrire les tests de validité des séries : trois identiques, trois différents, deux cartes et un joker acceptés ; deux fantassins et un cavalier refusés.
 - [ ] 9.2 Écrire les tests des barèmes : progressif (4, 6, 8, 10, 12, 15, puis 20 au septième échange), fixe (4, 6, 8, 10, joker valorisé au mieux).
-- [ ] 9.3 Écrire les tests de l'action `tradeCards` : armées ajoutées à la réserve, cartes en défausse, bonus de 2 armées une seule fois sur le premier territoire éligible, échange forcé à 5 cartes qui bloque le passage en attaque, refus hors phase de renforts.
+- [ ] 9.3 Écrire les tests de l'action `tradeCards` : armées ajoutées à la réserve, cartes en défausse, bonus de 2 armées une seule fois et hors réserve, sur le premier territoire éligible voisin d'un adversaire ou à défaut sur le premier éligible, échange forcé à 5 cartes qui bloque le passage en attaque, refus hors phase de renforts.
 - [ ] 9.4 Écrire les tests de la pioche : une seule carte en fin de tour après plusieurs conquêtes, aucune sans conquête, défausse remélangée quand la pioche est vide.
 - [ ] 9.5 Implémenter `src/engine/cards.ts` et brancher la pioche de fin de tour ; vérifier que les tests 9.1 à 9.4 passent.
 

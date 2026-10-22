@@ -40,6 +40,25 @@ quand la probabilité de conquête est d'au moins 0,5.
 - **WHEN** la capitale d'une IA difficile est tenue par un adversaire et qu'elle peut l'attaquer avec une probabilité de 0,6
 - **THEN** elle attaque sa capitale en priorité
 
+### Requirement: Probabilités avec bonus de défense
+
+Les IA normale et difficile SHALL évaluer toute attaque contre une capitale avec des probabilités de
+conquête qui tiennent compte exactement du bonus de défense.
+
+#### Scenario: Conquête d'une capitale à deux contre un
+
+- **WHEN** on calcule la probabilité qu'un territoire de 2 armées conquière une capitale défendue par 1 armée
+- **THEN** elle vaut 10/36, contre 15/36 pour un territoire ordinaire
+
+### Requirement: Choix sans information cachée
+
+Une IA SHALL choisir sa capitale sans connaître les choix déjà faits par les autres joueurs.
+
+#### Scenario: Choix indépendant
+
+- **WHEN** on présente à une IA deux états de choix identiques sauf les capitales déjà choisies par d'autres joueurs
+- **THEN** elle choisit la même capitale
+
 ### Requirement: Attaque des capitales adverses
 
 Les IA normale et difficile SHALL attaquer une capitale adverse quand la probabilité de conquête est

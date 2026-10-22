@@ -17,7 +17,7 @@ joueur qui en est l'auteur et au numéro de tour. Les formulations SHALL être l
 | Début de tour | « Tour <n> — <joueur> » (en-tête de groupe) |
 | Déploiement | « <joueur> place <n> armée(s) en <territoire> » |
 | Échange de cartes | « <joueur> échange une série contre <n> armées » |
-| Lancer de dés | « <joueur> attaque <territoire> depuis <territoire> : <dés> contre <dés> — <bilan des pertes> » |
+| Attaque (tous ses lancers) | « <joueur> attaque <territoire> depuis <territoire> : <n> lancer(s) — <bilan des pertes> » |
 | Conquête | « <joueur> conquiert <territoire> » |
 | Déplacement après conquête | « <joueur> avance <n> armée(s) en <territoire> » |
 | Fortification | « <joueur> déplace <n> armée(s) de <territoire> vers <territoire> » |
@@ -25,25 +25,31 @@ joueur qui en est l'auteur et au numéro de tour. Les formulations SHALL être l
 | Élimination | « <joueur> est éliminé par <joueur> » |
 | Victoire | « <joueur> remporte la partie » |
 
-#### Scenario: Lancer simple
+#### Scenario: Attaque en un lancer
 
-- **WHEN** Alice attaque le Brésil depuis l'Afrique du Nord et obtient 6, 5, 1 contre 4, 4 de Bob
-- **THEN** le journal contient « Alice attaque Brésil depuis Afrique du Nord : 6-5-1 contre 4-4 — Bob perd 2 armées »
+- **WHEN** Alice attaque le Brésil depuis l'Afrique du Nord et l'emporte en un seul lancer, 6, 5, 1 contre 4, 4 de Bob
+- **THEN** le journal contient « Alice attaque Brésil depuis Afrique du Nord : 1 lancer — Bob perd 2 armées »
 
 #### Scenario: Accord du pluriel
 
 - **WHEN** Alice place 1 armée en Ukraine
 - **THEN** l'entrée est « Alice place 1 armée en Ukraine »
 
-### Requirement: Blitz condensé
+### Requirement: Attaque condensée
 
-Les lancers d'une même attaque blitz SHALL être regroupés en une seule entrée résumant le nombre de
-lancers et les pertes totales de chaque camp, dépliable pour voir chaque lancer.
+Les lancers d'une même attaque SHALL être regroupés en une seule entrée résumant le nombre de lancers
+et les pertes totales de chaque camp, dépliable en une ligne par lancer de la forme « <dés> contre
+<dés> — <bilan des pertes> ».
 
-#### Scenario: Blitz de quatre lancers
+#### Scenario: Attaque de quatre lancers
 
-- **WHEN** un blitz d'Alice sur le Brésil dure 4 lancers où Alice perd 3 armées et Bob 5
-- **THEN** le journal contient une entrée « Alice lance un blitz sur Brésil depuis Afrique du Nord : 4 lancers — Alice perd 3 armées, Bob perd 5 armées », dépliable en 4 lignes de lancer
+- **WHEN** une attaque d'Alice sur le Brésil dure 4 lancers où Alice perd 3 armées et Bob 5
+- **THEN** le journal contient une entrée « Alice attaque Brésil depuis Afrique du Nord : 4 lancers — Alice perd 3 armées, Bob perd 5 armées », dépliable en 4 lignes de lancer
+
+#### Scenario: Détail d'un lancer
+
+- **WHEN** l'utilisateur déplie l'entrée d'une attaque dont un lancer a donné 6, 5, 1 contre 4, 4
+- **THEN** ce lancer apparaît sous la forme « 6-5-1 contre 4-4 — Bob perd 2 armées »
 
 ### Requirement: Pas de fuite d'information
 

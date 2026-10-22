@@ -39,7 +39,7 @@ séries échangées et armées obtenues par échange, ainsi que le tour de son �
 L'écran de fin SHALL proposer un onglet « Statistiques » avec deux courbes (territoires par tour et
 armées par tour, une ligne par joueur dans sa couleur, avec légende) et un tableau récapitulatif des
 compteurs par joueur, le vainqueur en premier puis les autres dans l'ordre inverse de leur
-élimination. Les courbes SHALL rester lisibles sur un écran de téléphone en portrait.
+élimination. Les courbes SHALL rester lisibles dès 1024 × 768.
 
 #### Scenario: Ordre du tableau
 
@@ -51,7 +51,7 @@ compteurs par joueur, le vainqueur en premier puis les autres dans l'ordre inver
 - **WHEN** l'utilisateur ouvre l'onglet « Statistiques » après une partie de 40 tours à 3 joueurs
 - **THEN** deux courbes de 40 points par joueur s'affichent avec une légende aux couleurs des joueurs
 
-#### Scenario: Petit écran
+#### Scenario: Plus petit écran cible
 
-- **WHEN** l'onglet « Statistiques » est ouvert en 390 × 844
-- **THEN** les courbes occupent la largeur de l'écran sans défilement horizontal de la page
+- **WHEN** l'onglet « Statistiques » est ouvert en 1024 × 768
+- **THEN** les deux courbes et le tableau sont lisibles sans défilement horizontal de la page

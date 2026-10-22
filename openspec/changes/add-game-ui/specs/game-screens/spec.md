@@ -21,6 +21,22 @@ Au lancement, l'application SHALL afficher un écran d'accueil proposant de cré
 - **WHEN** l'utilisateur clique sur « Nouvelle partie »
 - **THEN** l'écran de création de partie s'affiche
 
+### Requirement: Écrans hors cible
+
+Sur une fenêtre de moins de 1024 pixels CSS de large ou en portrait, l'application SHALL rester
+accessible sans mise en page dédiée, et SHALL afficher un bandeau refermable « Risky est conçu pour
+un écran d'au moins 1024 px de large en mode paysage ». Le bandeau SHALL NOT bloquer l'usage.
+
+#### Scenario: Ouverture sur un smartphone
+
+- **WHEN** l'application s'ouvre dans une fenêtre de 390 × 844
+- **THEN** le bandeau s'affiche et l'utilisateur peut le refermer puis utiliser l'application
+
+#### Scenario: Écran cible
+
+- **WHEN** l'application s'ouvre dans une fenêtre de 1024 × 768
+- **THEN** aucun bandeau ne s'affiche
+
 ### Requirement: Écran de partie
 
 Une fois la partie créée, l'application SHALL afficher le plateau 3D en plein écran avec le HUD

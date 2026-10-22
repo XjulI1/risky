@@ -78,8 +78,9 @@ action, sans effet perceptible. Si une mesure montre le contraire en fin de part
 
 `journal.ts` produit les entrées dès que le moteur répond. La session stocke la liste complète et un
 index « affiché jusqu'à », avancé par chaque étape de présentation terminée. Le panneau ne montre que
-les entrées jusqu'à cet index ; passer l'animation avance l'index au bout. Les lancers d'un blitz sont
-regroupés par `journal.ts` à partir de l'action à l'origine des événements, transmise avec eux.
+les entrées jusqu'à cet index ; passer l'animation avance l'index au bout. Les lancers d'une attaque sont
+regroupés par `journal.ts` à partir de l'action à l'origine des événements, transmise avec eux ;
+l'entrée de l'attaque n'est affichée qu'à la fin de l'animation de son dernier lancer.
 
 ### Statistiques
 

@@ -25,7 +25,7 @@
 ## 5. Niveaux
 
 - [ ] 5.1 Écrire les tests du niveau facile : renforts uniquement sur des frontières, pas d'attaque à 5 contre 3, arrêt après 3 conquêtes, échange seulement quand il est obligatoire.
-- [ ] 5.2 Implémenter `src/ai/levels/easy.ts` (toutes les phases, mise en place manuelle comprise) ; vérifier que les tests 5.1 passent.
+- [ ] 5.2 Implémenter `src/ai/levels/easy.ts` (toutes les phases, revendication et placement initial compris) ; vérifier que les tests 5.1 passent.
 - [ ] 5.3 Écrire les tests du niveau normal : renforts et attaque vers le dernier territoire d'Océanie, aucun renfort intérieur, attaque à partir de 0,6, échange dès que possible, fortification de 5 armées depuis un intérieur de 6.
 - [ ] 5.4 Implémenter `src/ai/levels/normal.ts` ; vérifier que les tests 5.3 passent.
 - [ ] 5.5 Écrire les tests du niveau difficile : attaque d'une Amérique du Sud adverse complète, priorité à l'élimination d'un adversaire à un territoire détenant des cartes, conservation des cartes en barème progressif sans attaque prioritaire, renforts proportionnels à la menace.

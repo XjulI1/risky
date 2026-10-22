@@ -3,7 +3,7 @@
 ## Purpose
 
 Rendre les combats lisibles et vivants : montrer chaque lancer de dés et ses pertes, permettre
-d'accélérer ou d'enchaîner les combats, et rendre les conquêtes visibles sur le plateau.
+d'accélérer les animations, et rendre les conquêtes visibles sur le plateau.
 
 ## ADDED Requirements
 
@@ -29,21 +29,21 @@ de chaque lancer, et non avant, pour que le résultat affiché corresponde aux d
 - **WHEN** un lancer fait perdre 2 armées au défenseur
 - **THEN** le compteur du territoire défendu diminue de 2 à la fin de l'animation de ce lancer
 
-### Requirement: Blitz
+### Requirement: Enchaînement des lancers d'une attaque
 
-Le bouton « Blitz » SHALL déclencher l'attaque blitz du moteur et montrer successivement chaque
-lancer produit, à une cadence accélérée par rapport à un lancer simple. L'utilisateur SHALL pouvoir
-passer l'animation restante d'un blitz d'un toucher.
+Une attaque SHALL montrer successivement chaque lancer produit par le moteur, le premier à la
+cadence normale et les suivants à une cadence accélérée. L'utilisateur SHALL pouvoir passer
+l'animation restante d'une attaque d'un toucher.
 
-#### Scenario: Blitz de quatre lancers
+#### Scenario: Attaque de quatre lancers
 
-- **WHEN** un blitz produit 4 lancers
+- **WHEN** une attaque produit 4 lancers
 - **THEN** les 4 lancers sont montrés dans l'ordre puis le déplacement après conquête est proposé si le territoire est tombé
 
 #### Scenario: Passer l'animation
 
-- **WHEN** l'utilisateur touche l'écran pendant un blitz
-- **THEN** le plateau affiche immédiatement l'état final du blitz
+- **WHEN** l'utilisateur touche l'écran pendant l'animation d'une attaque
+- **THEN** le plateau affiche immédiatement l'état final de l'attaque
 
 ### Requirement: Vitesse d'animation
 

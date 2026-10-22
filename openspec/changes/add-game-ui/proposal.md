@@ -12,15 +12,16 @@ d'ajouter l'IA.
 - **Création de partie** : 2 à 6 joueurs humains (nom, couleur), réglages numériques du moteur,
   graine aléatoire.
 - **Contrôles du tour** : bandeau indiquant joueur, phase et réserve ; parcours guidés sur le plateau
-  pour chaque phase (revendication et placement initiaux, déploiement, attaque, déplacement après
+  pour chaque phase (revendication et placement initial, déploiement, attaque, déplacement après
   conquête, fortification), boutons de fin de phase, messages d'erreur du moteur.
-- **Combat** : dés animés à chaque lancer, bouton blitz, vitesse d'animation réglable (lente,
-  normale, rapide, instantanée), animation de conquête.
+- **Combat** : attaque confirmée puis menée jusqu'au bout, dés animés à chaque lancer, vitesse
+  d'animation réglable (lente, normale, rapide, instantanée), animation de conquête.
 - **Main de cartes** : affichage des cartes, sélection d'une série valide, échange, échange forcé.
 - **Passage de main** entre humains : écran intermédiaire qui masque les informations privées
   quand plusieurs humains partagent l'écran.
-- **Mise en page adaptative** : HUD en panneau latéral en paysage, en volet bas en portrait,
-  commandes utilisables au doigt.
+- **Mise en page desktop et tablette** : conçue pour le paysage à partir de 1024 × 768, HUD en panneau
+  latéral, commandes utilisables à la souris et au doigt. En dessous de 1024 px ou en portrait, un
+  bandeau signale que l'écran n'est pas une cible, sans bloquer l'application.
 - Remplacement de l'écran de démonstration du plateau.
 
 ## Capabilities
@@ -30,7 +31,7 @@ d'ajouter l'IA.
 - `game-screens` : navigation entre accueil, création, partie et fin de partie.
 - `game-creation` : formulaire de création d'une partie et validation de la configuration.
 - `turn-controls` : HUD et parcours d'interaction de chaque phase, passage de main entre humains.
-- `combat-display` : dés animés, blitz, vitesse d'animation et animation des conquêtes.
+- `combat-display` : dés animés, enchaînement des lancers d'une attaque, vitesse d'animation et animation des conquêtes.
 - `card-hand` : main de cartes, choix d'une série et échanges.
 
 ### Modified Capabilities

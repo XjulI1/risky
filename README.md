@@ -1,22 +1,23 @@
 # Risky
 
 Jeu Risk en application web, avec un plateau en 3D vu du haut, jouable seul contre l'ordinateur
-sur ordinateur, tablette ou téléphone.
+sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 
 > **État du projet** : en phase de conception. Le plan est rédigé sous forme de changes OpenSpec
 > (voir [Feuille de route](#feuille-de-route)) ; l'implémentation n'a pas encore commencé.
 
 ## Le jeu
 
-- **Règles classiques** : 42 territoires, 6 continents, renforts, attaques aux dés, fortification,
-  cartes territoire.
+- **Règles classiques** : 42 territoires, 6 continents, renforts, attaques aux dés menées jusqu'à la
+  conquête ou à l'épuisement de l'attaquant, fortification, cartes territoire.
 - **2 à 6 joueurs**, avec une armée neutre à 2 joueurs.
 - **Adversaires IA** en trois niveaux : facile, normal, difficile.
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
-  défense, fortification adjacente ou par chemin connexe, placement initial aléatoire ou manuel.
-- **Variantes** : missions secrètes, mode capitales.
+  défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
+  au choix.
+- **Variantes** : missions secrètes, mode capitales (choix secret des capitales, bonus de défense).
 - **Plateau 3D** façon jeu de société : territoires en relief, pions et compteurs d'armées, dés
-  animés, attaque « blitz », vitesse d'animation réglable.
+  animés, vitesse d'animation réglable.
 - **Sauvegarde automatique** dans le navigateur, journal de partie et statistiques de fin.
 
 ## Stack technique

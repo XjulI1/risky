@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Résoudre les attaques entre territoires adjacents aux dés, gérer la conquête et le déplacement
-obligatoire qui la suit, et offrir une attaque « blitz » répétée jusqu'à l'issue.
+Résoudre les attaques entre territoires adjacents : chaque attaque enchaîne les lancers de dés
+jusqu'à la conquête du territoire ou l'épuisement de l'attaquant, puis gère le déplacement
+obligatoire qui suit une conquête.
 
 ## ADDED Requirements
 
@@ -28,16 +29,38 @@ pouvoir enchaîner autant d'attaques qu'il le souhaite.
 - **WHEN** le joueur attaque un de ses propres territoires
 - **THEN** l'action est rejetée
 
+### Requirement: Attaque menée jusqu'au bout
+
+Une attaque SHALL enchaîner des lancers jusqu'à ce que le territoire défendu n'ait plus d'armée ou que
+le territoire d'origine n'ait plus qu'une armée. Le joueur SHALL NOT pouvoir l'interrompre ni choisir
+son nombre de dés. Chaque lancer SHALL produire son propre événement, dans l'ordre.
+
+#### Scenario: Attaque victorieuse
+
+- **WHEN** le joueur attaque et que le défenseur perd toutes ses armées
+- **THEN** le territoire est conquis et la partie attend le déplacement après conquête
+
+#### Scenario: Attaque épuisée
+
+- **WHEN** le joueur attaque et que son territoire d'origine tombe à une armée
+- **THEN** l'attaque s'arrête, le territoire défendu reste à son propriétaire et la partie reste en phase d'attaque
+
+#### Scenario: Un événement par lancer
+
+- **WHEN** une attaque nécessite 4 lancers
+- **THEN** 4 événements de lancer de dés sont produits, dans l'ordre
+
 ### Requirement: Nombre de dés
 
-L'attaquant SHALL choisir entre 1 dé et le minimum entre le maximum de dés en attaque du réglage et
-(armées du territoire d'origine − 1). Le défenseur SHALL lancer automatiquement le maximum possible :
-le minimum entre le maximum de dés en défense du réglage et le nombre d'armées du territoire défendu.
+À chaque lancer, l'attaquant SHALL lancer le minimum entre le maximum de dés en attaque du réglage et
+(armées du territoire d'origine − 1). Le défenseur SHALL lancer le minimum entre le maximum de dés en
+défense du réglage et le nombre d'armées du territoire défendu. Le nombre de dés SHALL être recalculé
+avant chaque lancer.
 
-#### Scenario: Trop de dés en attaque
+#### Scenario: Dés de l'attaquant réduits en cours d'attaque
 
-- **WHEN** le joueur attaque avec 3 dés depuis un territoire de 3 armées
-- **THEN** l'action est rejetée
+- **WHEN** au cours d'une attaque le territoire d'origine passe de 4 à 3 armées
+- **THEN** l'attaquant lance 3 dés tant qu'il a 4 armées, puis 2 dés
 
 #### Scenario: Défense limitée par les armées
 
@@ -78,7 +101,7 @@ SHALL attendre un déplacement d'au moins le nombre de dés lancés au dernier l
 
 #### Scenario: Déplacement minimal
 
-- **WHEN** le joueur conquiert un territoire avec un dernier lancer à 3 dés depuis un territoire de 8 armées
+- **WHEN** le joueur conquiert un territoire avec un dernier lancer à 3 dés et qu'il reste 8 armées sur son territoire d'origine
 - **THEN** il doit déplacer entre 3 et 7 armées vers le territoire conquis
 
 #### Scenario: Déplacement insuffisant
@@ -90,24 +113,3 @@ SHALL attendre un déplacement d'au moins le nombre de dés lancés au dernier l
 
 - **WHEN** après une conquête le joueur tente une nouvelle attaque sans avoir déplacé ses armées
 - **THEN** l'action est rejetée
-
-### Requirement: Attaque blitz
-
-Le joueur SHALL pouvoir lancer une attaque blitz qui enchaîne des lancers avec le maximum de dés
-autorisé jusqu'à la conquête du territoire ou jusqu'à ce que le territoire d'origine n'ait plus
-qu'une armée. Chaque lancer SHALL produire son propre événement.
-
-#### Scenario: Blitz victorieux
-
-- **WHEN** le joueur lance un blitz et que le défenseur perd toutes ses armées
-- **THEN** le territoire est conquis et la partie attend le déplacement après conquête
-
-#### Scenario: Blitz épuisé
-
-- **WHEN** le joueur lance un blitz et que son territoire d'origine tombe à une armée
-- **THEN** le blitz s'arrête, le territoire défendu reste à son propriétaire et la partie reste en phase d'attaque
-
-#### Scenario: Un événement par lancer
-
-- **WHEN** un blitz nécessite 4 lancers
-- **THEN** 4 événements de lancer de dés sont produits, dans l'ordre
