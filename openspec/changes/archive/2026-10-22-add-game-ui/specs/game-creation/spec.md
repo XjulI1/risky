@@ -52,8 +52,8 @@ message à côté du champ fautif.
 
 ### Requirement: Réglages de règles
 
-Le formulaire SHALL exposer tous les réglages du moteur (répartition des territoires, barème
-d'échange, dés maximum en attaque et en défense, mode de fortification) avec leurs valeurs par défaut, et une
+Le formulaire SHALL exposer tous les réglages du moteur (répartition des territoires, placement des
+armées, barème d'échange, dés maximum en attaque et en défense, mode de fortification) avec leurs valeurs par défaut, et une
 mention indiquant qu'une armée neutre est ajoutée à 2 joueurs.
 
 #### Scenario: Réglages par défaut

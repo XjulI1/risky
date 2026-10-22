@@ -1,11 +1,11 @@
-# Spec Delta
+# combat-display Specification
 
 ## Purpose
 
 Rendre les combats lisibles et vivants : montrer chaque lancer de dés et ses pertes, permettre
 d'accélérer les animations, et rendre les conquêtes visibles sur le plateau.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Dés animés
 
@@ -47,9 +47,9 @@ l'animation restante d'une attaque d'un toucher.
 
 ### Requirement: Vitesse d'animation
 
-L'utilisateur SHALL pouvoir choisir la vitesse d'animation parmi lente, normale, rapide et
-instantanée, depuis le HUD, à tout moment. Le choix SHALL être mémorisé sur l'appareil. En vitesse
-instantanée, aucun dé n'est animé : le résultat du lancer est affiché sous forme de texte.
+L'utilisateur SHALL pouvoir choisir la vitesse d'animation parmi normale, rapide et instantanée,
+depuis le HUD, à tout moment. Le choix SHALL être mémorisé sur l'appareil. En vitesse instantanée,
+aucun dé n'est animé : le résultat du lancer est affiché sous forme de texte.
 
 #### Scenario: Vitesse mémorisée
 

@@ -1,4 +1,5 @@
 import { classicMap } from './maps/classic'
+import { placeRemainingArmiesAtRandom } from './placement'
 import { rollInt, ruleError, shuffleWithState } from './state'
 import type {
   Card,
@@ -21,6 +22,7 @@ export const NEUTRAL_COLOR = '#9e9e9e'
 /** Settings used for every value not given at game creation. */
 export const DEFAULT_SETTINGS: GameSettings = {
   territoryDistribution: 'random',
+  armyPlacement: 'random',
   cardTradeScale: 'progressive',
   attackerMaxDice: 3,
   defenderMaxDice: 2,
@@ -36,6 +38,7 @@ const JOKER_COUNT = 2
 
 const ALLOWED_VALUES: { [K in keyof GameSettings]?: readonly GameSettings[K][] } = {
   territoryDistribution: ['random', 'choice'],
+  armyPlacement: ['random', 'manual'],
   cardTradeScale: ['progressive', 'fixed'],
   fortifyMode: ['connected', 'adjacent'],
 }
@@ -180,7 +183,11 @@ export function createGame(config: GameConfig): CreateGameResult {
 
   if (settings.territoryDistribution === 'random') {
     dealTerritories(state, freeTerritories, config.players, remaining)
-    state.phase = { kind: 'placement', remaining }
+    if (settings.armyPlacement === 'random') {
+      placeRemainingArmiesAtRandom(state, remaining, [])
+    } else {
+      state.phase = { kind: 'placement', remaining }
+    }
   }
 
   return { ok: true, state }

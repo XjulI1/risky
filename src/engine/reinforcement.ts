@@ -34,6 +34,7 @@ function setReserve(state: GameState, reserve: number): void {
   }
 }
 
+/** Whether the player must trade a set before deploying: 5 cards or more in hand. */
 export function mustTrade(state: GameState, playerId: PlayerId): boolean {
   return (state.hands[playerId]?.length ?? 0) >= FORCED_TRADE_HAND_SIZE
 }

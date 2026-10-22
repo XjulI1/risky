@@ -10,7 +10,7 @@ context: |
   Produit : jeu Risk en web app, projet perso non publié. Solo contre IA (2 à 6 joueurs, humain
   + IA heuristique à 3 niveaux). Règles classiques (42 territoires, 6 continents) avec variantes
   activables : missions secrètes, mode capitales, réglages numériques (barème d'échange des
-  cartes, dés, fortification, répartition des territoires). Toute attaque est menée jusqu'au
+  cartes, dés, fortification, répartition des territoires, placement des armées). Toute attaque est menée jusqu'au
   bout (pas de lancer unique). Interface en français en dur, pas d'i18n.
 
   Rendu : vue du haut inclinée en 3D (zoom/pan, pas d'orbite libre), style plateau low-poly :

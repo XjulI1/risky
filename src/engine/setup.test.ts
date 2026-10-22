@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { classicMap } from './maps/classic'
 import { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
-import { armiesOf, createTestGame, ownedBy, testPlayers } from './testUtils'
+import { armiesOf, claimAll, createTestGame, ownedBy, testPlayers } from './testUtils'
 
 describe('createGame', () => {
   it('creates a game with the players in the given order', () => {
@@ -42,6 +42,7 @@ describe('game settings', () => {
   it('uses the default settings when none are given', () => {
     expect(DEFAULT_SETTINGS).toEqual({
       territoryDistribution: 'random',
+      armyPlacement: 'random',
       cardTradeScale: 'progressive',
       attackerMaxDice: 3,
       defenderMaxDice: 2,
@@ -62,6 +63,7 @@ describe('game settings', () => {
     { fortifyMode: 'teleport' },
     { cardTradeScale: 'random' },
     { territoryDistribution: 'auction' },
+    { armyPlacement: 'parachute' },
   ])('rejects the out-of-range setting %o', (settings) => {
     const result = createGame({
       players: testPlayers(3),
@@ -152,13 +154,48 @@ describe('random territory distribution', () => {
   })
 
   it('opens the placement phase on the first player with the armies left to place', () => {
-    const state = createTestGame(4)
+    const state = createTestGame(4, { settings: { armyPlacement: 'manual' } })
     expect(state.phase.kind).toBe('placement')
     expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
     if (state.phase.kind === 'placement') {
       for (const player of state.players) {
         expect(state.phase.remaining[player.id]).toBe(30 - ownedBy(state, player.id).length)
       }
+    }
+  })
+})
+
+describe('random army placement', () => {
+  it.each([
+    [5, 25],
+    [3, 35],
+  ])('puts all the initial armies on the board at once with %i players', (count, armies) => {
+    const state = createTestGame(count)
+    for (const player of state.players) {
+      expect(armiesOf(state, player.id)).toBe(armies)
+    }
+  })
+
+  it('opens the reinforcement phase of the first player', () => {
+    const state = createTestGame(4)
+    expect(state.phase.kind).toBe('reinforce')
+    expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
+  })
+
+  it('spreads the armies the same way for the same seed', () => {
+    expect(createTestGame(4, { seed: 9 }).territories).toEqual(createTestGame(4, { seed: 9 }).territories)
+  })
+
+  it('spreads the armies differently with another seed', () => {
+    expect(createTestGame(4, { seed: 9 }).territories).not.toEqual(createTestGame(4, { seed: 10 }).territories)
+  })
+
+  it('places the remaining armies at random once the last territory is claimed', () => {
+    const state = claimAll(createTestGame(3, { settings: { territoryDistribution: 'choice' } }))
+    expect(state.phase.kind).toBe('reinforce')
+    expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
+    for (const player of state.players) {
+      expect(armiesOf(state, player.id)).toBe(35)
     }
   })
 })

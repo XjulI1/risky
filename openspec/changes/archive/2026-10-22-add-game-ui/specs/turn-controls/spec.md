@@ -124,14 +124,21 @@ sélecteur de quantité. Un bouton « Passer » SHALL terminer le tour sans fort
 
 ### Requirement: Passage de main entre humains
 
-Quand le tour passe d'un humain à un autre humain, l'application SHALL afficher un écran
-intermédiaire « Au tour de <nom> » qui masque le plateau et les cartes jusqu'à ce que le joueur
-touche « Je suis prêt ». Cet écran SHALL être omis quand un seul humain participe.
+Quand le tour passe d'un humain à un autre humain, l'application SHALL afficher au centre de
+l'écran une boîte « Au tour de <nom> », par-dessus un voile léger qui laisse voir le plateau et
+l'interface. La main de cartes du nouveau joueur SHALL rester masquée et le plateau inactif jusqu'à
+ce qu'il touche « Je suis prêt ». Cette boîte SHALL être omise quand un seul humain participe, ainsi
+que pendant la revendication et le placement initial, où aucune information privée n'existe encore.
 
 #### Scenario: Deux humains
 
 - **WHEN** dans une partie entre Alice et Bob le tour d'Alice se termine
-- **THEN** l'écran « Au tour de Bob » s'affiche et la main de Bob n'est visible qu'après « Je suis prêt »
+- **THEN** la boîte « Au tour de Bob » s'affiche, le plateau reste visible derrière, et la main de Bob n'est visible qu'après « Je suis prêt »
+
+#### Scenario: Mise en place
+
+- **WHEN** dans une partie entre Alice et Bob en placement des armées un par un, Alice place une armée
+- **THEN** la main passe à Bob sans afficher la boîte « Au tour de Bob »
 
 ### Requirement: Mise en page desktop et tablette
 

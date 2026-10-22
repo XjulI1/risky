@@ -6,7 +6,7 @@ import { currentPlayer } from './state'
 import { apply, armiesOf, claimAll, createTestGame, freeTerritories, ownedBy, placeAll } from './testUtils'
 
 describe('territory claim (distribution by choice)', () => {
-  const start = createTestGame(3, { settings: { territoryDistribution: 'choice' } })
+  const start = createTestGame(3, { settings: { territoryDistribution: 'choice', armyPlacement: 'manual' } })
 
   it('starts with every territory free, on the first player', () => {
     expect(start.phase.kind).toBe('claim')
@@ -77,7 +77,7 @@ describe('territory claim (distribution by choice)', () => {
 })
 
 describe('initial army placement', () => {
-  const start = createTestGame(4)
+  const start = createTestGame(4, { settings: { armyPlacement: 'manual' } })
 
   it('adds one army on an owned territory and passes the turn', () => {
     const playerId = currentPlayer(start).id
@@ -118,14 +118,16 @@ describe('initial army placement', () => {
     [5, 25],
     [4, 30],
   ])('ends with exactly the initial armies on the board with %i players', (count, armies) => {
-    const state = placeAll(createTestGame(count))
+    const state = placeAll(createTestGame(count, { settings: { armyPlacement: 'manual' } }))
     for (const player of state.players) {
       expect(armiesOf(state, player.id)).toBe(armies)
     }
   })
 
   it('ends with 40 armies each for both players and the neutral army', () => {
-    const state = placeAll(claimAll(createTestGame(2, { settings: { territoryDistribution: 'choice' } })))
+    const state = placeAll(
+      claimAll(createTestGame(2, { settings: { territoryDistribution: 'choice', armyPlacement: 'manual' } })),
+    )
     expect(armiesOf(state, 'p1')).toBe(40)
     expect(armiesOf(state, 'p2')).toBe(40)
     expect(armiesOf(state, NEUTRAL_PLAYER_ID)).toBe(40)

@@ -35,10 +35,14 @@ src/
     presentation.ts          événements moteur → étapes d'animation, projection sur l'état affiché
     animationSpeed.ts        vitesses, durées, préférence mémorisée
     cardAdvice.ts            meilleure série d'une main, valeur affichée
+    gameForm.ts              état et validation du formulaire de création (pur)
+    labels.ts                libellés des phases, résumé d'une attaque (pur)
   ui/
     screens/HomeScreen.vue, CreateGameScreen.vue, GameScreen.vue, GameOverOverlay.vue
-    hud/StatusBar.vue, PlayersPanel.vue, AmountPicker.vue, AttackPanel.vue,
-        CardHand.vue, DiceTray.vue, HandoffScreen.vue, Toast.vue
+    hud/StatusBar.vue, PlayersPanel.vue, AmountPicker.vue, AttackPanel.vue, CardHand.vue,
+        DiceTray.vue, DrawnCardNotice.vue, HandoffScreen.vue, ErrorToast.vue, SpeedSelector.vue
+    ConfirmDialog.vue, OffTargetBanner.vue
+  board/ArmyTransit.vue      pion qui vole de l'origine au territoire conquis
   App.vue                    bascule d'écran
 ```
 
@@ -88,7 +92,15 @@ détermine les parcours possibles ; les phases sans choix de territoire (déplac
 ### Dés : cubes CSS 3D
 
 `DiceTray` affiche des cubes en transformations CSS 3D au-dessus du plateau : animation de roulement,
-arrêt forcé sur la face donnée par l'événement, puis tri et alignement par paires. Alternative
+puis remplacement du cube par une face à plat portant la valeur de l'événement (aucune dépendance à
+l'orientation du cube, donc aucune valeur fausse possible), dés alignés par paires et pertes marquées.
+
+### Conquête animée
+
+`TerritoryMesh` fait converger sa couleur vers la couleur cible à chaque image (interpolation
+exponentielle), ce qui donne la transition de conquête sans état d'animation supplémentaire.
+`GameBoard` reçoit un `transit` optionnel pendant l'étape de déplacement d'armées, que `ArmyTransit`
+dessine comme un pion volant en arc de l'origine au territoire conquis. Alternative
 écartée : dés dans la scène TresJS, qui dépendraient de la position de caméra et mobiliseraient le
 rendu WebGL pour un élément d'interface.
 
@@ -104,6 +116,22 @@ valeur par défaut si indisponible), avec repli sur `prefers-reduced-motion`.
 La session sait qui est humain. Quand `currentPlayer` change vers un humain différent du précédent
 humain et que la partie compte au moins deux humains, `GameScreen` affiche `HandoffScreen` par-dessus
 tout. La carte piochée est montrée avant ce passage pour rester privée.
+
+Le passage de main n'est pas affiché pendant la revendication et le placement initial : aucune
+information privée n'existe encore, et l'appliquer à la lettre interromprait la partie après chaque
+armée posée.
+
+`HandoffScreen` est une boîte centrée sur un voile à 10 % d'opacité : le plateau et l'interface
+restent visibles derrière. Ce qui est privé, la main de cartes du nouveau joueur, n'est pas rendu
+tant que le passage de main n'est pas acquitté.
+
+### Placement des armées
+
+Le moteur gagne le réglage `armyPlacement` (`random` par défaut, `manual` en option). En aléatoire,
+`placeRemainingArmiesAtRandom` répartit une à une, au hasard, les armées restantes de chaque joueur
+sur ses territoires, puis démarre le premier tour ; il est appelé à la fin de la répartition
+aléatoire des territoires ou après la dernière revendication. La phase `placement` n'existe plus
+qu'en mode `manual`.
 
 ### Style
 

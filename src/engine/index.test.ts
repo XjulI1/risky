@@ -15,7 +15,7 @@ function deployAction(state: GameState): Extract<Action, { type: 'deploy' }> {
 
 describe('applyAction validation', () => {
   it('rejects an action from a player whose turn it is not', () => {
-    const state = createTestGame(3)
+    const state = createTestGame(3, { settings: { armyPlacement: 'manual' } })
     const other = state.players.find((player) => player.id !== currentPlayer(state).id)
     const result = applyAction(state, {
       type: 'placeInitialArmy',
@@ -44,7 +44,7 @@ describe('applyAction validation', () => {
 
 describe('applyAction purity', () => {
   it('never modifies the given state', () => {
-    const state = deepFreeze(createTestGame(3))
+    const state = deepFreeze(createTestGame(3, { settings: { armyPlacement: 'manual' } }))
     const snapshot = structuredClone(state)
     const playerId = currentPlayer(state).id
     const result = applyAction(state, {
@@ -71,7 +71,7 @@ describe('serialization', () => {
   })
 
   it('continues identically after a JSON round trip', () => {
-    const state = createTestGame(3, { seed: 5 })
+    const state = createTestGame(3, { seed: 5, settings: { armyPlacement: 'manual' } })
     const restored = JSON.parse(JSON.stringify(state)) as GameState
     const playerId = currentPlayer(state).id
     const action: Action = { type: 'placeInitialArmy', playerId, territory: ownedBy(state, playerId)[0] as string }

@@ -68,8 +68,9 @@ export function applyAction(state: GameState, action: Action): ActionResult {
   return error === null ? { ok: true, state: next, events } : reject(error)
 }
 
-export { isValidSet, tradeValue } from './cards'
+export { bonusTerritory, isValidSet, tradeValue } from './cards'
 export { areAdjacent, classicMap } from './maps/classic'
 export { attackOrigins, attackTargets, expectedReinforcement, fortifyDestinations, tradeableSets } from './queries'
+export { mustTrade } from './reinforcement'
 export { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 export type * from './types'

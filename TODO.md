@@ -21,9 +21,11 @@ indiquées reflètent ces décisions.
 
 - [x] **Neutre à 2 joueurs** : 14 territoires et armées tirés au hasard à la création (officiel :
   armées neutres placées par les joueurs).
-- [x] **Répartition aléatoire** : territoires distribués au hasard, puis chaque joueur place ses
-  armées restantes une à une, comme dans la règle officielle. La répartition au choix (revendication)
-  reste proposée.
+- [x] **Répartition aléatoire** : territoires distribués au hasard. La répartition au choix
+  (revendication) reste proposée.
+- [x] **Placement des armées restantes aléatoire par défaut**, pour tous les joueurs (décision du
+  22 octobre 2026, revenant sur le placement un par un officiel). Le placement un par un, à tour de
+  rôle, reste proposé en option.
 - [x] **Premier joueur** tiré au sort par la graine, sans animation (officiel : plus haut lancer de dé).
 
 ### Combat (`add-classic-rules-engine`, spec `combat`)

@@ -15,13 +15,16 @@ d'ajouter l'IA.
   pour chaque phase (revendication et placement initial, déploiement, attaque, déplacement après
   conquête, fortification), boutons de fin de phase, messages d'erreur du moteur.
 - **Combat** : attaque confirmée puis menée jusqu'au bout, dés animés à chaque lancer, vitesse
-  d'animation réglable (lente, normale, rapide, instantanée), animation de conquête.
+  d'animation réglable (normale, rapide, instantanée), animation de conquête.
 - **Main de cartes** : affichage des cartes, sélection d'une série valide, échange, échange forcé.
 - **Passage de main** entre humains : écran intermédiaire qui masque les informations privées
   quand plusieurs humains partagent l'écran.
 - **Mise en page desktop et tablette** : conçue pour le paysage à partir de 1024 × 768, HUD en panneau
   latéral, commandes utilisables à la souris et au doigt. En dessous de 1024 px ou en portrait, un
   bandeau signale que l'écran n'est pas une cible, sans bloquer l'application.
+- **Placement aléatoire des armées par défaut** : après la répartition des territoires, les armées
+  initiales restantes sont réparties au hasard pour tous les joueurs ; le placement un par un reste
+  proposé en option.
 - Remplacement de l'écran de démonstration du plateau.
 
 ## Capabilities
@@ -36,7 +39,8 @@ d'ajouter l'IA.
 
 ### Modified Capabilities
 
-(aucune)
+- `game-setup` : nouveau réglage « placement des armées restantes », aléatoire par défaut pour tous
+  les joueurs ; le placement un par un, à tour de rôle, devient une option.
 
 ## Hors périmètre
 

@@ -5,6 +5,7 @@ import { computed, ref } from 'vue'
 import continentLabels from '../../data/maps/classic/continent-labels.json'
 import { classicMap, type GameState, type TerritoryId } from '../engine'
 import ArmyPawn from './ArmyPawn.vue'
+import ArmyTransit from './ArmyTransit.vue'
 import BoardControls, { type HoveredTerritory } from './BoardControls.vue'
 import { boardViewModel, HIGHLIGHT_STYLES, type Highlights } from './boardViewModel'
 import { CAMERA_FOV } from './cameraFraming'
@@ -17,9 +18,18 @@ import OceanPlane from './OceanPlane.vue'
 import SeaLink from './SeaLink.vue'
 import TerritoryMesh from './TerritoryMesh.vue'
 
+export type BoardTransit = {
+  key: string
+  from: TerritoryId
+  to: TerritoryId
+  color: string
+  durationMs: number
+}
+
 const props = defineProps<{
   state: GameState
   highlights?: Highlights
+  transit?: BoardTransit | null
 }>()
 
 const emit = defineEmits<{
@@ -137,6 +147,15 @@ const hoveredName = computed(() =>
         :position="continent.position"
         :name="continent.name"
         :bonus="continent.bonus"
+      />
+
+      <ArmyTransit
+        v-if="props.transit"
+        :key="props.transit.key"
+        :from="territoryAnchor(props.transit.from)"
+        :to="territoryAnchor(props.transit.to)"
+        :color="props.transit.color"
+        :duration-ms="props.transit.durationMs"
       />
 
       <BoardControls

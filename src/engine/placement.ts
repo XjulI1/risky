@@ -1,5 +1,5 @@
 import { notOwner, unknownTerritory, wrongPhase } from './errors'
-import { mapOf, ruleError } from './state'
+import { mapOf, rollInt, ruleError, territoriesOf } from './state'
 import { nextPlayerIndex, startTurn } from './turn'
 import type { Action, GameEvent, GameState, PlayerId, RuleError } from './types'
 
@@ -12,6 +12,25 @@ function firstIndexWithArmiesLeft(state: GameState, remaining: Record<PlayerId, 
     fromIndex,
     (player) => !player.isNeutral && (remaining[player.id] ?? 0) > 0,
   )
+}
+
+/** Spreads the initial armies left to each player at random over their territories, then starts the first turn. */
+export function placeRemainingArmiesAtRandom(
+  state: GameState,
+  remaining: Record<PlayerId, number>,
+  events: GameEvent[],
+): void {
+  for (const player of state.players) {
+    const owned = territoriesOf(state, player.id)
+    for (let left = remaining[player.id] ?? 0; left > 0 && owned.length > 0; left--) {
+      const territory = state.territories[owned[rollInt(state, 0, owned.length - 1)] as string]
+      if (territory !== undefined) {
+        territory.armies += 1
+      }
+    }
+    remaining[player.id] = 0
+  }
+  startTurn(state, state.firstPlayerIndex, events)
 }
 
 export function claimTerritory(state: GameState, action: ClaimAction, events: GameEvent[]): RuleError | null {
@@ -32,7 +51,9 @@ export function claimTerritory(state: GameState, action: ClaimAction, events: Ga
   events.push({ type: 'territoryClaimed', playerId: action.playerId, territory: action.territory })
 
   const allClaimed = map.territoryIds.every((id) => state.territories[id] !== undefined)
-  if (allClaimed) {
+  if (allClaimed && state.settings.armyPlacement === 'random') {
+    placeRemainingArmiesAtRandom(state, remaining, events)
+  } else if (allClaimed) {
     state.phase = { kind: 'placement', remaining }
     state.currentPlayerIndex = firstIndexWithArmiesLeft(state, remaining, state.firstPlayerIndex - 1)
   } else {

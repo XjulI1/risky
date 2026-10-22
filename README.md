@@ -14,7 +14,7 @@ sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 - **Adversaires IA** en trois niveaux : facile, normal, difficile.
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
   défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
-  au choix.
+  au choix, placement des armées aléatoire ou un par un.
 - **Variantes** : missions secrètes, mode capitales (choix secret des capitales, bonus de défense).
 - **Plateau 3D** façon jeu de société : territoires en relief, pions et compteurs d'armées, dés
   animés, vitesse d'animation réglable.

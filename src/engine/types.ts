@@ -38,11 +38,13 @@ export type Player = PlayerConfig & {
 }
 
 export type TerritoryDistribution = 'random' | 'choice'
+export type ArmyPlacement = 'random' | 'manual'
 export type CardTradeScale = 'progressive' | 'fixed'
 export type FortifyMode = 'connected' | 'adjacent'
 
 export type GameSettings = {
   territoryDistribution: TerritoryDistribution
+  armyPlacement: ArmyPlacement
   cardTradeScale: CardTradeScale
   attackerMaxDice: number
   defenderMaxDice: number
