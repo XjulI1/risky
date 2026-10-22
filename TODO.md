@@ -5,7 +5,7 @@ change correspondant ; ce fichier ne suit que les grandes étapes et les points 
 
 ## Avant de commencer
 
-- [ ] Relire les artefacts des 7 changes dans `openspec/changes/`.
+- [x] Relire les artefacts des 7 changes dans `openspec/changes/`.
 - [x] Valider les écarts de règles : voir [Décisions de règles](#décisions-de-règles) ci-dessous ;
   les specs concernées sont à jour.
 - [x] Trouver la source de la carte du plateau : données récupérées dans `data/maps/classic/`
@@ -67,10 +67,10 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ### 1. `add-classic-rules-engine` — socle et moteur de règles
 
-- [ ] Cocher la tâche 1.1 (dépôt git et `.gitignore`), déjà réalisée lors du premier push.
-- [ ] Lancer `pnpm install` après l'écriture du `package.json` (tâche 1.2).
-- [ ] Implémenter les [tâches](openspec/changes/add-classic-rules-engine/tasks.md).
-- [ ] Archiver le change.
+- [x] Cocher la tâche 1.1 (dépôt git et `.gitignore`), déjà réalisée lors du premier push.
+- [x] Lancer `pnpm install` après l'écriture du `package.json` (tâche 1.2).
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-22-add-classic-rules-engine/tasks.md).
+- [x] Archiver le change.
 - [ ] Retirer l'encadré « État du projet » du README et vérifier que la section « Démarrage » est
   exacte.
 

@@ -1,0 +1,187 @@
+export type PlayerId = string
+export type TerritoryId = string
+export type ContinentId = string
+
+export type Territory = {
+  id: TerritoryId
+  name: string
+  continent: ContinentId
+  neighbors: TerritoryId[]
+}
+
+export type Continent = {
+  id: ContinentId
+  name: string
+  bonus: number
+  territories: TerritoryId[]
+}
+
+export type GameMap = {
+  territoryIds: TerritoryId[]
+  continentIds: ContinentId[]
+  territories: Record<TerritoryId, Territory>
+  continents: Record<ContinentId, Continent>
+}
+
+export type PlayerKind = 'human' | 'ai'
+
+export type PlayerConfig = {
+  id: PlayerId
+  name: string
+  color: string
+  kind: PlayerKind
+}
+
+export type Player = PlayerConfig & {
+  isNeutral: boolean
+  eliminated: boolean
+}
+
+export type TerritoryDistribution = 'random' | 'choice'
+export type CardTradeScale = 'progressive' | 'fixed'
+export type FortifyMode = 'connected' | 'adjacent'
+
+export type GameSettings = {
+  territoryDistribution: TerritoryDistribution
+  cardTradeScale: CardTradeScale
+  attackerMaxDice: number
+  defenderMaxDice: number
+  fortifyMode: FortifyMode
+}
+
+export type CardSymbol = 'infantry' | 'cavalry' | 'artillery'
+
+export type TerritoryCard = {
+  id: number
+  symbol: CardSymbol
+  territory: TerritoryId
+}
+
+export type JokerCard = {
+  id: number
+  symbol: 'joker'
+  territory: null
+}
+
+export type Card = TerritoryCard | JokerCard
+
+export type TerritoryState = {
+  owner: PlayerId
+  armies: number
+}
+
+export type Phase =
+  | { kind: 'claim'; remaining: Record<PlayerId, number> }
+  | { kind: 'placement'; remaining: Record<PlayerId, number> }
+  | { kind: 'reinforce'; reserve: number }
+  | { kind: 'attack' }
+  | { kind: 'conquestMove'; from: TerritoryId; to: TerritoryId; minArmies: number; maxArmies: number }
+  | { kind: 'eliminationTrade'; reserve: number }
+  | { kind: 'fortify' }
+  | { kind: 'gameOver' }
+
+export type PhaseKind = Phase['kind']
+
+export type GameState = {
+  settings: GameSettings
+  mapId: 'classic'
+  players: Player[]
+  territories: Record<TerritoryId, TerritoryState>
+  firstPlayerIndex: number
+  currentPlayerIndex: number
+  phase: Phase
+  deck: Card[]
+  discard: Card[]
+  hands: Record<PlayerId, Card[]>
+  tradeCount: number
+  conqueredThisTurn: boolean
+  rngState: number
+  winner: PlayerId | null
+}
+
+export type Action =
+  | { type: 'claimTerritory'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'placeInitialArmy'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'tradeCards'; playerId: PlayerId; cardIds: [number, number, number] }
+  | { type: 'deploy'; playerId: PlayerId; territory: TerritoryId; armies: number }
+  | { type: 'attack'; playerId: PlayerId; from: TerritoryId; to: TerritoryId }
+  | { type: 'moveAfterConquest'; playerId: PlayerId; armies: number }
+  | { type: 'endAttack'; playerId: PlayerId }
+  | { type: 'fortify'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
+  | { type: 'skipFortify'; playerId: PlayerId }
+
+export type ActionType = Action['type']
+
+export type GameEvent =
+  | { type: 'territoryClaimed'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'initialArmyPlaced'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'turnStarted'; playerId: PlayerId; reserve: number }
+  | {
+      type: 'cardsTraded'
+      playerId: PlayerId
+      cardIds: number[]
+      armies: number
+      bonusTerritory: TerritoryId | null
+    }
+  | { type: 'armiesDeployed'; playerId: PlayerId; territory: TerritoryId; armies: number }
+  | {
+      type: 'diceRolled'
+      attacker: PlayerId
+      defender: PlayerId
+      from: TerritoryId
+      to: TerritoryId
+      attackerDice: number[]
+      defenderDice: number[]
+      attackerLosses: number
+      defenderLosses: number
+    }
+  | {
+      type: 'territoryConquered'
+      playerId: PlayerId
+      previousOwner: PlayerId
+      from: TerritoryId
+      to: TerritoryId
+    }
+  | { type: 'conquestMoved'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
+  | { type: 'fortified'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
+  | { type: 'cardDrawn'; playerId: PlayerId; cardId: number }
+  | { type: 'playerEliminated'; playerId: PlayerId; by: PlayerId; cardsTaken: number }
+  | { type: 'gameWon'; playerId: PlayerId }
+
+export type RuleErrorCode =
+  | 'INVALID_PLAYER_COUNT'
+  | 'DUPLICATE_PLAYER'
+  | 'INVALID_SETTING'
+  | 'GAME_OVER'
+  | 'NOT_YOUR_TURN'
+  | 'WRONG_PHASE'
+  | 'UNKNOWN_TERRITORY'
+  | 'TERRITORY_TAKEN'
+  | 'NOT_OWNER'
+  | 'OWN_TERRITORY'
+  | 'NOT_ADJACENT'
+  | 'NOT_CONNECTED'
+  | 'NOT_ENOUGH_ARMIES'
+  | 'INVALID_ARMY_COUNT'
+  | 'CARD_NOT_IN_HAND'
+  | 'INVALID_CARD_SET'
+  | 'TRADE_REQUIRED'
+
+export type RuleError = {
+  code: RuleErrorCode
+  message: string
+}
+
+export type ActionResult =
+  | { ok: true; state: GameState; events: GameEvent[] }
+  | { ok: false; error: RuleError }
+
+export type GameConfig = {
+  players: PlayerConfig[]
+  seed: number
+  settings?: Partial<GameSettings>
+}
+
+export type CreateGameResult =
+  | { ok: true; state: GameState }
+  | { ok: false; error: RuleError }

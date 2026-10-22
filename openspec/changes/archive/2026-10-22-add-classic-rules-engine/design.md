@@ -100,6 +100,7 @@ type GameState = {
   mapId: 'classic'
   players: Player[]
   territories: Record<TerritoryId, { owner: PlayerId; armies: number }>
+  firstPlayerIndex: number
   currentPlayerIndex: number
   phase: Phase
   deck: Card[]
@@ -112,8 +113,13 @@ type GameState = {
 }
 ```
 
+`firstPlayerIndex` mémorise le premier joueur tiré au sort : la revendication et le placement
+tournent ensuite d'un joueur à l'autre, et le premier tour de jeu doit revenir à ce joueur une fois la
+mise en place terminée. `currentPlayerIndex` seul ne suffit pas à le retrouver.
+
 `Phase` est une union discriminée qui porte ses propres données :
-`{ kind: 'claim' }`, `{ kind: 'placement'; remaining: Record<PlayerId, number> }`,
+`{ kind: 'claim'; remaining: Record<PlayerId, number> }`,
+`{ kind: 'placement'; remaining: Record<PlayerId, number> }`,
 `{ kind: 'reinforce'; reserve: number }`, `{ kind: 'attack' }`,
 `{ kind: 'conquestMove'; from; to; minArmies; maxArmies }`,
 `{ kind: 'eliminationTrade'; reserve: number }`, `{ kind: 'fortify' }`, `{ kind: 'gameOver' }`.
@@ -124,6 +130,24 @@ depuis `maps/`. Cela garde l'état léger et laisse la place à d'autres cartes.
 
 Pas de `Map` ni de `Set` dans l'état : uniquement des objets et tableaux, pour que
 `JSON.parse(JSON.stringify(state))` soit l'identité.
+
+### Après une conquête
+
+Une conquête place la partie en phase `conquestMove` ; c'est l'action `moveAfterConquest` qui en
+sort. Deux cas en découlent :
+
+- **Échange forcé après élimination** : il s'ouvre *après* le déplacement, pas au moment de la
+  conquête. Si le joueur détient alors 6 cartes ou plus, la partie passe en `eliminationTrade` avec une
+  réserve à 0 ; sinon elle revient en `attack`. Ce seuil ne peut être atteint qu'en récupérant la main
+  d'un joueur éliminé : l'échange forcé à 5 cartes en début de tour et la pioche d'une seule carte par
+  tour limitent sinon la main à 5 cartes. En `eliminationTrade`, `deploy` est refusé tant que la main
+  compte 5 cartes ou plus (`TRADE_REQUIRED`) ; la partie revient en `attack` dès que la réserve est
+  vide et la main sous 5 cartes, ce qui réalise « échanger jusqu'à 4 cartes ou moins, puis déployer ».
+- **Victoire par une conquête** : quand la conquête élimine le dernier adversaire, le moteur effectue
+  lui-même le déplacement minimal (le nombre de dés du dernier lancer) et émet l'événement
+  `conquestMoved` correspondant, puis termine la partie. L'état final ne contient ainsi jamais de
+  territoire sans armée, et aucune action n'est attendue d'un joueur sur une partie terminée. Les
+  variantes missions et capitales réutilisent ce même mécanisme.
 
 ### Données de la carte
 
