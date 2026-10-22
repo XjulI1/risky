@@ -27,7 +27,8 @@ Contraintes structurantes :
 **Non-Goals :**
 
 - Aucune réactivité Vue ni store (Pinia ou autre) : l'intégration à Vue viendra avec `add-game-ui`.
-- Aucune géométrie de carte (SVG, coordonnées) : elle viendra avec `add-3d-board`.
+- Aucun usage de la géométrie de carte (contours, coordonnées) : elle sera exploitée par
+  `add-3d-board`.
 - Pas d'annulation de coup (undo) ; l'immutabilité la rendra triviale plus tard si besoin.
 
 ## Decisions
@@ -40,7 +41,7 @@ src/
     index.ts            API publique (createGame, applyAction, requêtes)
     types.ts            GameState, Action, GameEvent, RuleError, GameSettings
     rng.ts              générateur à graine
-    maps/classic.ts     territoires, continents, adjacences
+    maps/classic.ts     carte classique construite depuis data/maps/classic/, noms français
     setup.ts            création, mise en place aléatoire et manuelle
     reinforcement.ts
     combat.ts
@@ -120,6 +121,27 @@ depuis `maps/`. Cela garde l'état léger et laisse la place à d'autres cartes.
 Pas de `Map` ni de `Set` dans l'état : uniquement des objets et tableaux, pour que
 `JSON.parse(JSON.stringify(state))` soit l'identité.
 
+### Données de la carte
+
+La carte n'est pas saisie à la main : elle est construite à partir des fichiers récupérés dans
+`data/maps/classic/` (provenance et licences dans `SOURCE.md`), importés comme modules JSON
+(`resolveJsonModule`) :
+
+- `board.json` fournit les bonus de continent et les adjacences ;
+- `territories.json` fournit la liste des territoires et leur continent. Le moteur ne lit que les
+  champs `id` et `continent` ; les contours et points d'ancrage qu'il contient sont réservés au
+  plateau 3D.
+
+Les identifiants des données sont repris tels quels comme identifiants du moteur : `snake_case`
+anglais pour les territoires (`north_africa`, `eastern_australia`…) et `camelCase` pour les
+continents (`northAmerica`, `australia`…). Le plateau 3D et le moteur partagent ainsi les mêmes
+identifiants sans table de correspondance. Les noms anglais de `board.json` ne sont pas utilisés :
+`maps/classic.ts` déclare les noms français des 42 territoires et des 6 continents (le continent
+`australia` s'affiche « Océanie »), et un test vérifie qu'il n'en manque aucun.
+
+Les fichiers de `data/maps/classic/` ne sont jamais modifiés, pour rester identiques à leur source ;
+tout complément vit dans `maps/classic.ts`.
+
 ### Générateur aléatoire
 
 Un générateur mulberry32 (32 bits, quelques lignes, sans dépendance) dont l'état entier est stocké
@@ -157,9 +179,9 @@ Tailwind et TresJS ne sont pas installés ici : ils arrivent avec les changes qu
 
 ## Risks / Trade-offs
 
-- [Adjacences mal recopiées depuis le plateau classique] → tests d'invariants (symétrie, connexité,
-  pas de boucle, liaisons maritimes connues) et décompte des voisins par territoire comparé à une
-  référence.
+- [Données de carte récupérées erronées ou incomplètes] → tests d'invariants (symétrie, connexité,
+  pas de boucle, liaisons maritimes connues, 83 liaisons au total) et cohérence des identifiants entre
+  `board.json` et `territories.json`.
 - [Le modèle de phases ne couvre pas un cas de règle découvert plus tard] → phases en union
   discriminée : ajouter un cas fait échouer le typage partout où il faut le traiter.
 - [`structuredClone` à chaque action trop coûteux pour l'IA] → acceptable pour l'heuristique prévue ;

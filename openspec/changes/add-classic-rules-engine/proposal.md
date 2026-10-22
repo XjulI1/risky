@@ -10,7 +10,8 @@ lequel brancher l'affichage et l'IA sans jamais dupliquer de logique de jeu.
 - **Socle du projet** : application Vite + Vue 3 + TypeScript strict, gérée avec pnpm, avec Vitest,
   ESLint et vérification de types. L'application affiche seulement un écran d'accueil provisoire.
 - **Carte du monde classique en données** : 42 territoires, 6 continents avec leurs bonus, graphe
-  d'adjacence (dont les liaisons maritimes comme Alaska–Kamtchatka).
+  d'adjacence (dont les liaisons maritimes comme Alaska–Kamtchatka), lus dans les données déjà
+  présentes dans `data/maps/classic/` (voir `SOURCE.md`) et complétés par les noms français.
 - **Moteur de règles** (`src/engine/`, sans dépendance à Vue ni à Three.js) :
   - création d'une partie de 2 à 6 joueurs, avec une armée neutre à 2 joueurs ;
   - mise en place initiale aléatoire ou manuelle ;

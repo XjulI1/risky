@@ -43,8 +43,9 @@ reflété sans recharger le plateau.
 ### Requirement: Pion et compteur d'armées
 
 Chaque territoire SHALL porter un pion 3D aux couleurs de son propriétaire et un compteur indiquant
-son nombre d'armées, placés à l'intérieur de la forme du territoire, au point le plus éloigné de ses
-bords. Le compteur SHALL rester lisible quel que soit le niveau de zoom autorisé.
+son nombre d'armées, placés à l'intérieur de la forme du territoire (sur son plus grand morceau pour
+un territoire en plusieurs îles). Le compteur SHALL rester lisible quel que soit le niveau de zoom
+autorisé.
 
 #### Scenario: Compteur à jour
 
@@ -53,8 +54,13 @@ bords. Le compteur SHALL rester lisible quel que soit le niveau de zoom autoris�
 
 #### Scenario: Pion à l'intérieur du territoire
 
-- **WHEN** on calcule la position du pion d'un territoire de forme concave
-- **THEN** cette position est à l'intérieur de la forme du territoire
+- **WHEN** on calcule la position du pion de chacun des 42 territoires
+- **THEN** chaque position est à l'intérieur de la forme de son territoire
+
+#### Scenario: Territoire en plusieurs îles
+
+- **WHEN** on calcule la position du pion de la Grande-Bretagne, formée de deux îles
+- **THEN** la position est à l'intérieur de la plus grande des deux îles
 
 ### Requirement: Liaisons maritimes
 
@@ -72,6 +78,16 @@ travers toute la carte.
 
 - **WHEN** le plateau est affiché
 - **THEN** la liaison Alaska–Kamtchatka part de chaque territoire vers le bord de carte le plus proche
+
+### Requirement: Noms des continents
+
+Le nom français de chaque continent et son bonus SHALL être affichés en pleine mer, près du continent,
+sans recouvrir de territoire.
+
+#### Scenario: Étiquette de l'Océanie
+
+- **WHEN** le plateau est affiché
+- **THEN** l'étiquette « Océanie +2 » est visible en mer près de l'Océanie
 
 ### Requirement: Fluidité
 

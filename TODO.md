@@ -8,8 +8,9 @@ change correspondant ; ce fichier ne suit que les grandes étapes et les points 
 - [ ] Relire les artefacts des 7 changes dans `openspec/changes/`.
 - [ ] Valider chacune des [simplifications et adaptations de règles](#simplifications-et-adaptations-de-règles)
   ci-dessous, ou demander sa correction dans la spec concernée.
-- [ ] Trouver la source de la carte SVG du plateau : une carte libre (Wikimedia Commons) à
-  redécouper, ou un SVG existant.
+- [x] Trouver la source de la carte du plateau : données récupérées dans `data/maps/classic/`
+  (voir `SOURCE.md`).
+- [x] Adapter `add-classic-rules-engine` et `add-3d-board` à ces données.
 
 ## Simplifications et adaptations de règles
 
@@ -89,8 +90,7 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ### 2. `add-3d-board` — plateau 3D
 
-- [ ] Lancer `pnpm install` après l'ajout de three, TresJS et polylabel (tâche 1.1).
-- [ ] Produire `src/assets/maps/classic.svg` avec les identifiants de territoires du moteur.
+- [ ] Lancer `pnpm install` après l'ajout de three et TresJS (tâche 1.1).
 - [ ] Implémenter les [tâches](openspec/changes/add-3d-board/tasks.md).
 - [ ] Ajuster visuellement la teinte de l'océan et la palette des joueurs.
 - [ ] Archiver le change.

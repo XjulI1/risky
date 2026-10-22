@@ -3,17 +3,30 @@
 ## Context
 
 Le moteur (`add-classic-rules-engine`) expose un `GameState` sérialisable et la carte classique
-(identifiants, continents, adjacences), mais aucune géométrie. Ce change ajoute la représentation
-visuelle. Motivation : voir proposal.md ; exigences : `specs/`.
+(identifiants, continents, adjacences), construite depuis `data/maps/classic/`. Ce même dossier
+contient déjà toute la géométrie nécessaire au plateau (provenance et licences dans `SOURCE.md`) :
+
+- `territories.json` : `viewBox` `[23, 18, 709, 466]` et, pour chaque territoire, son contour en
+  données de chemin SVG (`d`) et un point d'ancrage d'étiquette (`cx`, `cy`) ;
+- `sea-routes.json` : 21 liaisons maritimes avec le point le plus proche sur chaque côte (`pa`,
+  `pb`), et deux amorces de bord de carte (`wrap`) pour Alaska–Kamtchatka ;
+- `continent-labels.json` : position en mer de l'étiquette de chaque continent.
+
+Constats faits sur ces données : les contours n'utilisent que les commandes `M`, `L`, `C` et `z` en
+coordonnées absolues ; l'Indonésie compte 4 sous-chemins et la Grande-Bretagne 2, tous des îles
+pleines (aucun trou) ; le point d'ancrage de la Grande-Bretagne tombe en mer, tous les autres sont
+à l'intérieur de leur territoire.
+
+Motivation : voir proposal.md ; exigences : `specs/`.
 
 ## Goals / Non-Goals
 
 **Goals :**
 
 - Un composant `GameBoard` sans état de jeu propre : `props` en entrée, événements en sortie.
-- La géométrie de la carte comme donnée éditable (SVG), pas comme code.
-- Toute la logique calculable (parsing, position des pions, modèle de vue, surbrillances,
-  distinction clic/glisser) en fonctions pures testées avec Vitest.
+- Utiliser les données récupérées telles quelles, sans les modifier ni les recalculer.
+- Toute la logique calculable (conversion des contours, ancrages, liaisons, modèle de vue,
+  distinction clic/glisser, cadrage) en fonctions pures testées avec Vitest.
 
 **Non-Goals :**
 
@@ -26,51 +39,66 @@ visuelle. Motivation : voir proposal.md ; exigences : `specs/`.
 
 ```
 src/
-  assets/maps/classic.svg
   board/
-    geometry/svgMap.ts         SVG → formes par territoire (pur)
+    geometry/pathData.ts       données de chemin SVG → contours (pur)
+    geometry/mapGeometry.ts    territories.json → formes en coordonnées monde (pur)
     geometry/anchors.ts        point d'ancrage du pion (pur)
-    geometry/seaLinks.ts       liaisons maritimes à tracer (pur)
+    geometry/seaRoutes.ts      sea-routes.json → segments en coordonnées monde (pur)
     boardViewModel.ts          GameState + surbrillances → données d'affichage (pur)
     tapDetector.ts             distinction toucher bref / glisser (pur)
     GameBoard.vue              TresCanvas, caméra, lumières, océan
     TerritoryMesh.vue
     ArmyPawn.vue
     SeaLink.vue
+    ContinentLabel.vue
     useBoardCamera.ts
 ```
 
-### Source de la carte : SVG extrudé
+### Contours : petit lecteur de chemins plutôt que `SVGLoader`
 
-Le SVG contient un `<path id="<territoryId>">` par territoire (plusieurs sous-chemins pour les
-territoires en plusieurs îles) et rien d'autre. Point de départ : une carte classique de Risk sous
-licence libre (Wikimedia Commons), redécoupée et renommée dans Inkscape ; à défaut, tracé manuel en
-s'appuyant sur une carte du plateau. Le projet n'étant pas publié, la licence n'est pas bloquante.
+`pathData.ts` lit les données de chemin et produit, pour chaque sous-chemin, une suite d'opérations
+`moveTo`, `lineTo` et `bezierCurveTo` appliquées à une `THREE.Shape`. Il ne gère que les commandes
+présentes dans les données (`M`, `L`, `C`, `z`) et lève une erreur explicite sur toute autre, ce qui
+rend visible une future donnée inattendue.
 
-Au chargement, `SVGLoader` (addons de Three.js) convertit chaque chemin en `Shape`, puis en
-`ExtrudeGeometry` peu profonde avec un léger biseau. Le SVG étant en coordonnées écran (Y vers le bas),
-la conversion inverse l'axe Y et ramène la carte à une taille monde fixe (largeur 100 unités) centrée
-sur l'origine, dans le plan XZ.
+Alternative écartée : `SVGLoader` des addons de Three.js. Il attend un document SVG et s'appuie sur
+`DOMParser`, absent de l'environnement de test `node` ; il faudrait reconstruire un document à partir
+du JSON pour n'en utiliser qu'une petite partie.
 
-Alternatives écartées : GeoJSON réel (projection et fusion de pays, trop de prétraitement pour un
-plateau stylisé) ; modèle glTF (demande de modéliser dans Blender, moins facile à corriger).
+Chaque sous-chemin devient une forme pleine distincte, rattachée au même territoire (pas de gestion
+des trous, absents des données ; un test le vérifie en contrôlant qu'aucun sous-chemin n'est contenu
+dans un autre).
 
-Le SVG est importé avec le suffixe `?raw` de Vite, ce qui permet de tester le parsing sous Vitest à
-partir du même fichier.
+### Repère monde
 
-### Position des pions : pôle d'inaccessibilité
+`mapGeometry.ts` convertit les coordonnées du `viewBox` vers le plan XZ : la carte est ramenée à
+100 unités de large, centrée sur l'origine, l'axe Y du SVG (vers le bas) devenant l'axe Z. La même
+fonction de conversion sert aux contours, aux ancrages, aux liaisons maritimes et aux étiquettes de
+continent. Chaque forme est extrudée en `ExtrudeGeometry` peu profonde avec un léger biseau.
 
-Le centroïde d'une forme concave peut tomber hors de la forme (Amérique centrale, Indonésie). La
-bibliothèque `polylabel` calcule le point intérieur le plus éloigné des bords, sur le plus grand
-morceau du territoire. Un fichier `anchorOverrides` permet de corriger à la main un territoire dont
-le point calculé est mal placé visuellement.
+### Ancrage des pions : données + corrections
 
-### Liaisons maritimes : calculées, pas saisies
+Le point d'ancrage d'un pion est le couple `cx`, `cy` de `territories.json`, sauf correction déclarée
+dans `anchorOverrides` (constante de `anchors.ts`). La Grande-Bretagne, dont l'ancrage tombe en mer,
+y reçoit un point à l'intérieur de sa plus grande île. Un test vérifie que chacun des 42 ancrages
+retenus est à l'intérieur de la forme de son territoire (sur son plus grand morceau pour les
+territoires en plusieurs îles).
 
-`seaLinks.ts` parcourt les adjacences du moteur et retient celles dont les deux formes ne se touchent
-pas (distance minimale entre contours au-delà d'un seuil). Une liaison est tracée entre les points de
-contour les plus proches. Les adjacences qui traversent le bord de carte (Alaska–Kamtchatka) sont
-déclarées dans une courte liste et tracées en deux demi-segments vers les bords.
+Alternative écartée : recalculer tous les ancrages avec `polylabel` (pôle d'inaccessibilité). Une
+dépendance de plus pour corriger un seul territoire.
+
+### Liaisons maritimes : données telles quelles
+
+`seaRoutes.ts` convertit chaque route de `sea-routes.json` en segment pointillé de `pa` à `pb`, et
+chaque amorce `wrap` en segment partant de `from` jusqu'au bord `toX` de la carte. Un test vérifie
+que chaque route correspond à une adjacence du moteur et que l'adjacence Alaska–Kamtchatka est
+représentée par les deux amorces.
+
+### Étiquettes de continent
+
+`ContinentLabel` affiche en mer, aux positions de `continent-labels.json`, le nom français du
+continent (fourni par la carte du moteur) et son bonus, en texte DOM via le composant `Html` de
+cientos, comme les compteurs.
 
 ### Modèle de vue
 
@@ -120,12 +148,14 @@ surbrillances et les adjacences visuellement. Cet écran sera remplacé par `add
 
 ## Risks / Trade-offs
 
-- [Le SVG trouvé ne correspond pas exactement au découpage classique] → test d'adéquation
-  SVG ↔ moteur, et retouche dans Inkscape.
+- [Carte peu détaillée une fois en relief et zoomée] → contours d'une carte de plateau, pas d'une
+  carte géographique : c'est le style recherché ; le biseau et l'éclairage donnent le relief.
+- [Licence CC BY-SA 3.0 de la géométrie] → sans effet pour un projet personnel ; à respecter
+  (attribution, même licence) si le projet est un jour diffusé. `SOURCE.md` porte l'attribution.
 - [Ombres et shader d'océan trop coûteux sur téléphone] → réglage de qualité automatique selon
   `devicePixelRatio` et le type de pointeur ; ombres coupées si besoin.
-- [42 éléments `Html` en DOM ralentissent le déplacement de caméra] → si mesuré, basculer vers des
-  sprites à texture canvas, sans changer l'API du composant.
+- [Éléments `Html` en DOM (42 compteurs + 6 étiquettes) qui ralentissent le déplacement de caméra] →
+  si mesuré, basculer vers des sprites à texture canvas, sans changer l'API du composant.
 - [Petits territoires difficiles à toucher au zoom minimal] → rayon de tolérance tactile et zoom
   maximal assez fort.
 

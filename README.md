@@ -32,6 +32,15 @@ Le moteur de règles est écrit en TypeScript pur, sans dépendance à Vue ni à
 déterministe (même graine et mêmes actions donnent la même partie) et son état se sérialise
 directement en JSON. L'interface, le plateau 3D et l'IA s'appuient tous sur ce moteur.
 
+## Données de la carte
+
+La carte classique (contours des territoires, adjacences, liaisons maritimes) se trouve dans
+`data/maps/classic/`. Elle provient du projet [RISK](https://github.com/kopy-kat/risk) de Konrad Kopp ;
+la géométrie est dérivée de
+[`Risk_board.svg`](https://commons.wikimedia.org/wiki/File:Risk_board.svg) de Gr0gmint et reste sous
+licence [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Provenance et licences en
+détail : [`data/maps/classic/SOURCE.md`](data/maps/classic/SOURCE.md).
+
 ## Démarrage
 
 Une fois le socle du projet en place (premier change), les commandes seront :

@@ -15,8 +15,8 @@
 
 ## 3. Carte classique (`world-map`)
 
-- [ ] 3.1 Écrire les tests d'invariants de la carte : 42 territoires, 6 continents, tailles et bonus, identifiants uniques, symétrie, absence de boucle, connexité, liaisons maritimes Alaska–Kamtchatka, Brésil–Afrique du Nord, Siam–Indonésie.
-- [ ] 3.2 Saisir `src/engine/maps/classic.ts` (identifiants, noms français, continents, bonus, adjacences du plateau classique) ; vérifier que les tests 3.1 passent.
+- [ ] 3.1 Écrire les tests d'invariants de la carte : 42 territoires, 6 continents, tailles et bonus, identifiants uniques et identiques entre `board.json` et `territories.json`, symétrie, absence de boucle, connexité, 83 liaisons, liaisons maritimes Alaska–Kamtchatka, Brésil–Afrique du Nord, Siam–Indonésie, nom français pour chaque territoire et chaque continent.
+- [ ] 3.2 Implémenter `src/engine/maps/classic.ts` à partir de `data/maps/classic/board.json` et `territories.json` (champs `id` et `continent` seulement), avec la table des noms français, et activer `resolveJsonModule` ; vérifier que les tests 3.1 passent et que les fichiers de `data/maps/classic/` sont inchangés.
 
 ## 4. Création et mise en place (`game-setup`)
 
