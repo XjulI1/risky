@@ -32,6 +32,7 @@ const roll: Extract<GameEvent, { type: 'diceRolled' }> = {
   to: 'brazil',
   attackerDice: [6, 5, 1],
   defenderDice: [4, 4],
+  defenderBonus: 0,
   attackerLosses: 0,
   defenderLosses: 2,
 }

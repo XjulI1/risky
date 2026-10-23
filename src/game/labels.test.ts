@@ -5,7 +5,8 @@ describe('PHASE_LABELS', () => {
   it('names every phase in French', () => {
     expect(PHASE_LABELS.reinforce).toBe('Renforts')
     expect(PHASE_LABELS.conquestMove).toBe('Déplacement après conquête')
-    expect(Object.values(PHASE_LABELS)).toHaveLength(8)
+    expect(PHASE_LABELS.capitalChoice).toBe('Choix de la capitale')
+    expect(Object.values(PHASE_LABELS)).toHaveLength(9)
   })
 })
 

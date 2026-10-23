@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onUnmounted } from 'vue'
-import type { Highlights } from '../../board/boardViewModel'
+import { capitalColors, type Highlights } from '../../board/boardViewModel'
 import GameBoard, { type BoardTransit } from '../../board/GameBoard.vue'
 import { classicMap, type TerritoryId } from '../../engine'
 import { ANIMATION_DURATIONS } from '../../game/animationSpeed'
 import { provideGameSession, startGameSession, type GameStart } from '../../game/useGameSession'
 import AmountPicker from '../hud/AmountPicker.vue'
 import AttackPanel from '../hud/AttackPanel.vue'
+import CapitalLostAlert from '../hud/CapitalLostAlert.vue'
+import CapitalPanel from '../hud/CapitalPanel.vue'
+import CapitalsRevealedNotice from '../hud/CapitalsRevealedNotice.vue'
 import CardHand from '../hud/CardHand.vue'
 import DiceTray from '../hud/DiceTray.vue'
 import DrawnCardNotice from '../hud/DrawnCardNotice.vue'
@@ -45,6 +48,8 @@ const {
   handoffTo,
   drawnCard,
   convertedMission,
+  revealedCapitals,
+  capitalLost,
   error,
   thinkingPlayer,
   aiFocus,
@@ -159,6 +164,7 @@ function trade(cardIds: [number, number, number]) {
         :state="displayedState"
         :highlights="highlights"
         :transit="transit"
+        :capitals="capitalColors(displayedState)"
         @select="onBoardSelect"
       />
       <DiceTray
@@ -184,6 +190,18 @@ function trade(cardIds: [number, number, number]) {
         v-if="showOverlays && convertedMission && !handoffTo && !drawnCard"
         :player="convertedMission"
         @dismiss="session.acknowledgeConvertedMission()"
+      />
+      <CapitalLostAlert
+        v-if="showOverlays && capitalLost && !winner"
+        :player="capitalLost.player"
+        :territory="capitalLost.territory"
+        @dismiss="session.acknowledgeCapitalLost()"
+      />
+      <CapitalsRevealedNotice
+        v-if="showOverlays && revealedCapitals && !handoffTo && !drawnCard"
+        :capitals="revealedCapitals"
+        :players="displayedState.players"
+        @dismiss="session.acknowledgeRevealedCapitals()"
       />
       <GameOverOverlay
         v-if="winner"
@@ -217,6 +235,12 @@ function trade(cardIds: [number, number, number]) {
           :confirm-label="amountPanel.confirmLabel"
           :cancellable="amountPanel.cancellable"
           @confirm="session.input({ kind: 'confirm', amount: $event })"
+          @cancel="session.input({ kind: 'cancel' })"
+        />
+        <CapitalPanel
+          v-if="view.panel.kind === 'capitalConfirm'"
+          :label="view.panel.label"
+          @confirm="session.input({ kind: 'confirm' })"
           @cancel="session.input({ kind: 'cancel' })"
         />
         <AttackPanel

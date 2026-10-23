@@ -12,6 +12,7 @@ const props = defineProps<{
 const HINTS: Partial<Record<GameState['phase']['kind'], string>> = {
   claim: 'Touchez un territoire libre pour le revendiquer.',
   placement: 'Touchez un de vos territoires pour y placer une armée.',
+  capitalChoice: 'Touchez un de vos territoires pour en faire votre capitale, en secret.',
   reinforce: 'Touchez un de vos territoires pour y déployer des renforts.',
   eliminationTrade: 'Échangez vos cartes puis déployez les armées obtenues.',
   conquestMove: "Choisissez combien d'armées avancer dans le territoire conquis.",

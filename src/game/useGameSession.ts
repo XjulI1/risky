@@ -25,6 +25,12 @@ export type AiFocus = {
   to: TerritoryId
 }
 
+/** A capital a human has just lost. */
+export type LostCapital = {
+  player: Player
+  territory: TerritoryId
+}
+
 /** A running game as seen by the interface: engine truth, what is on screen and what the player is doing. */
 export type GameSession = {
   engineState: ShallowRef<GameState>
@@ -39,6 +45,8 @@ export type GameSession = {
   handoffTo: ShallowRef<Player | null>
   drawnCard: ShallowRef<Card | null>
   convertedMission: ShallowRef<Player | null>
+  revealedCapitals: ShallowRef<Record<PlayerId, TerritoryId> | null>
+  capitalLost: ShallowRef<LostCapital | null>
   thinkingPlayer: ComputedRef<Player | null>
   aiFocus: ShallowRef<AiFocus | null>
   journal: ShallowRef<JournalEntry[]>
@@ -53,6 +61,8 @@ export type GameSession = {
   acknowledgeHandoff: () => void
   acknowledgeDrawnCard: () => void
   acknowledgeConvertedMission: () => void
+  acknowledgeRevealedCapitals: () => void
+  acknowledgeCapitalLost: () => void
   setSpeed: (speed: AnimationSpeed) => void
   dismissStorageWarning: () => void
   dispose: () => void
@@ -125,6 +135,28 @@ function convertedHumans(state: GameState, events: GameEvent[]): PlayerId[] {
   )
 }
 
+function revealedCapitalsOf(events: GameEvent[]): Record<PlayerId, TerritoryId> | null {
+  const revealed = events.find((event) => event.type === 'capitalsRevealed')
+  return revealed?.type === 'capitalsRevealed' ? revealed.capitals : null
+}
+
+function capitalLostByHuman(state: GameState, events: GameEvent[]): LostCapital | null {
+  const lost = events.findLast((event, index) => {
+    const conquest = events[index - 1]
+    return (
+      event.type === 'capitalCaptured' &&
+      conquest?.type === 'territoryConquered' &&
+      conquest.previousOwner === event.from &&
+      event.by !== event.from
+    )
+  })
+  if (lost?.type !== 'capitalCaptured') {
+    return null
+  }
+  const player = state.players.find((candidate) => candidate.id === lost.from)
+  return player?.kind === 'human' ? { player, territory: lost.territory } : null
+}
+
 function startedTurnOf(state: GameState, events: GameEvent[]): Player | null {
   const started = events.findLast((event) => event.type === 'turnStarted')
   return started === undefined ? null : (state.players.find((player) => player.id === started.playerId) ?? null)
@@ -150,6 +182,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   const drawnCard = shallowRef<Card | null>(null)
   const convertedMission = shallowRef<Player | null>(null)
   const pendingConversions = new Set<PlayerId>()
+  const revealedCapitals = shallowRef<Record<PlayerId, TerritoryId> | null>(null)
+  const capitalLost = shallowRef<LostCapital | null>(null)
   const aiFocus = shallowRef<AiFocus | null>(null)
   const turnNumber = ref(options.history?.turnNumber ?? initialTurnNumber(initial))
   const journal = shallowRef<JournalEntry[]>(options.history?.journal ?? openingJournal(initial, turnNumber.value))
@@ -165,7 +199,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   let disposed = false
 
   const scheduleAiAction = () => {
-    if (disposed || aiTimer !== null || isPresenting.value || drawnCard.value !== null) {
+    if (disposed || aiTimer !== null || isPresenting.value || drawnCard.value !== null || revealedCapitals.value !== null) {
       return
     }
     const action = nextAiAction(engineState.value, turnProgress)
@@ -263,6 +297,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     engineState.value = result.state
     lastEvents.value = result.events
     drawnCard.value = drawnCardOf(result.state, result.events)
+    revealedCapitals.value = revealedCapitalsOf(result.events) ?? revealedCapitals.value
+    capitalLost.value = capitalLostByHuman(result.state, result.events) ?? capitalLost.value
     handoffTo.value = needsHandoff(before, result.state)
     notifyConversion(result.state, result.events)
     save()
@@ -298,6 +334,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     handoffTo,
     drawnCard,
     convertedMission,
+    revealedCapitals,
+    capitalLost,
     thinkingPlayer,
     aiFocus,
     journal,
@@ -324,6 +362,13 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     },
     acknowledgeConvertedMission: () => {
       convertedMission.value = null
+    },
+    acknowledgeCapitalLost: () => {
+      capitalLost.value = null
+    },
+    acknowledgeRevealedCapitals: () => {
+      revealedCapitals.value = null
+      scheduleAiAction()
     },
     setSpeed: (next: AnimationSpeed) => {
       speed.value = next

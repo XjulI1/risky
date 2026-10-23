@@ -23,6 +23,25 @@ function finishedGame(secretMissions: boolean): GameState {
   return state
 }
 
+describe('end of a game in the capitals mode', () => {
+  function capitalsGame(): GameState {
+    const state = finishedGame(false)
+    state.settings = { ...state.settings, capitals: true }
+    state.capitals = { p1: 'egypt', p2: 'brazil', p3: 'peru' }
+    return state
+  }
+
+  it('tells that the winner controls every capital', () => {
+    const state = capitalsGame()
+    state.winReason = 'capitals'
+    expect(`Alice remporte la partie ${winReasonText(state)}`).toBe('Alice remporte la partie en contrôlant toutes les capitales')
+  })
+
+  it('tells that the winner eliminated all its opponents', () => {
+    expect(winReasonText(capitalsGame())).toBe('en éliminant tous ses adversaires')
+  })
+})
+
 describe('end of a game with missions', () => {
   it('tells that the winner accomplished its mission', () => {
     const state = finishedGame(true)

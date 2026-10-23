@@ -36,6 +36,16 @@ export const HIGHLIGHT_STYLES: Record<Highlight, HighlightStyle> = {
   selected: { lift: 0.8, emissiveIntensity: 0.5 },
 }
 
+/** Color of the player whose capital each revealed capital is, by territory; empty before the reveal. */
+export function capitalColors(state: GameState): Partial<Record<TerritoryId, string>> {
+  return Object.fromEntries(
+    Object.entries(state.capitals ?? {}).flatMap(([playerId, territory]) => {
+      const color = state.players.find((player) => player.id === playerId)?.color
+      return color === undefined ? [] : [[territory, color]]
+    }),
+  )
+}
+
 /** Turns a game state and the caller's highlights into the display data of the 42 territories. */
 export function boardViewModel(state: GameState, highlights: Highlights): Record<TerritoryId, TerritoryView> {
   const colors = new Map(state.players.map((player) => [player.id, player.color]))

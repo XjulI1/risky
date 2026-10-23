@@ -3,6 +3,7 @@ import {
   attackTargets,
   bonusTerritory,
   classicMap,
+  defenderBonusOn,
   FORCED_TRADE_HAND_SIZE,
   tradeableSets,
   tradeValue,
@@ -57,6 +58,7 @@ export type ConquestMove = Extract<Phase, { kind: 'conquestMove' }>
 export type Strategy = {
   claim: (context: DecisionContext) => TerritoryId
   place: (context: DecisionContext) => TerritoryId
+  capital: (context: DecisionContext) => TerritoryId
   trade: (context: DecisionContext) => CardSet | null
   deploy: (context: DecisionContext, reserve: number) => Deployment
   attack: (context: DecisionContext) => AttackOption | null
@@ -100,13 +102,13 @@ export function bestSet(view: PlayerView): CardSet | null {
   return best
 }
 
-/** Every attack the player can launch, with its probability of conquest. */
+/** Every attack the player can launch, with its probability of conquest, the defense bonus of a capital included. */
 export function attackOptions(view: PlayerView, playerId: PlayerId): AttackOption[] {
   return attackOrigins(view, playerId).flatMap((from) =>
     attackTargets(view, from).map((to) => ({
       from,
       to,
-      probability: conquestProbability(armiesOn(view, from), armiesOn(view, to), view.settings),
+      probability: conquestProbability(armiesOn(view, from), armiesOn(view, to), view.settings, defenderBonusOn(view, to)),
     })),
   )
 }

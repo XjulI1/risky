@@ -62,11 +62,11 @@ describe('saved game', () => {
     expect(storage.values.has(SAVE_KEY)).toBe(false)
   })
 
-  it('is at version 2 since the secret missions', () => {
-    expect(SAVE_FORMAT_VERSION).toBe(2)
+  it('is at version 3 since the capitals mode', () => {
+    expect(SAVE_FORMAT_VERSION).toBe(3)
   })
 
-  it.each([1, 3])('treats a save of version %i as unreadable and deletes it', (formatVersion) => {
+  it.each([1, 2, 4])('treats a save of version %i as unreadable and deletes it', (formatVersion) => {
     const storage = storageWith({ ...savedGame(), formatVersion })
     expect(loadSavedGame(storage)).toEqual({ kind: 'unreadable' })
     expect(storage.values.has(SAVE_KEY)).toBe(false)
@@ -85,6 +85,12 @@ describe('saved game', () => {
   it('treats an engine state without missions as unreadable', () => {
     const game: SavedGame = structuredClone(savedGame())
     delete (game.engineState as Partial<GameState>).missions
+    expect(loadSavedGame(storageWith(game))).toEqual({ kind: 'unreadable' })
+  })
+
+  it('treats an engine state without capitals as unreadable', () => {
+    const game: SavedGame = structuredClone(savedGame())
+    delete (game.engineState as Partial<GameState>).capitals
     expect(loadSavedGame(storageWith(game))).toEqual({ kind: 'unreadable' })
   })
 

@@ -7,10 +7,12 @@ import { classicMap, type GameState, type TerritoryId } from '../engine'
 import ArmyPawn from './ArmyPawn.vue'
 import ArmyTransit from './ArmyTransit.vue'
 import BoardControls, { type HoveredTerritory } from './BoardControls.vue'
+import CapitalMarker from './CapitalMarker.vue'
 import { boardViewModel, HIGHLIGHT_STYLES, type Highlights } from './boardViewModel'
 import { CAMERA_FOV } from './cameraFraming'
 import ContinentLabel from './ContinentLabel.vue'
 import { territoryAnchor } from './geometry/anchors'
+import { capitalLayout } from './geometry/capitalLayout'
 import { mapGeometry, svgToWorld } from './geometry/mapGeometry'
 import { seaRouteSegments, wrapStubs } from './geometry/seaRoutes'
 import { HOVER_LIFT } from './boardLayout'
@@ -30,6 +32,7 @@ const props = defineProps<{
   state: GameState
   highlights?: Highlights
   transit?: BoardTransit | null
+  capitals?: Partial<Record<TerritoryId, string>>
 }>()
 
 const emit = defineEmits<{
@@ -53,6 +56,10 @@ const view = computed(() => boardViewModel(props.state, props.highlights ?? {}))
 const hovered = ref<HoveredTerritory | null>(null)
 const controls = ref<InstanceType<typeof BoardControls> | null>(null)
 
+function pawnPosition(id: TerritoryId) {
+  return props.capitals?.[id] === undefined ? territoryAnchor(id) : capitalLayout(id).pawn
+}
+
 const territories = computed(() =>
   classicMap.territoryIds.flatMap((id) => {
     const geometry = mapGeometry[id]
@@ -61,12 +68,14 @@ const territories = computed(() =>
       return []
     }
     const hoverLift = hovered.value?.id === id ? HOVER_LIFT : 0
+    const capitalColor = props.capitals?.[id]
     return [
       {
         id,
         geometry,
         view: territoryView,
-        anchor: territoryAnchor(id),
+        anchor: pawnPosition(id),
+        capital: capitalColor === undefined ? null : { color: capitalColor, position: capitalLayout(id).marker },
         lift: HIGHLIGHT_STYLES[territoryView.highlight].lift + hoverLift,
       },
     ]
@@ -126,6 +135,12 @@ const hoveredName = computed(() =>
           :armies="territory.view.armies"
           :lift="territory.lift"
         />
+        <CapitalMarker
+          v-if="territory.capital"
+          :position="territory.capital.position"
+          :color="territory.capital.color"
+          :lift="territory.lift"
+        />
       </template>
 
       <SeaLink
@@ -152,8 +167,8 @@ const hoveredName = computed(() =>
       <ArmyTransit
         v-if="props.transit"
         :key="props.transit.key"
-        :from="territoryAnchor(props.transit.from)"
-        :to="territoryAnchor(props.transit.to)"
+        :from="pawnPosition(props.transit.from)"
+        :to="pawnPosition(props.transit.to)"
         :color="props.transit.color"
         :duration-ms="props.transit.durationMs"
       />

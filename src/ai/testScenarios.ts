@@ -18,7 +18,7 @@ import { chooseAction } from './index'
 import { playerView } from './playerView'
 import type { TurnProgress } from './strategy'
 
-const COLORS = ['#d64541', '#3a7bd5', '#3fa34d', '#e3b23c', '#8e5cc4', '#e8803a']
+const COLORS = ['#d64541', '#3a7bd5', '#3fa34d', '#e3b23c', '#8e5cc4', '#8d5a3b']
 
 export function aiPlayers(levels: AiLevel[]): PlayerConfig[] {
   return levels.map((level, i) => ({
@@ -47,6 +47,7 @@ export type Scenario = {
   hands?: Record<PlayerId, Card[]>
   settings?: Partial<GameSettings>
   missions?: Record<PlayerId, Mission>
+  capitals?: Record<PlayerId, TerritoryId>
 }
 
 export function scenario({
@@ -58,6 +59,7 @@ export function scenario({
   hands = {},
   settings = {},
   missions,
+  capitals,
 }: Scenario): GameState {
   const state = newAiGame(Array.from({ length: playerCount }, () => 'normal'), 1, settings)
   for (const id of classicMap.territoryIds) {
@@ -68,6 +70,7 @@ export function scenario({
   state.phase = phase
   state.hands = { ...state.hands, ...hands }
   state.missions = missions ?? null
+  state.capitals = capitals ?? null
   return state
 }
 

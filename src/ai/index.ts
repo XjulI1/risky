@@ -59,6 +59,8 @@ export function chooseAction(view: PlayerView, level: AiLevel, turn: TurnProgres
       return { type: 'claimTerritory', playerId, territory: strategy.claim(context) }
     case 'placement':
       return { type: 'placeInitialArmy', playerId, territory: strategy.place(context) }
+    case 'capitalChoice':
+      return { type: 'chooseCapital', playerId, territory: strategy.capital(context) }
     case 'reinforce':
     case 'eliminationTrade':
       return reinforcementAction(strategy, context, phase.reserve)

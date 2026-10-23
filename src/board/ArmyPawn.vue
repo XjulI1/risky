@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Html } from '@tresjs/cientos'
 import { computed } from 'vue'
-import { TILE_HEIGHT } from './boardLayout'
+import { PAWN_RADIUS, TILE_HEIGHT } from './boardLayout'
 import type { MapPoint } from './geometry/polygon'
 
 const props = defineProps<{
@@ -20,7 +20,7 @@ const base = computed(() => TILE_HEIGHT + props.lift)
       :position-y="0.12"
       cast-shadow
     >
-      <TresCylinderGeometry :args="[0.55, 0.65, 0.24, 8]" />
+      <TresCylinderGeometry :args="[0.55, PAWN_RADIUS, 0.24, 8]" />
       <TresMeshStandardMaterial
         :color="props.color"
         :roughness="0.6"
@@ -50,7 +50,7 @@ const base = computed(() => TILE_HEIGHT + props.lift)
       center
       pointer-events="none"
       :position="[0, 1.6, 0]"
-      :z-index-range="[10, 0]"
+      :z-index-range="[20, 11]"
     >
       <span class="army-count">{{ props.armies }}</span>
     </Html>

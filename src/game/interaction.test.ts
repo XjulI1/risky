@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { attackOrigins, classicMap, createGame, type Card, type GameSettings, type GameState } from '../engine'
+import { capitalColors } from '../board/boardViewModel'
 import { IDLE, reduceInteraction, viewOf, type Interaction, type InteractionInput } from './interaction'
 
 function game(settings: Partial<GameSettings> = {}): GameState {
@@ -78,6 +79,53 @@ describe('setup', () => {
       territory: 'peru',
     })
     expect(viewOf(state, IDLE).armiesToPlace).toBe(12)
+  })
+})
+
+describe('capital choice', () => {
+  const choosing = () => board({ kind: 'capitalChoice', pending: { p3: 'brazil' } }, { egypt: 3, peru: 1 }, { capitals: true })
+
+  it('offers own territories', () => {
+    expect(selectable(choosing())).toEqual(['egypt', 'peru'])
+  })
+
+  it('asks for a confirmation on tap', () => {
+    const state = choosing()
+    const { interaction, action } = reduceInteraction(state, IDLE, tap('egypt'))
+    expect(action).toBeUndefined()
+    expect(interaction).toEqual({ kind: 'capitalConfirm', territory: 'egypt' })
+    expect(viewOf(state, interaction).panel).toEqual({
+      kind: 'capitalConfirm',
+      territory: 'egypt',
+      label: 'Faire de Égypte votre capitale ?',
+    })
+    expect(viewOf(state, interaction).highlights.egypt).toBe('selected')
+  })
+
+  it('ignores a tap on a territory of another player', () => {
+    expect(reduceInteraction(choosing(), IDLE, tap('brazil'))).toEqual({ interaction: IDLE })
+  })
+
+  it('chooses the capital on confirm', () => {
+    expect(reduceInteraction(choosing(), { kind: 'capitalConfirm', territory: 'egypt' }, { kind: 'confirm' })).toEqual({
+      interaction: IDLE,
+      action: { type: 'chooseCapital', playerId: 'p1', territory: 'egypt' },
+    })
+  })
+
+  it.each([{ kind: 'cancel' }, ocean] as InteractionInput[])('chooses nothing on $kind and keeps the territories selectable', (input) => {
+    const state = choosing()
+    const step = reduceInteraction(state, { kind: 'capitalConfirm', territory: 'egypt' }, input)
+    expect(step).toEqual({ interaction: IDLE })
+    expect(selectable(state, step.interaction)).toEqual(['egypt', 'peru'])
+  })
+
+  it('shows no capital chosen by another player before the reveal', () => {
+    const state = choosing()
+    const { highlights, panel } = viewOf(state, IDLE)
+    expect(highlights.brazil).toBeUndefined()
+    expect(panel).toEqual({ kind: 'none' })
+    expect(capitalColors(state)).toEqual({})
   })
 })
 

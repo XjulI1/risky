@@ -17,6 +17,7 @@ function settingsFor(game: number): GameSettings {
     defenderMaxDice: [2, 1, 2, 3, 2, 2, 1][game % 7] as number,
     fortifyMode: game % 2 === 0 ? 'connected' : 'adjacent',
     secretMissions: game % 5 !== 0 && game % 3 !== 1,
+    capitals: game % 3 === 1,
   }
 }
 
@@ -70,6 +71,8 @@ describe('games between AIs', () => {
   it('covers 2 to 6 players, every level and varied settings', () => {
     expect(new Set(results.map((result) => result.levels.length))).toEqual(new Set([2, 3, 4, 5, 6]))
     expect(results.filter((result) => result.settings.secretMissions).length).toBeGreaterThan(40)
+    expect(results.filter((result) => result.settings.capitals).length).toBeGreaterThan(30)
+    expect(new Set(results.filter((result) => result.settings.capitals).map((result) => result.levels.length))).toEqual(new Set([2, 3, 4, 5, 6]))
     expect(new Set(results.flatMap((result) => result.levels))).toEqual(new Set(LEVELS))
     expect(new Set(results.map((result) => JSON.stringify(result.settings))).size).toBeGreaterThan(20)
   })

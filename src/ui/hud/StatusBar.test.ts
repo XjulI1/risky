@@ -45,6 +45,15 @@ describe('StatusBar', () => {
     expect(wrapper.get('[data-testid="status-phase"]').text()).toBe('Déplacement après conquête')
   })
 
+  it('guides a human through the capital choice', () => {
+    const state = game({ kind: 'human' })
+    state.phase = { kind: 'capitalChoice', pending: {} }
+    const wrapper = mountBar(state)
+    expect(wrapper.get('[data-testid="status-title"]').text()).toBe('Alice')
+    expect(wrapper.get('[data-testid="status-phase"]').text()).toBe('Choix de la capitale')
+    expect(wrapper.get('[data-testid="status-hint"]').text()).toBe('Touchez un de vos territoires pour en faire votre capitale, en secret.')
+  })
+
   it('shows the armies left to place on the line of the phase', () => {
     const attacking = mountBar(game({ kind: 'human' }))
     expect(attacking.find('[data-testid="status-reserve"]').exists()).toBe(false)

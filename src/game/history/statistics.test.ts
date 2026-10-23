@@ -27,6 +27,7 @@ const roll = (attackerDice: number[], defenderDice: number[], attackerLosses: nu
   to: 'brazil',
   attackerDice,
   defenderDice,
+  defenderBonus: 0,
   attackerLosses,
   defenderLosses,
 })

@@ -9,3 +9,9 @@ export const SEA_LINK_HEIGHT = 0.08
 
 /** Height of the border lines above the tile tops, enough to stay clear of depth conflicts. */
 export const BORDER_ABOVE_TOP = 0.01
+
+/** Radius of the base of an army pawn. */
+export const PAWN_RADIUS = 0.65
+
+/** Radius of the base of a capital marker. */
+export const CAPITAL_MARKER_RADIUS = 0.38

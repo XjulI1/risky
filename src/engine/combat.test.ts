@@ -44,6 +44,72 @@ describe('resolveRoll', () => {
   })
 })
 
+describe('resolveRoll with a defender bonus', () => {
+  it('turns 6-2 against 5-1 on a capital into one loss on each side', () => {
+    expect(resolveRoll([6, 2], [5, 1], 1)).toEqual({
+      attackerDice: [6, 2],
+      defenderDice: [5, 1],
+      attackerLosses: 1,
+      defenderLosses: 1,
+    })
+  })
+
+  it('adds the bonus to the highest defending die only', () => {
+    expect(resolveRoll([2, 2], [1, 1], 1)).toMatchObject({ attackerLosses: 1, defenderLosses: 1 })
+  })
+
+  it('changes nothing without a bonus', () => {
+    expect(resolveRoll([6, 2], [5, 1], 0)).toEqual(resolveRoll([6, 2], [5, 1]))
+    expect(resolveRoll([6, 2], [5, 1])).toMatchObject({ attackerLosses: 0, defenderLosses: 2 })
+  })
+})
+
+describe('defense bonus of a capital', () => {
+  function capitalBattle(capitals: Record<string, string>, seed = 1): GameState {
+    const state = battle(30, 20, seed, { capitals: true })
+    assignTerritories(state, 'p3', ['argentina'], 1)
+    state.capitals = capitals
+    return state
+  }
+
+  function rollsOf(state: GameState): DiceRolled[] {
+    const result = attackBrazil(state)
+    if (!result.ok) throw new Error(result.error.code)
+    return rolls(result.events)
+  }
+
+  it('applies to every roll against a capital and records the dice as rolled', () => {
+    for (const seed of [1, 2, 3]) {
+      const events = rollsOf(capitalBattle({ p1: 'egypt', p2: 'brazil', p3: 'argentina' }, seed))
+      expect(events.length).toBeGreaterThan(0)
+      for (const roll of events) {
+        expect(roll.defenderBonus).toBe(1)
+        expect(resolveRoll(roll.attackerDice, roll.defenderDice, 1)).toMatchObject({
+          attackerLosses: roll.attackerLosses,
+          defenderLosses: roll.defenderLosses,
+        })
+        expect(roll.defenderDice.every((die) => die >= 1 && die <= 6)).toBe(true)
+      }
+    }
+  })
+
+  it('protects the current holder of a captured capital', () => {
+    const state = capitalBattle({ p1: 'egypt', p2: 'argentina', p3: 'brazil' })
+    expect(state.territories.brazil?.owner).toBe('p2')
+    expect(rollsOf(state).every((roll) => roll.defenderBonus === 1)).toBe(true)
+  })
+
+  it('does not apply to an ordinary territory', () => {
+    const events = rollsOf(capitalBattle({ p1: 'egypt', p2: 'peru', p3: 'argentina' }))
+    expect(events.every((roll) => roll.defenderBonus === 0)).toBe(true)
+  })
+
+  it('never applies in a classic game', () => {
+    const result = attackBrazil(battle(30, 20))
+    expect(result.ok && rolls(result.events).every((roll) => roll.defenderBonus === 0)).toBe(true)
+  })
+})
+
 describe('attack conditions', () => {
   it('rejects an origin with a single army', () => {
     expect(attackBrazil(battle(1, 3))).toMatchObject({ ok: false, error: { code: 'NOT_ENOUGH_ARMIES' } })

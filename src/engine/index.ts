@@ -1,3 +1,4 @@
+import { chooseCapital } from './capitals'
 import { tradeCards } from './cards'
 import { attack, endAttack, moveAfterConquest } from './combat'
 import { fortify, skipFortify } from './fortification'
@@ -5,11 +6,12 @@ import { claimTerritory, placeInitialArmy } from './placement'
 import { deploy } from './reinforcement'
 import { currentPlayer, ruleError } from './state'
 import type { Action, ActionResult, ActionType, GameEvent, GameState, PhaseKind, RuleError } from './types'
-import { endIfMissionAccomplished } from './victory'
+import { endIfObjectiveReached } from './victory'
 
 const ALLOWED_PHASES: Record<ActionType, readonly PhaseKind[]> = {
   claimTerritory: ['claim'],
   placeInitialArmy: ['placement'],
+  chooseCapital: ['capitalChoice'],
   tradeCards: ['reinforce', 'eliminationTrade'],
   deploy: ['reinforce', 'eliminationTrade'],
   attack: ['attack'],
@@ -19,7 +21,7 @@ const ALLOWED_PHASES: Record<ActionType, readonly PhaseKind[]> = {
   skipFortify: ['fortify'],
 }
 
-const SETUP_PHASES: readonly PhaseKind[] = ['claim', 'placement']
+const SETUP_PHASES: readonly PhaseKind[] = ['claim', 'placement', 'capitalChoice']
 
 function reject(error: RuleError): ActionResult {
   return { ok: false, error }
@@ -31,6 +33,8 @@ function handle(state: GameState, action: Action, events: GameEvent[]): RuleErro
       return claimTerritory(state, action, events)
     case 'placeInitialArmy':
       return placeInitialArmy(state, action, events)
+    case 'chooseCapital':
+      return chooseCapital(state, action, events)
     case 'tradeCards':
       return tradeCards(state, action, events)
     case 'deploy':
@@ -51,8 +55,8 @@ function handle(state: GameState, action: Action, events: GameEvent[]): RuleErro
 }
 
 /**
- * Validates an action against the current state and applies it, then ends the game if it accomplished
- * the mission of the player who played it (set-up actions excepted).
+ * Validates an action against the current state and applies it, then ends the game if the player who
+ * played it has accomplished its mission or holds every capital (set-up actions excepted).
  * Returns the new state and the events it caused, or the rule it breaks; the given state is never modified.
  */
 export function applyAction(state: GameState, action: Action): ActionResult {
@@ -73,11 +77,12 @@ export function applyAction(state: GameState, action: Action): ActionResult {
     return reject(error)
   }
   if (!SETUP_PHASES.includes(state.phase.kind)) {
-    endIfMissionAccomplished(next, action.playerId, events)
+    endIfObjectiveReached(next, action.playerId, events)
   }
   return { ok: true, state: next, events }
 }
 
+export { CAPITAL_DEFENSE_BONUS, capitalOwnerOf, defenderBonusOn, heldCapitals, holdsAllCapitals, isCapital } from './capitals'
 export { bonusTerritory, isValidSet, tradeValue } from './cards'
 export { resolveRoll } from './combat'
 export { areAdjacent, classicMap } from './maps/classic'

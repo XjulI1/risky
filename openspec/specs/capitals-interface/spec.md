@@ -1,22 +1,21 @@
-# Spec Delta
+# capitals-interface Specification
 
 ## Purpose
 
 Rendre le mode capitales jouable et lisible : l'activer, choisir sa capitale en secret, voir en
 permanence où sont les capitales, qui les tient et quand leur bonus de défense joue.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Option à la création
 
 Le formulaire de création SHALL proposer l'option « Mode capitales », décochée par défaut. Cocher
-« Mode capitales » SHALL décocher « Missions secrètes » et inversement, avec la mention « Les variantes
-missions et capitales s'excluent ».
+« Mode capitales » SHALL décocher « Missions secrètes » et inversement.
 
 #### Scenario: Exclusivité dans le formulaire
 
 - **WHEN** « Missions secrètes » est cochée et que l'utilisateur coche « Mode capitales »
-- **THEN** « Missions secrètes » est décochée et la mention d'exclusivité s'affiche
+- **THEN** « Missions secrètes » est décochée
 
 #### Scenario: Deux joueurs
 

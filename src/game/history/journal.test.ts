@@ -7,7 +7,7 @@ const players: Player[] = [
   { id: 'p2', name: 'Bob', color: '#3a7bd5', kind: 'ai', level: 'normal', isNeutral: false, eliminated: false },
 ]
 
-function roll(attackerDice: number[], defenderDice: number[], attackerLosses: number, defenderLosses: number): GameEvent {
+function roll(attackerDice: number[], defenderDice: number[], attackerLosses: number, defenderLosses: number, defenderBonus = 0): GameEvent {
   return {
     type: 'diceRolled',
     attacker: 'p1',
@@ -16,6 +16,7 @@ function roll(attackerDice: number[], defenderDice: number[], attackerLosses: nu
     to: 'brazil',
     attackerDice,
     defenderDice,
+    defenderBonus,
     attackerLosses,
     defenderLosses,
   }
@@ -99,6 +100,47 @@ describe('journal entries', () => {
     const [entry] = journalBatch([{ type: 'cardDrawn', playerId: 'p2', cardId: 9 }], players, 3).entries
     expect(entry?.text).toBe('Bob pioche une carte')
     expect(entry?.details).toEqual([])
+  })
+})
+
+describe('capitals in the journal', () => {
+  it('writes nothing while the capitals are chosen', () => {
+    const batch = journalBatch([{ type: 'capitalChosen', playerId: 'p1' }], players, 0)
+    expect(batch).toEqual({ entries: [], revealSteps: [] })
+  })
+
+  it('lists every capital in a single entry at the reveal', () => {
+    const { entries } = journalBatch(
+      [
+        { type: 'capitalChosen', playerId: 'p2' },
+        { type: 'capitalsRevealed', capitals: { p1: 'egypt', p2: 'brazil' } },
+        { type: 'turnStarted', playerId: 'p1', reserve: 3 },
+      ],
+      players,
+      0,
+    )
+    expect(entries.map((entry) => [entry.turn, entry.text])).toEqual([
+      [0, 'Capitales : Alice — Égypte, Bob — Brésil'],
+      [1, 'Tour 1 — Alice'],
+    ])
+  })
+
+  it('tells whose capital is taken', () => {
+    expect(
+      texts([
+        { type: 'territoryConquered', playerId: 'p1', previousOwner: 'p2', from: 'middle_east', to: 'egypt' },
+        { type: 'capitalCaptured', by: 'p1', from: 'p2', territory: 'egypt' },
+      ]),
+    ).toEqual(['Alice conquiert Égypte', "Alice s'empare de la capitale de Bob (Égypte)"])
+  })
+
+  it('tells when a player takes its own capital back', () => {
+    expect(texts([{ type: 'capitalCaptured', by: 'p2', from: 'p2', territory: 'brazil' }])).toEqual(['Bob reprend sa capitale (Brésil)'])
+  })
+
+  it('shows the bonified die of the defender of a capital in the detail of a roll', () => {
+    const [entry] = journalBatch([roll([6, 2], [5, 1], 1, 1, 1)], players, 3).entries
+    expect(entry?.details).toEqual(['6-2 contre 5+1-1 — Alice perd 1 armée, Bob perd 1 armée'])
   })
 })
 

@@ -64,15 +64,16 @@ export function missionSummary(state: GameState): MissionSummary | null {
   return { holder, text: missionText(mission, state.players), progress: progressLines(mission, state, holder) }
 }
 
-/** How the winner won, completing « <winner> remporte la partie », or `null` in a game without missions. */
+/** How the winner won, completing « <winner> remporte la partie », or `null` in a game without missions nor capitals. */
 export function winReasonText(state: GameState): string | null {
-  if (state.missions === null) {
+  if (state.missions === null && state.capitals === null) {
     return null
   }
-  const mission = state.winner === null ? undefined : state.missions[state.winner]
-  return state.winReason === 'mission' && mission !== undefined
-    ? `en accomplissant sa mission : ${missionText(mission, state.players)}`
-    : 'en éliminant tous ses adversaires'
+  const mission = state.winner === null ? undefined : state.missions?.[state.winner]
+  if (state.winReason === 'mission' && mission !== undefined) {
+    return `en accomplissant sa mission : ${missionText(mission, state.players)}`
+  }
+  return state.winReason === 'capitals' ? 'en contrôlant toutes les capitales' : 'en éliminant tous ses adversaires'
 }
 
 /** The mission of every player, in the order of play, for the end screen. */

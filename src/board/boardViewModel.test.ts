@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createGame, NEUTRAL_PLAYER_ID, type GameState } from '../engine'
-import { boardViewModel, HIGHLIGHT_STYLES, UNCLAIMED_COLOR } from './boardViewModel'
+import { boardViewModel, capitalColors, HIGHLIGHT_STYLES, UNCLAIMED_COLOR } from './boardViewModel'
 
 function game(playerCount: number, territoryDistribution: 'random' | 'choice' = 'random'): GameState {
   const colors = ['#e53935', '#1e88e5', '#43a047', '#fdd835']
@@ -66,5 +66,19 @@ describe('boardViewModel', () => {
   it('gives distinct visual styles to every highlight state', () => {
     const styles = Object.values(HIGHLIGHT_STYLES).map((style) => JSON.stringify(style))
     expect(new Set(styles).size).toBe(styles.length)
+  })
+})
+
+describe('capitalColors', () => {
+  it('shows no capital before the reveal', () => {
+    expect(capitalColors(game(3))).toEqual({})
+  })
+
+  it("keeps the color of the capital's player on a captured capital", () => {
+    const state = game(3)
+    state.capitals = { p1: 'egypt', p2: 'brazil', p3: 'peru' }
+    state.territories.brazil = { owner: 'p1', armies: 3 }
+    expect(capitalColors(state)).toEqual({ egypt: '#e53935', brazil: '#1e88e5', peru: '#43a047' })
+    expect(boardViewModel(state, {}).brazil?.color).toBe('#e53935')
   })
 })

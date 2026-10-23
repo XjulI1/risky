@@ -1,8 +1,8 @@
 import type { GameEvent, GameState } from '../../engine'
 
-const SETUP_PHASES = new Set(['claim', 'placement'])
+const SETUP_PHASES = new Set(['claim', 'placement', 'capitalChoice'])
 
-/** Turn number of a new game: 0 during the set-up, 1 when it opens on the first turn. */
+/** Turn number of a new game: 0 during the set-up and the capital choice, 1 when it opens on the first turn. */
 export function initialTurnNumber(state: GameState): number {
   return SETUP_PHASES.has(state.phase.kind) ? 0 : 1
 }

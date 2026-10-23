@@ -16,6 +16,12 @@ describe('rollLossDistribution', () => {
     expect(loss).toBeCloseTo(21 / 36, 12)
   })
 
+  it('adds the defender bonus to its highest die', () => {
+    const [win, loss] = rollLossDistribution(1, 1, 1)
+    expect(win).toBeCloseTo(10 / 36, 12)
+    expect(loss).toBeCloseTo(26 / 36, 12)
+  })
+
   it('compares as many pairs as the smaller side has dice', () => {
     const distribution = rollLossDistribution(3, 3)
     expect(distribution).toHaveLength(4)
@@ -26,6 +32,18 @@ describe('rollLossDistribution', () => {
 describe('conquestProbability', () => {
   it('is 15/36 for 2 armies against 1', () => {
     expect(conquestProbability(2, 1, DEFAULT_SETTINGS)).toBeCloseTo(15 / 36, 12)
+  })
+
+  it('is 10/36 for 2 armies against a capital defended by 1', () => {
+    expect(conquestProbability(2, 1, DEFAULT_SETTINGS, 1)).toBeCloseTo(10 / 36, 12)
+    expect(conquestProbability(2, 1, DEFAULT_SETTINGS, 0)).toBeCloseTo(15 / 36, 12)
+  })
+
+  it('keeps a distinct table for each defender bonus', () => {
+    const capital = conquestProbability(10, 5, DEFAULT_SETTINGS, 1)
+    expect(capital).toBeLessThan(conquestProbability(10, 5, DEFAULT_SETTINGS))
+    expect(conquestProbability(10, 5, DEFAULT_SETTINGS)).toBe(conquestProbability(10, 5, DEFAULT_SETTINGS, 0))
+    expect(conquestProbability(10, 5, DEFAULT_SETTINGS, 1)).toBe(capital)
   })
 
   it('is certain against an empty territory and impossible with a single army', () => {

@@ -14,6 +14,7 @@ import type { Highlights } from '../board/boardViewModel'
 /** What the current player has started to do on the board. */
 export type Interaction =
   | { kind: 'idle' }
+  | { kind: 'capitalConfirm'; territory: TerritoryId }
   | { kind: 'deployAmount'; territory: TerritoryId }
   | { kind: 'attackFrom'; from: TerritoryId }
   | { kind: 'attackPanel'; from: TerritoryId; to: TerritoryId }
@@ -35,6 +36,7 @@ export type InteractionPanel =
   | { kind: 'tradeRequired' }
   | { kind: 'amount'; purpose: 'deploy' | 'conquest' | 'fortify'; min: number; max: number; initial: number }
   | { kind: 'attackConfirm'; from: TerritoryId; to: TerritoryId; fromArmies: number; toArmies: number; label: string }
+  | { kind: 'capitalConfirm'; territory: TerritoryId; label: string }
 
 /** Everything the board and the HUD need to show the current step. */
 export type InteractionView = {
@@ -89,6 +91,8 @@ function normalize(state: GameState, interaction: Interaction): Interaction {
   switch (interaction.kind) {
     case 'idle':
       return interaction
+    case 'capitalConfirm':
+      return state.phase.kind === 'capitalChoice' && owns(state, interaction.territory) ? interaction : IDLE
     case 'deployAmount':
       return isDeploying(state) && !mustTrade(state, currentPlayerId(state)) && owns(state, interaction.territory)
         ? interaction
@@ -108,6 +112,19 @@ function normalize(state: GameState, interaction: Interaction): Interaction {
         ? interaction
         : IDLE
   }
+}
+
+function reduceCapitalChoice(state: GameState, interaction: Interaction, input: InteractionInput): Step {
+  if (input.kind === 'territory') {
+    return owns(state, input.territory) ? { interaction: { kind: 'capitalConfirm', territory: input.territory } } : { interaction }
+  }
+  if (input.kind === 'confirm' && interaction.kind === 'capitalConfirm') {
+    return {
+      interaction: IDLE,
+      action: { type: 'chooseCapital', playerId: currentPlayerId(state), territory: interaction.territory },
+    }
+  }
+  return input.kind === 'ocean' || input.kind === 'cancel' ? { interaction: IDLE } : { interaction }
 }
 
 function reduceDeployment(state: GameState, interaction: Interaction, input: InteractionInput): Step {
@@ -198,6 +215,8 @@ export function reduceInteraction(state: GameState, current: Interaction, input:
       return input.kind === 'territory' && owns(state, input.territory)
         ? { interaction: IDLE, action: { type: 'placeInitialArmy', playerId, territory: input.territory } }
         : { interaction: IDLE }
+    case 'capitalChoice':
+      return reduceCapitalChoice(state, interaction, input)
     case 'reinforce':
     case 'eliminationTrade':
       return reduceDeployment(state, interaction, input)
@@ -223,6 +242,21 @@ export function reduceInteraction(state: GameState, current: Interaction, input:
 
 function mark(ids: TerritoryId[], highlight: 'selectable' | 'target'): Highlights {
   return Object.fromEntries(ids.map((id) => [id, highlight]))
+}
+
+function capitalChoiceView(state: GameState, interaction: Interaction): Pick<InteractionView, 'highlights' | 'panel'> {
+  const highlights = mark(ownTerritories(state), 'selectable')
+  if (interaction.kind !== 'capitalConfirm') {
+    return { highlights, panel: NO_PANEL }
+  }
+  return {
+    highlights: { ...highlights, [interaction.territory]: 'selected' },
+    panel: {
+      kind: 'capitalConfirm',
+      territory: interaction.territory,
+      label: `Faire de ${territoryName(interaction.territory)} votre capitale ?`,
+    },
+  }
 }
 
 function deploymentView(state: GameState, interaction: Interaction): Pick<InteractionView, 'highlights' | 'panel'> {
@@ -299,6 +333,8 @@ export function viewOf(state: GameState, current: Interaction): InteractionView 
         panel: NO_PANEL,
         armiesToPlace: phase.remaining[currentPlayerId(state)] ?? 0,
       }
+    case 'capitalChoice':
+      return { ...base, ...capitalChoiceView(state, interaction) }
     case 'reinforce':
     case 'eliminationTrade':
       return { ...base, ...deploymentView(state, interaction) }

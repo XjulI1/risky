@@ -38,8 +38,12 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 const pairs = computed(() => Math.min(props.event.attackerDice.length, props.event.defenderDice.length))
 
+function bonusOf(index: number): number {
+  return index === 0 ? props.event.defenderBonus : 0
+}
+
 function attackerLost(index: number): boolean {
-  return index < pairs.value && (props.event.attackerDice[index] ?? 0) <= (props.event.defenderDice[index] ?? 0)
+  return index < pairs.value && (props.event.attackerDice[index] ?? 0) <= (props.event.defenderDice[index] ?? 0) + bonusOf(index)
 }
 
 function defenderLost(index: number): boolean {
@@ -112,6 +116,11 @@ const columns = computed(() =>
               :class="{ visible: PIP_CELLS[column[side] ?? 0]?.includes(cell - 1) }"
             />
           </div>
+          <span
+            v-if="settled && side === 'defender' && bonusOf(column.index) > 0"
+            data-testid="die-bonus"
+            class="bonus"
+          >+{{ bonusOf(column.index) }}</span>
         </div>
       </template>
     </div>
@@ -125,6 +134,19 @@ const columns = computed(() =>
   height: 48px;
   perspective: 300px;
   transition: opacity 200ms;
+}
+
+.bonus {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #f4ead5;
+  color: #1b2430;
+  font: 800 13px/1.3 system-ui, sans-serif;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
 }
 
 .die-slot.unpaired {

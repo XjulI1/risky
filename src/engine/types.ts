@@ -53,6 +53,7 @@ export type GameSettings = {
   defenderMaxDice: number
   fortifyMode: FortifyMode
   secretMissions: boolean
+  capitals: boolean
 }
 
 export type Mission =
@@ -60,7 +61,7 @@ export type Mission =
   | { kind: 'territories'; count: number; minArmies: number }
   | { kind: 'eliminate'; target: PlayerId }
 
-export type WinReason = 'domination' | 'mission'
+export type WinReason = 'domination' | 'mission' | 'capitals'
 
 export type CardSymbol = 'infantry' | 'cavalry' | 'artillery'
 
@@ -86,6 +87,7 @@ export type TerritoryState = {
 export type Phase =
   | { kind: 'claim'; remaining: Record<PlayerId, number> }
   | { kind: 'placement'; remaining: Record<PlayerId, number> }
+  | { kind: 'capitalChoice'; pending: Record<PlayerId, TerritoryId> }
   | { kind: 'reinforce'; reserve: number }
   | { kind: 'attack' }
   | { kind: 'conquestMove'; from: TerritoryId; to: TerritoryId; minArmies: number; maxArmies: number }
@@ -112,9 +114,10 @@ export type GameState = {
   winner: PlayerId | null
   winReason: WinReason | null
   missions: Record<PlayerId, Mission> | null
+  capitals: Record<PlayerId, TerritoryId> | null
 }
 
-/** The part of the game state every player can see: no deck, discard, hands, missions or generator state. */
+/** The part of the game state every player can see: no deck, discard, hands, missions or generator state; capitals are only set once revealed. */
 export type PublicState = Pick<
   GameState,
   | 'settings'
@@ -128,11 +131,13 @@ export type PublicState = Pick<
   | 'conqueredThisTurn'
   | 'winner'
   | 'winReason'
+  | 'capitals'
 >
 
 export type Action =
   | { type: 'claimTerritory'; playerId: PlayerId; territory: TerritoryId }
   | { type: 'placeInitialArmy'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'chooseCapital'; playerId: PlayerId; territory: TerritoryId }
   | { type: 'tradeCards'; playerId: PlayerId; cardIds: [number, number, number] }
   | { type: 'deploy'; playerId: PlayerId; territory: TerritoryId; armies: number }
   | { type: 'attack'; playerId: PlayerId; from: TerritoryId; to: TerritoryId }
@@ -146,6 +151,8 @@ export type ActionType = Action['type']
 export type GameEvent =
   | { type: 'territoryClaimed'; playerId: PlayerId; territory: TerritoryId }
   | { type: 'initialArmyPlaced'; playerId: PlayerId; territory: TerritoryId }
+  | { type: 'capitalChosen'; playerId: PlayerId }
+  | { type: 'capitalsRevealed'; capitals: Record<PlayerId, TerritoryId> }
   | { type: 'turnStarted'; playerId: PlayerId; reserve: number }
   | {
       type: 'cardsTraded'
@@ -163,6 +170,7 @@ export type GameEvent =
       to: TerritoryId
       attackerDice: number[]
       defenderDice: number[]
+      defenderBonus: number
       attackerLosses: number
       defenderLosses: number
     }
@@ -173,6 +181,7 @@ export type GameEvent =
       from: TerritoryId
       to: TerritoryId
     }
+  | { type: 'capitalCaptured'; by: PlayerId; from: PlayerId; territory: TerritoryId }
   | { type: 'conquestMoved'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
   | { type: 'fortified'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
   | { type: 'cardDrawn'; playerId: PlayerId; cardId: number }

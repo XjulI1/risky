@@ -2,7 +2,7 @@ import { fortifyDestinations, type PlayerId, type TerritoryId } from '../../engi
 import type { AiRandom } from '../aiRandom'
 import { armiesOn, borderTerritories, interiorTerritories, isBorder, territoriesOwnedBy } from '../evaluation'
 import type { PlayerView } from '../playerView'
-import { attackOptions, freeTerritories, type DecisionContext, type Strategy } from '../strategy'
+import { attackOptions, freeTerritories, maxBy, type DecisionContext, type Strategy } from '../strategy'
 
 const MIN_ATTACKING_ARMIES = 4
 const REQUIRED_ADVANTAGE = 2
@@ -25,10 +25,11 @@ function randomFortification(view: PlayerView, me: PlayerId, random: AiRandom) {
   return to === undefined ? null : { from, to, armies: armiesOn(view, from) - 1 }
 }
 
-/** Spreads its armies at random along its borders and attacks only with a clear advantage, without any plan. */
+/** Spreads its armies at random along its borders and attacks only with a clear advantage, without any plan; its capital is its largest army. */
 export const easy: Strategy = {
   claim: ({ view, random }) => random.pick(freeTerritories(view)) ?? '',
   place: randomBorder,
+  capital: ({ view, me }) => maxBy(territoriesOwnedBy(view, me), (territory) => armiesOn(view, territory)) ?? '',
   trade: () => null,
   deploy: (context, reserve) => ({
     territory: randomBorder(context),

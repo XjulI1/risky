@@ -48,6 +48,7 @@ function playTournament(settings: Partial<GameSettings>): TournamentResult {
 describe.each([
   { variant: 'classic', settings: {} },
   { variant: 'with secret missions', settings: { secretMissions: true } },
+  { variant: 'with capitals', settings: { capitals: true } },
 ])('reference tournament, $variant', ({ variant, settings }) => {
   let result: TournamentResult = { wins: { easy: 0, normal: 0, hard: 0 }, unfinished: 0 }
 

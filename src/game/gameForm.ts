@@ -7,7 +7,7 @@ export type GameSetup = {
 }
 
 /** Six player colors, all distinct from the grey of the neutral army. */
-export const PLAYER_PALETTE = ['#d64541', '#3a7bd5', '#3fa34d', '#e3b23c', '#8e5cc4', '#e8803a']
+export const PLAYER_PALETTE = ['#d64541', '#3a7bd5', '#3fa34d', '#e3b23c', '#8e5cc4', '#8d5a3b']
 
 export const MIN_FORM_PLAYERS = 2
 export const MAX_FORM_PLAYERS = 6
@@ -147,6 +147,17 @@ export function chooseColor(players: PlayerConfig[], id: string, color: string):
     }
     return player.color === color && previous !== undefined ? { ...player, color: previous } : player
   })
+}
+
+/** A variant of the rules, exclusive of the other one. */
+export type Variant = 'secretMissions' | 'capitals'
+
+/** Checks or unchecks a variant; checking one unchecks the other, since they exclude each other. */
+export function chooseVariant(settings: GameSettings, variant: Variant, checked: boolean): GameSettings {
+  if (!checked) {
+    return { ...settings, [variant]: false }
+  }
+  return { ...settings, secretMissions: variant === 'secretMissions', capitals: variant === 'capitals' }
 }
 
 /** Error message for each player whose name is invalid. */

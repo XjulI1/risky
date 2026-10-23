@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { classicMap } from './maps/classic'
 import { CONQUER_24_TERRITORIES } from './missions'
 import { createGame, dealMissions, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
-import { armiesOf, claimAll, createTestGame, ownedBy, testPlayers } from './testUtils'
+import { armiesOf, claimAll, createTestGame, ownedBy, placeAll, testPlayers } from './testUtils'
 import type { Mission, PlayerConfig } from './types'
 
 describe('createGame', () => {
@@ -68,6 +68,7 @@ describe('game settings', () => {
       defenderMaxDice: 2,
       fortifyMode: 'connected',
       secretMissions: false,
+      capitals: false,
     })
     expect(createTestGame(3).settings).toEqual(DEFAULT_SETTINGS)
   })
@@ -86,6 +87,7 @@ describe('game settings', () => {
     { territoryDistribution: 'auction' },
     { armyPlacement: 'parachute' },
     { secretMissions: 'yes' },
+    { capitals: 1 },
   ])('rejects the out-of-range setting %o', (settings) => {
     const result = createGame({
       players: testPlayers(3),
@@ -273,6 +275,59 @@ describe('secret missions', () => {
         expect(mission).not.toEqual({ kind: 'eliminate', target: playerId })
       }
     }
+  })
+})
+
+describe('capitals mode', () => {
+  const withCapitals = { settings: { capitals: true } }
+
+  it('is off by default, without capital choice nor capitals', () => {
+    const state = createTestGame(3)
+    expect(state.settings.capitals).toBe(false)
+    expect(state.capitals).toBeNull()
+    expect(state.phase.kind).toBe('reinforce')
+  })
+
+  it('is refused together with the secret missions', () => {
+    const result = createGame({ players: testPlayers(3), seed: 1, settings: { capitals: true, secretMissions: true } })
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: 'INVALID_SETTING', message: 'Les variantes missions et capitales s\'excluent.' },
+    })
+  })
+
+  it.each([2, 6])('is allowed with %i players', (count) => {
+    expect(createGame({ players: testPlayers(count), seed: 1, ...withCapitals }).ok).toBe(true)
+  })
+
+  it('opens the capital choice of the first player once the armies are spread at random', () => {
+    const state = createTestGame(4, withCapitals)
+    expect(state.phase).toEqual({ kind: 'capitalChoice', pending: {} })
+    expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
+    expect(state.capitals).toBeNull()
+    for (const player of state.players) {
+      expect(armiesOf(state, player.id)).toBe(30)
+    }
+  })
+
+  it('opens the capital choice once the last initial army is placed by hand', () => {
+    const start = createTestGame(3, { settings: { capitals: true, armyPlacement: 'manual' } })
+    expect(start.phase.kind).toBe('placement')
+    const state = placeAll(start)
+    expect(state.phase).toEqual({ kind: 'capitalChoice', pending: {} })
+    expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
+  })
+
+  it('opens the capital choice once the last territory is claimed, the armies being spread at random', () => {
+    const state = claimAll(createTestGame(3, { settings: { capitals: true, territoryDistribution: 'choice' } }))
+    expect(state.phase).toEqual({ kind: 'capitalChoice', pending: {} })
+    expect(state.currentPlayerIndex).toBe(state.firstPlayerIndex)
+  })
+
+  it('opens no capital choice without the setting', () => {
+    const state = placeAll(createTestGame(3, { settings: { armyPlacement: 'manual' } }))
+    expect(state.phase.kind).toBe('reinforce')
+    expect(state.capitals).toBeNull()
   })
 })
 

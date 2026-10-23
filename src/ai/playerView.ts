@@ -3,6 +3,7 @@ import {
   type Card,
   type GameState,
   type Mission,
+  type Phase,
   type PlayerId,
   type PublicState,
   type TerritoryId,
@@ -26,7 +27,18 @@ function territoriesInMapOrder(state: GameState): Record<TerritoryId, TerritoryS
   )
 }
 
-/** Projects `state` on what `viewer` is allowed to see; two states differing only by hidden information give the same view. */
+function visiblePhase(phase: Phase, viewer: PlayerId): Phase {
+  if (phase.kind !== 'capitalChoice') {
+    return phase
+  }
+  const own = phase.pending[viewer]
+  return { kind: 'capitalChoice', pending: own === undefined ? {} : { [viewer]: own } }
+}
+
+/**
+ * Projects `state` on what `viewer` is allowed to see, its own pending capital being the only one
+ * shown before the reveal; two states differing only by hidden information give the same view.
+ */
 export function playerView(state: GameState, viewer: PlayerId): PlayerView {
   return {
     settings: state.settings,
@@ -35,11 +47,12 @@ export function playerView(state: GameState, viewer: PlayerId): PlayerView {
     territories: territoriesInMapOrder(state),
     firstPlayerIndex: state.firstPlayerIndex,
     currentPlayerIndex: state.currentPlayerIndex,
-    phase: state.phase,
+    phase: visiblePhase(state.phase, viewer),
     tradeCount: state.tradeCount,
     conqueredThisTurn: state.conqueredThisTurn,
     winner: state.winner,
     winReason: state.winReason,
+    capitals: state.capitals,
     viewer,
     hand: state.hands[viewer] ?? [],
     handSizes: Object.fromEntries(state.players.map((player) => [player.id, state.hands[player.id]?.length ?? 0])),

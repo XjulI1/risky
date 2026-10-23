@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   defenderMaxDice: 2,
   fortifyMode: 'connected',
   secretMissions: false,
+  capitals: false,
 }
 
 const MIN_PLAYERS = 2
@@ -80,8 +81,11 @@ function isValidDiceCount(value: number): boolean {
 
 function resolveSettings(overrides: Partial<GameSettings>, playerCount: number): GameSettings | RuleError {
   const settings = { ...DEFAULT_SETTINGS, ...overrides }
-  if (typeof settings.secretMissions !== 'boolean') {
+  if (typeof settings.secretMissions !== 'boolean' || typeof settings.capitals !== 'boolean') {
     return ruleError('INVALID_SETTING', 'Un réglage de la partie est invalide.')
+  }
+  if (settings.secretMissions && settings.capitals) {
+    return ruleError('INVALID_SETTING', "Les variantes missions et capitales s'excluent.")
   }
   if (settings.secretMissions && playerCount < MIN_MISSION_PLAYERS) {
     return ruleError('INVALID_SETTING', 'Les missions secrètes exigent au moins 3 joueurs.')
@@ -163,7 +167,8 @@ export function dealMissions(deck: readonly Mission[], playerIds: readonly Playe
 /**
  * Creates a new game: validates players and settings, adds the neutral army in a 2-player game,
  * shuffles the deck, draws the first player, distributes territories according to the settings
- * and, when secret missions are on, deals one mission to each player.
+ * and, when secret missions are on, deals one mission to each player. In the capitals mode, the set-up
+ * ends on the capital choice instead of the first turn.
  */
 export function createGame(config: GameConfig): CreateGameResult {
   const playersError = validatePlayers(config.players)
@@ -203,6 +208,7 @@ export function createGame(config: GameConfig): CreateGameResult {
     winner: null,
     winReason: null,
     missions: null,
+    capitals: null,
   }
 
   state.deck = shuffleWithState(state, buildDeck(map))

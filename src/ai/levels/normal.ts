@@ -1,4 +1,5 @@
-import { classicMap, fortifyDestinations, type PlayerId, type TerritoryId } from '../../engine'
+import { classicMap, defenderBonusOn, fortifyDestinations, type PlayerId, type TerritoryId } from '../../engine'
+import { capitalAttack, capitalDefense, safestTerritory } from '../capitalObjective'
 import { conquestProbability } from '../combatOdds'
 import {
   armiesOn,
@@ -64,7 +65,9 @@ export function claimForContinent(view: PlayerView, me: PlayerId): TerritoryId {
 function bestOdds(view: PlayerView, origin: TerritoryId, targets: TerritoryId[], extraArmies: number): number {
   return Math.max(
     0,
-    ...targets.map((target) => conquestProbability(armiesOn(view, origin) + extraArmies, armiesOn(view, target), view.settings)),
+    ...targets.map((target) =>
+      conquestProbability(armiesOn(view, origin) + extraArmies, armiesOn(view, target), view.settings, defenderBonusOn(view, target)),
+    ),
   )
 }
 
@@ -135,13 +138,18 @@ function splitAfterConquest(view: PlayerView, move: ConquestMove): number {
   return Math.ceil(armiesOn(view, move.from) / 2)
 }
 
-/** Aims at a continent, or at what its mission asks, concentrates its reinforcements on its front and attacks with good odds. */
+/**
+ * Aims at a continent, or at what its mission asks, concentrates its reinforcements on its front and attacks with good odds;
+ * in the capitals mode, defends its capital first and attacks the capitals from a probability of 0.5.
+ */
 export const normal: Strategy = {
   claim: ({ view, me }) => claimForContinent(view, me),
   place: ({ view, me }) => frontOrigin(view, me, 1),
+  capital: ({ view, me }) => safestTerritory(view, me),
   trade: ({ view }) => bestSet(view),
-  deploy: ({ view, me }, reserve) => ({ territory: frontOrigin(view, me, reserve), armies: reserve }),
-  attack: ({ view, me }) => plannedAttack(view, me, ATTACK_THRESHOLD),
+  deploy: ({ view, me }, reserve) =>
+    capitalDefense(view, me, reserve) ?? { territory: frontOrigin(view, me, reserve), armies: reserve },
+  attack: ({ view, me }) => capitalAttack(view, me) ?? plannedAttack(view, me, ATTACK_THRESHOLD),
   conquestMove: ({ view }, move) => keepForMission(view, move, splitAfterConquest(view, move)),
   fortify: ({ view, me }) => fortifyFromInterior(view, me, mostThreatened),
 }

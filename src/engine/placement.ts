@@ -14,7 +14,17 @@ function firstIndexWithArmiesLeft(state: GameState, remaining: Record<PlayerId, 
   )
 }
 
-/** Spreads the initial armies left to each player at random over their territories, then starts the first turn. */
+/** Ends the set-up: opens the capital choice of the first player in the capitals mode, else starts the first turn. */
+export function endSetup(state: GameState, events: GameEvent[]): void {
+  if (state.settings.capitals) {
+    state.phase = { kind: 'capitalChoice', pending: {} }
+    state.currentPlayerIndex = state.firstPlayerIndex
+  } else {
+    startTurn(state, state.firstPlayerIndex, events)
+  }
+}
+
+/** Spreads the initial armies left to each player at random over their territories, then ends the set-up. */
 export function placeRemainingArmiesAtRandom(
   state: GameState,
   remaining: Record<PlayerId, number>,
@@ -30,7 +40,7 @@ export function placeRemainingArmiesAtRandom(
     }
     remaining[player.id] = 0
   }
-  startTurn(state, state.firstPlayerIndex, events)
+  endSetup(state, events)
 }
 
 export function claimTerritory(state: GameState, action: ClaimAction, events: GameEvent[]): RuleError | null {
@@ -81,7 +91,7 @@ export function placeInitialArmy(state: GameState, action: PlaceAction, events: 
 
   const next = firstIndexWithArmiesLeft(state, remaining, state.currentPlayerIndex)
   if (next === -1) {
-    startTurn(state, state.firstPlayerIndex, events)
+    endSetup(state, events)
   } else {
     state.currentPlayerIndex = next
   }

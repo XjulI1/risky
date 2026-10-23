@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GameState } from '../../engine'
+import { heldCapitals, type GameState } from '../../engine'
 
 const props = defineProps<{
   state: GameState
 }>()
+
+const capitalCount = computed(() => Object.keys(props.state.capitals ?? {}).length)
 
 const rows = computed(() =>
   props.state.players.map((player, index) => {
@@ -15,6 +17,7 @@ const rows = computed(() =>
       territories: territories.length,
       armies: territories.reduce((sum, territory) => sum + territory.armies, 0),
       cards: props.state.hands[player.id]?.length ?? 0,
+      capitals: capitalCount.value === 0 || player.isNeutral ? null : heldCapitals(props.state, player.id),
     }
   }),
 )
@@ -49,7 +52,14 @@ const rows = computed(() =>
             class="size-3 shrink-0 rounded-full"
             :style="{ backgroundColor: row.player.color }"
           />
-          <span class="truncate">{{ row.player.name }}</span>
+          <span class="flex min-w-0 flex-col">
+            <span class="truncate">{{ row.player.name }}</span>
+            <span
+              v-if="row.capitals !== null"
+              data-testid="capital-count"
+              class="text-xs font-normal text-parchment/70"
+            >Capitales : {{ row.capitals }}/{{ capitalCount }}</span>
+          </span>
         </td>
         <td class="text-center tabular-nums">
           {{ row.territories }}

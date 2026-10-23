@@ -11,7 +11,9 @@ function mountForm() {
 const nameInputs = (wrapper: ReturnType<typeof mountForm>) => wrapper.findAll('[data-testid="player-name"]')
 const startButton = (wrapper: ReturnType<typeof mountForm>) => wrapper.get('[data-testid="start-game"]')
 const kindSelects = (wrapper: ReturnType<typeof mountForm>) => wrapper.findAll('[data-testid="player-kind"]')
-const aiLevelSelect = (wrapper: ReturnType<typeof mountForm>) => wrapper.get('[data-testid="ai-level"]')
+const chooseAiLevel = (wrapper: ReturnType<typeof mountForm>, level: string) => wrapper.get(`[data-testid="ai-level-${level}"]`).trigger('click')
+const pressedAiLevels = (wrapper: ReturnType<typeof mountForm>) =>
+  wrapper.findAll('[data-testid^="ai-level-"]').filter((button) => button.attributes('aria-pressed') === 'true').map((button) => button.text())
 const names = (wrapper: ReturnType<typeof mountForm>) =>
   nameInputs(wrapper).map((input) => (input.element as HTMLInputElement).value)
 const rowColor = (wrapper: ReturnType<typeof mountForm>, row: number) =>
@@ -101,14 +103,15 @@ describe('CreateGameScreen', () => {
   it('makes player 1 human and the other players normal AIs by default', () => {
     const wrapper = mountForm()
     expect(kindSelects(wrapper).map((select) => (select.element as HTMLSelectElement).value)).toEqual(['human', 'ai', 'ai'])
-    expect((aiLevelSelect(wrapper).element as HTMLSelectElement).value).toBe('normal')
+    expect(pressedAiLevels(wrapper)).toEqual(['Normal'])
   })
 
   it('offers a single level for all the AIs of the game', async () => {
     const wrapper = mountForm()
     await wrapper.get('[data-testid="add-player"]').trigger('click')
     expect(wrapper.findAll('[data-testid="ai-level"]')).toHaveLength(1)
-    await aiLevelSelect(wrapper).setValue('hard')
+    await chooseAiLevel(wrapper, 'hard')
+    expect(pressedAiLevels(wrapper)).toEqual(['Difficile'])
     await kindSelects(wrapper)[0]?.setValue('ai')
     await startButton(wrapper).trigger('click')
     const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
@@ -117,7 +120,7 @@ describe('CreateGameScreen', () => {
 
   it('gives the common level to a player turned into an AI and to an added player', async () => {
     const wrapper = mountForm()
-    await aiLevelSelect(wrapper).setValue('easy')
+    await chooseAiLevel(wrapper, 'easy')
     await kindSelects(wrapper)[0]?.setValue('ai')
     await wrapper.get('[data-testid="add-player"]').trigger('click')
     await startButton(wrapper).trigger('click')
@@ -187,6 +190,46 @@ describe('CreateGameScreen', () => {
       const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
       expect(state.settings.secretMissions).toBe(true)
       expect(Object.keys(state.missions ?? {})).toHaveLength(3)
+    })
+  })
+
+  describe('capitals mode option', () => {
+    const box = (wrapper: ReturnType<typeof mountForm>, setting: 'capitals' | 'secretMissions') =>
+      wrapper.get(`[data-testid="setting-${setting}"]`)
+    const isChecked = (wrapper: ReturnType<typeof mountForm>, setting: 'capitals' | 'secretMissions') =>
+      (box(wrapper, setting).element as HTMLInputElement).checked
+
+    it('is unchecked by default', () => {
+      const wrapper = mountForm()
+      expect(isChecked(wrapper, 'capitals')).toBe(false)
+      expect(wrapper.text()).toContain('Mode capitales')
+    })
+
+    it('stays available with 2 players', async () => {
+      const wrapper = mountForm()
+      await wrapper.findAll('[data-testid="remove-player"]').at(-1)?.trigger('click')
+      expect(box(wrapper, 'capitals').attributes('disabled')).toBeUndefined()
+      await box(wrapper, 'capitals').setValue(true)
+      await startButton(wrapper).trigger('click')
+      const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
+      expect(state.settings.capitals).toBe(true)
+      expect(state.phase.kind).toBe('capitalChoice')
+    })
+
+    it('unchecks the secret missions when checked', async () => {
+      const wrapper = mountForm()
+      await box(wrapper, 'secretMissions').setValue(true)
+      await box(wrapper, 'capitals').setValue(true)
+      expect(isChecked(wrapper, 'secretMissions')).toBe(false)
+      expect(isChecked(wrapper, 'capitals')).toBe(true)
+    })
+
+    it('is unchecked when the secret missions are checked', async () => {
+      const wrapper = mountForm()
+      await box(wrapper, 'capitals').setValue(true)
+      await box(wrapper, 'secretMissions').setValue(true)
+      expect(isChecked(wrapper, 'capitals')).toBe(false)
+      expect(isChecked(wrapper, 'secretMissions')).toBe(true)
     })
   })
 })

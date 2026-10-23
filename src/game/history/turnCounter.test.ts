@@ -24,6 +24,10 @@ describe('turn counter', () => {
     expect(initialTurnNumber(created({ armyPlacement: 'manual' }))).toBe(0)
   })
 
+  it('starts at 0 while the capitals are chosen', () => {
+    expect(initialTurnNumber(created({ capitals: true }))).toBe(0)
+  })
+
   it('counts one more turn at each turn start', () => {
     const events: GameEvent[] = [
       { type: 'fortified', playerId: 'p1', from: 'peru', to: 'brazil', armies: 2 },

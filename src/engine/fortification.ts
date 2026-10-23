@@ -2,7 +2,7 @@ import { invalidArmyCount, notOwner, unknownTerritory } from './errors'
 import { areAdjacent } from './maps/classic'
 import { mapOf, ruleError } from './state'
 import { endTurn } from './turn'
-import { endIfMissionAccomplished } from './victory'
+import { endIfObjectiveReached } from './victory'
 import type { Action, GameEvent, GameState, PlayerId, PublicState, RuleError, TerritoryId } from './types'
 
 type FortifyAction = Extract<Action, { type: 'fortify' }>
@@ -59,7 +59,7 @@ export function fortify(state: GameState, action: FortifyAction, events: GameEve
   origin.armies -= action.armies
   destination.armies += action.armies
   events.push({ type: 'fortified', playerId: action.playerId, from: action.from, to: action.to, armies: action.armies })
-  if (!endIfMissionAccomplished(state, action.playerId, events)) {
+  if (!endIfObjectiveReached(state, action.playerId, events)) {
     endTurn(state, events)
   }
   return null

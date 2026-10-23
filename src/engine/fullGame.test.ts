@@ -37,6 +37,8 @@ function scriptedAction(state: GameState): Action {
       throw new Error(`Unexpected phase ${phase.kind}`)
     case 'placement':
       return { type: 'placeInitialArmy', playerId, territory: frontline(state, playerId) }
+    case 'capitalChoice':
+      return { type: 'chooseCapital', playerId, territory: frontline(state, playerId) }
     case 'reinforce':
     case 'eliminationTrade': {
       const set = tradeableSets(state.hands[playerId] ?? [])[0]

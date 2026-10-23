@@ -4,6 +4,7 @@ import type { PhaseKind } from '../engine'
 export const PHASE_LABELS: Record<PhaseKind, string> = {
   claim: 'Revendication',
   placement: 'Placement',
+  capitalChoice: 'Choix de la capitale',
   reinforce: 'Renforts',
   attack: 'Attaque',
   conquestMove: 'Déplacement après conquête',

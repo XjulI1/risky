@@ -1,4 +1,4 @@
-import { classicMap, type ContinentId, type PlayerId, type TerritoryId } from '../engine'
+import { classicMap, defenderBonusOn, type ContinentId, type PlayerId, type TerritoryId } from '../engine'
 import { conquestProbability } from './combatOdds'
 import type { PlayerView } from './playerView'
 
@@ -97,7 +97,7 @@ export function targetContinent(view: PlayerView, playerId: PlayerId): Continent
   return best
 }
 
-/** Enemy armies next to a territory, each weighted by its probability of conquering the territory. */
+/** Enemy armies next to a territory, each weighted by its probability of conquering the territory, the defense bonus of a capital included. */
 export function threat(view: PlayerView, territory: TerritoryId): number {
   const owner = ownerOf(view, territory)
   if (owner === undefined) {
@@ -105,12 +105,13 @@ export function threat(view: PlayerView, territory: TerritoryId): number {
   }
   const opponents = new Set(opponentsOf(view, owner))
   const defenders = armiesOn(view, territory)
+  const bonus = defenderBonusOn(view, territory)
   return neighborsOf(territory).reduce((sum, neighbor) => {
     const neighborOwner = ownerOf(view, neighbor)
     if (neighborOwner === undefined || !opponents.has(neighborOwner)) {
       return sum
     }
     const attackers = armiesOn(view, neighbor)
-    return sum + attackers * conquestProbability(attackers, defenders, view.settings)
+    return sum + attackers * conquestProbability(attackers, defenders, view.settings, bonus)
   }, 0)
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { PlayerConfig } from '../engine'
-import { addPlayer, AI_NAMES, chooseControl, defaultSetup, MAX_NAME_LENGTH } from './gameForm'
+import { DEFAULT_SETTINGS, type PlayerConfig } from '../engine'
+import { addPlayer, AI_NAMES, chooseControl, chooseVariant, defaultSetup, MAX_NAME_LENGTH } from './gameForm'
 
 function sequence(...values: number[]): () => number {
   let index = 0
@@ -60,5 +60,25 @@ describe('AI names', () => {
     const players = defaultSetup(sequence(0)).players
     const harder = chooseControl(players, 'player-2', { kind: 'ai', level: 'hard' }, sequence(0.9))
     expect(harder[1]?.name).toBe(players[1]?.name)
+  })
+})
+
+describe('chooseVariant', () => {
+  it('starts with both variants off', () => {
+    expect(defaultSetup().settings).toMatchObject({ secretMissions: false, capitals: false })
+  })
+
+  it('turns the secret missions off when the capitals mode is checked', () => {
+    const settings = chooseVariant({ ...DEFAULT_SETTINGS, secretMissions: true }, 'capitals', true)
+    expect(settings).toEqual({ ...DEFAULT_SETTINGS, secretMissions: false, capitals: true })
+  })
+
+  it('turns the capitals mode off when the secret missions are checked', () => {
+    const settings = chooseVariant({ ...DEFAULT_SETTINGS, capitals: true }, 'secretMissions', true)
+    expect(settings).toEqual({ ...DEFAULT_SETTINGS, secretMissions: true, capitals: false })
+  })
+
+  it('leaves the other variant as it is when one is unchecked', () => {
+    expect(chooseVariant({ ...DEFAULT_SETTINGS, capitals: true }, 'secretMissions', false)).toEqual({ ...DEFAULT_SETTINGS, capitals: true })
   })
 })

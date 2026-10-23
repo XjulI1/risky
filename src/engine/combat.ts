@@ -1,3 +1,4 @@
+import { capitalOwnerOf, defenderBonusOn } from './capitals'
 import { invalidArmyCount, notOwner, unknownTerritory, wrongPhase } from './errors'
 import { areAdjacent } from './maps/classic'
 import { mapOf, rollInt, ruleError } from './state'
@@ -20,14 +21,18 @@ const ELIMINATION_TRADE_HAND_SIZE = 6
 
 const descending = (a: number, b: number) => b - a
 
-/** Compares the dice pair by pair, highest first; the defender wins ties. */
-export function resolveRoll(attackerDice: number[], defenderDice: number[]): RollOutcome {
+/**
+ * Compares the dice pair by pair, highest first; the defender wins ties. `defenderBonus` is added to
+ * the highest defending die for the comparison only: the outcome keeps the dice as rolled.
+ */
+export function resolveRoll(attackerDice: number[], defenderDice: number[], defenderBonus = 0): RollOutcome {
   const attacker = [...attackerDice].sort(descending)
   const defender = [...defenderDice].sort(descending)
   const pairs = Math.min(attacker.length, defender.length)
   let attackerLosses = 0
   for (let i = 0; i < pairs; i++) {
-    if ((attacker[i] ?? 0) <= (defender[i] ?? 0)) {
+    const bonus = i === 0 ? defenderBonus : 0
+    if ((attacker[i] ?? 0) <= (defender[i] ?? 0) + bonus) {
       attackerLosses += 1
     }
   }
@@ -68,11 +73,12 @@ function fightUntilDecided(
   events: GameEvent[],
 ): number {
   const defenderId: PlayerId = defender.owner
+  const defenderBonus = defenderBonusOn(state, action.to)
   let lastAttackerDice = 0
   while (attacker.armies > 1 && defender.armies > 0) {
     lastAttackerDice = Math.min(state.settings.attackerMaxDice, attacker.armies - 1)
     const defenderDiceCount = Math.min(state.settings.defenderMaxDice, defender.armies)
-    const outcome = resolveRoll(rollDice(state, lastAttackerDice), rollDice(state, defenderDiceCount))
+    const outcome = resolveRoll(rollDice(state, lastAttackerDice), rollDice(state, defenderDiceCount), defenderBonus)
     attacker.armies -= outcome.attackerLosses
     defender.armies -= outcome.defenderLosses
     events.push({
@@ -81,7 +87,11 @@ function fightUntilDecided(
       defender: defenderId,
       from: action.from,
       to: action.to,
-      ...outcome,
+      attackerDice: outcome.attackerDice,
+      defenderDice: outcome.defenderDice,
+      defenderBonus,
+      attackerLosses: outcome.attackerLosses,
+      defenderLosses: outcome.defenderLosses,
     })
   }
   return lastAttackerDice
@@ -104,6 +114,10 @@ export function attack(state: GameState, action: AttackAction, events: GameEvent
   defender.owner = action.playerId
   state.conqueredThisTurn = true
   events.push({ type: 'territoryConquered', playerId: action.playerId, previousOwner, from: action.from, to: action.to })
+  const capitalOwner = capitalOwnerOf(state, action.to)
+  if (capitalOwner !== null) {
+    events.push({ type: 'capitalCaptured', by: action.playerId, from: capitalOwner, territory: action.to })
+  }
   state.phase = {
     kind: 'conquestMove',
     from: action.from,

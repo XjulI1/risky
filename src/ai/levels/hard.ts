@@ -1,4 +1,5 @@
-import { classicMap, type PlayerId, type TerritoryId } from '../../engine'
+import { classicMap, defenderBonusOn, type PlayerId, type TerritoryId } from '../../engine'
+import { capitalAttack, capitalDefense, lastCapitalStaging, safestTerritory } from '../capitalObjective'
 import { conquestProbability } from '../combatOdds'
 import {
   armiesOn,
@@ -56,7 +57,12 @@ function bestOrigin(view: PlayerView, me: PlayerId, target: TerritoryId, extraAr
   return maxBy(
     ownNeighbors(view, me, target).map((origin) => ({
       origin,
-      probability: conquestProbability(armiesOn(view, origin) + extraArmies, armiesOn(view, target), view.settings),
+      probability: conquestProbability(
+        armiesOn(view, origin) + extraArmies,
+        armiesOn(view, target),
+        view.settings,
+        defenderBonusOn(view, target),
+      ),
     })),
     (candidate) => candidate.probability,
   )
@@ -128,6 +134,11 @@ function deployByThreat(view: PlayerView, me: PlayerId, reserve: number): Deploy
   return { territory, armies: Math.min(reserve, Math.max(1, Math.round(deficit(territory)))) }
 }
 
+function lastCapitalDeployment(view: PlayerView, me: PlayerId, reserve: number): Deployment | null {
+  const staging = lastCapitalStaging(view, me)
+  return staging === null ? null : { territory: staging, armies: reserve }
+}
+
 function deploy(view: PlayerView, me: PlayerId, reserve: number): Deployment {
   const opening = bestOpening(view, me, reserve)
   return opening === undefined ? deployByThreat(view, me, reserve) : { territory: opening.origin, armies: reserve }
@@ -159,10 +170,14 @@ const towardOffensiveFront: DestinationChoice = (view, me, from, destinations) =
   return destinations.includes(front) ? front : mostThreatened(view, me, from, destinations)
 }
 
-/** The normal strategy, plus breaking continents, eliminating opponents (its target first), defending by threat and keeping its cards. */
+/**
+ * The normal strategy, plus breaking continents, eliminating opponents (its target first), defending by threat and keeping its cards;
+ * in the capitals mode, gathers its whole reserve toward the last capital it lacks.
+ */
 export const hard: Strategy = {
   claim: ({ view, me }) => blockingClaim(view, me) ?? claimForContinent(view, me),
   place: ({ view, me }) => deploy(view, me, 1).territory,
+  capital: ({ view, me }) => safestTerritory(view, me),
   trade: ({ view, me }) => {
     const set = bestSet(view)
     if (set === null || view.settings.cardTradeScale === 'fixed') {
@@ -170,8 +185,10 @@ export const hard: Strategy = {
     }
     return needsCardsForOpening(view, me, setValue(view, set)) ? set : null
   },
-  deploy: ({ view, me }, reserve) => deploy(view, me, reserve),
+  deploy: ({ view, me }, reserve) =>
+    capitalDefense(view, me, reserve) ?? lastCapitalDeployment(view, me, reserve) ?? deploy(view, me, reserve),
   attack: ({ view, me }) =>
+    capitalAttack(view, me) ??
     priorityAttack(view, me) ??
     plannedAttack(view, me, view.conqueredThisTurn ? ATTACK_THRESHOLD : CARD_ATTACK_THRESHOLD),
   conquestMove: normal.conquestMove,

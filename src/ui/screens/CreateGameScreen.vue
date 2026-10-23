@@ -8,6 +8,7 @@ import {
   applyAiLevel,
   chooseColor,
   chooseControl,
+  chooseVariant,
   defaultSetup,
   MAX_FORM_PLAYERS,
   MAX_NAME_LENGTH,
@@ -17,6 +18,7 @@ import {
   PLAYER_PALETTE,
   removePlayer,
   type GameSetup,
+  type Variant,
 } from '../../game/gameForm'
 
 const emit = defineEmits<{
@@ -59,6 +61,10 @@ function addAiPlayer() {
 
 function updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
   setup.value.settings = { ...setup.value.settings, [key]: value }
+}
+
+function updateVariant(variant: Variant, checked: boolean) {
+  setup.value.settings = chooseVariant(setup.value.settings, variant, checked)
 }
 
 function removePlayerRow(id: string) {
@@ -172,26 +178,34 @@ function start() {
         >
           Ajouter un joueur
         </button>
-        <label
+        <div
           v-if="hasAi"
-          class="flex max-w-xs flex-col gap-1"
+          class="flex flex-col items-center gap-2 pt-2"
         >
-          <span class="text-sm text-parchment/80">Niveau des IA</span>
-          <select
+          <span
+            id="ai-level-label"
+            class="text-sm text-parchment/80"
+          >Niveau des IA</span>
+          <div
             data-testid="ai-level"
-            class="select-field min-h-11 rounded-lg bg-ink px-3"
-            :value="aiLevel"
-            @change="updateAiLevel(($event.target as HTMLSelectElement).value as AiLevel)"
+            role="group"
+            aria-labelledby="ai-level-label"
+            class="flex justify-center gap-3"
           >
-            <option
+            <button
               v-for="level in AI_LEVELS"
               :key="level"
-              :value="level"
+              type="button"
+              :data-testid="`ai-level-${level}`"
+              class="min-h-11 min-w-28 rounded-lg px-5 text-sm"
+              :class="level === aiLevel ? 'bg-accent font-semibold text-ink' : 'bg-ink text-parchment/80 hover:text-parchment'"
+              :aria-pressed="level === aiLevel"
+              @click="updateAiLevel(level)"
             >
               {{ AI_LEVEL_LABELS[level] }}
-            </option>
-          </select>
-        </label>
+            </button>
+          </div>
+        </div>
         <p
           v-if="withNeutral"
           class="text-sm text-parchment/80"
@@ -287,22 +301,74 @@ function start() {
           </select>
         </label>
         <label
-          class="flex min-h-11 items-center gap-3 sm:col-span-2"
-          :class="missionsAllowed ? '' : 'opacity-60'"
+          class="variant-card"
+          :class="[
+            setup.settings.secretMissions ? 'border-accent' : 'border-transparent',
+            missionsAllowed ? 'cursor-pointer hover:border-parchment/30' : 'cursor-not-allowed opacity-60',
+          ]"
         >
+          <span class="variant-icon">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="5"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="1.5"
+              />
+            </svg>
+          </span>
+          <span class="flex min-w-0 flex-1 flex-col">
+            <span class="font-semibold">Missions secrètes</span>
+            <span class="text-sm text-parchment/70">
+              {{ missionsAllowed ? 'Un objectif secret par joueur' : '3 joueurs minimum' }}
+            </span>
+          </span>
           <input
             data-testid="setting-secretMissions"
             type="checkbox"
-            class="size-5 accent-accent"
+            class="size-5 shrink-0 accent-accent"
             :checked="setup.settings.secretMissions"
             :disabled="!missionsAllowed"
-            @change="updateSetting('secretMissions', ($event.target as HTMLInputElement).checked)"
+            @change="updateVariant('secretMissions', ($event.target as HTMLInputElement).checked)"
           >
-          <span>Missions secrètes</span>
-          <span
-            v-if="!missionsAllowed"
-            class="text-sm text-parchment/80"
-          >3 joueurs minimum</span>
+        </label>
+        <label
+          class="variant-card cursor-pointer"
+          :class="setup.settings.capitals ? 'border-accent' : 'border-transparent hover:border-parchment/30'"
+        >
+          <span class="variant-icon">
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M3 21h18" />
+              <path d="M5 21V10l2-1V5h2v2h2V5h2v2h2V5h2v4l2 1v11" />
+              <path d="M10 21v-4a2 2 0 0 1 4 0v4" />
+            </svg>
+          </span>
+          <span class="flex min-w-0 flex-1 flex-col">
+            <span class="font-semibold">Mode capitales</span>
+            <span class="text-sm text-parchment/70">Tenir toutes les capitales</span>
+          </span>
+          <input
+            data-testid="setting-capitals"
+            type="checkbox"
+            class="size-5 shrink-0 accent-accent"
+            :checked="setup.settings.capitals"
+            @change="updateVariant('capitals', ($event.target as HTMLInputElement).checked)"
+          >
         </label>
       </section>
 
@@ -325,3 +391,38 @@ function start() {
     </div>
   </main>
 </template>
+
+<style scoped>
+.variant-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 12px;
+  border-width: 2px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-ink) 60%, transparent);
+  transition: border-color 150ms;
+}
+
+.variant-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-ink);
+  color: var(--color-accent);
+}
+
+.variant-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+</style>

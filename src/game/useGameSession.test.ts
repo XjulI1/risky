@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { classicMap, CONQUER_24_TERRITORIES, createGame, type GameState, type PlayerControl } from '../engine'
+import { capitalColors } from '../board/boardViewModel'
 import { ANIMATION_DURATIONS, type AnimationSpeed } from './animationSpeed'
 import type { GameSetup } from './gameForm'
 import { loadSavedGame } from './persistence'
@@ -119,6 +120,89 @@ describe('hand-off between humans', () => {
 
   it('does not interrupt a game with a single human', () => {
     expect(endTurn([HUMAN, AI, AI]).handoffTo.value).toBeNull()
+  })
+})
+
+describe('hand-off during the capital choice', () => {
+  function choosingGame(controls: PlayerControl[]): GameState {
+    const created = createGame({
+      seed: 12,
+      settings: { capitals: true },
+      players: controls.map((control, i) => ({ id: `p${i + 1}`, name: `Joueur ${i + 1}`, color: ['#d64541', '#3a7bd5', '#3fa34d'][i] ?? '#000', ...control })),
+    })
+    if (!created.ok) throw new Error(created.error.message)
+    created.state.currentPlayerIndex = 0
+    created.state.firstPlayerIndex = 0
+    return created.state
+  }
+
+  function chooseFirstTerritory(session: ReturnType<typeof createGameSession>) {
+    const state = session.engineState.value
+    const playerId = state.players[state.currentPlayerIndex]?.id ?? ''
+    const territory = classicMap.territoryIds.find((id) => state.territories[id]?.owner === playerId) ?? ''
+    session.input({ kind: 'territory', territory })
+    session.input({ kind: 'confirm' })
+  }
+
+  it('asks the next human to take the device before each choice', () => {
+    const session = createGameSession(choosingGame([HUMAN, HUMAN, HUMAN]), { speed: 'instant' })
+    chooseFirstTerritory(session)
+    expect(session.engineState.value.phase.kind).toBe('capitalChoice')
+    expect(session.handoffTo.value?.id).toBe('p2')
+    session.acknowledgeHandoff()
+    chooseFirstTerritory(session)
+    expect(session.handoffTo.value?.id).toBe('p3')
+  })
+
+  it('announces every capital once the last one is chosen, the AI waiting for the announcement to close', async () => {
+    const session = createGameSession(choosingGame([AI, HUMAN, HUMAN]), { speed: 'instant' })
+    await vi.runAllTimersAsync()
+    chooseFirstTerritory(session)
+    session.acknowledgeHandoff()
+    expect(session.revealedCapitals.value).toBeNull()
+    chooseFirstTerritory(session)
+    const revealed = session.engineState.value
+    expect(revealed.capitals).not.toBeNull()
+    expect(session.revealedCapitals.value).toEqual(revealed.capitals)
+    await vi.runAllTimersAsync()
+    expect(session.engineState.value).toBe(revealed)
+    session.acknowledgeRevealedCapitals()
+    expect(session.revealedCapitals.value).toBeNull()
+    await vi.runAllTimersAsync()
+    expect(session.engineState.value).not.toBe(revealed)
+  })
+
+  it('does not interrupt the choice of a single human', () => {
+    const session = createGameSession(choosingGame([HUMAN, AI, AI]), { speed: 'instant' })
+    chooseFirstTerritory(session)
+    expect(session.handoffTo.value).toBeNull()
+  })
+})
+
+describe('capital lost by a human', () => {
+  function bobsCapitalTaken(controls: PlayerControl[], capitals = { p1: 'egypt', p2: 'brazil', p3: 'peru' }) {
+    const state = attackingGame(controls)
+    state.settings = { ...state.settings, capitals: true }
+    state.capitals = capitals
+    state.territories.brazil = { owner: 'p2', armies: 1 }
+    const session = createGameSession(state, { speed: 'instant' })
+    session.dispatch(attack)
+    return session
+  }
+
+  it('alerts when a human loses its capital', () => {
+    const session = bobsCapitalTaken([HUMAN, HUMAN, HUMAN])
+    expect(session.capitalLost.value).toMatchObject({ player: { id: 'p2' }, territory: 'brazil' })
+    session.acknowledgeCapitalLost()
+    expect(session.capitalLost.value).toBeNull()
+  })
+
+  it('does not alert when an AI loses its capital', () => {
+    expect(bobsCapitalTaken([HUMAN, AI, AI]).capitalLost.value).toBeNull()
+  })
+
+  it('does not alert when a capital already lost changes hands', () => {
+    expect(bobsCapitalTaken([HUMAN, HUMAN, HUMAN], { p1: 'egypt', p2: 'peru', p3: 'brazil' }).capitalLost.value).toBeNull()
   })
 })
 
@@ -321,6 +405,31 @@ describe('journal, statistics and save', () => {
     const loaded = loadSavedGame(storage)
     expect(loaded.kind === 'saved' && loaded.game.engineState).toEqual(session.engineState.value)
     expect(loaded.kind === 'saved' && loaded.game.engineState).not.toEqual(reinforcing([AI, HUMAN, HUMAN]))
+  })
+
+  it('resumes a game saved during the capital choice on the right player, without revealing the choices made', () => {
+    const created = createGame({
+      seed: 12,
+      settings: { capitals: true },
+      players: [HUMAN, HUMAN, HUMAN].map((control, i) => ({ id: `p${i + 1}`, name: `Joueur ${i + 1}`, color: ['#d64541', '#3a7bd5', '#3fa34d'][i] ?? '#000', ...control })),
+    })
+    if (!created.ok) throw new Error(created.error.message)
+    const { session, storage } = savedSession(created.state)
+    const chooser = session.engineState.value.players[session.engineState.value.currentPlayerIndex]?.id ?? ''
+    const territory = classicMap.territoryIds.find((id) => session.engineState.value.territories[id]?.owner === chooser) ?? ''
+    session.input({ kind: 'territory', territory })
+    session.input({ kind: 'confirm' })
+    const loaded = loadSavedGame(storage)
+    if (loaded.kind !== 'saved') throw new Error(loaded.kind)
+    const resumed = createGameSessionFromSave(loaded.game, { speed: 'instant', storage })
+    const state = resumed.engineState.value
+    expect(state.phase).toEqual({ kind: 'capitalChoice', pending: { [chooser]: territory } })
+    expect(state.currentPlayerIndex).toBe(session.engineState.value.currentPlayerIndex)
+    expect(state.players[state.currentPlayerIndex]?.id).not.toBe(chooser)
+    expect(state.capitals).toBeNull()
+    expect(capitalColors(resumed.displayedState.value)).toEqual({})
+    expect(resumed.revealedCapitals.value).toBeNull()
+    expect(resumed.journal.value.some((entry) => entry.text.includes('apitale'))).toBe(false)
   })
 
   it('saves a game as soon as it starts, replacing the previous save', () => {

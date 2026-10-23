@@ -64,6 +64,23 @@ describe('playerView', () => {
     expect(JSON.stringify(playerView(other, 'p1'))).toBe(JSON.stringify(view))
   })
 
+  it('shows the viewer its own pending capital only', () => {
+    const state = newAiGame(['normal', 'normal', 'normal'], 7, { capitals: true })
+    state.phase = { kind: 'capitalChoice', pending: { p1: 'egypt', p2: 'brazil' } }
+    expect(playerView(state, 'p1').phase).toEqual({ kind: 'capitalChoice', pending: { p1: 'egypt' } })
+    expect(playerView(state, 'p3').phase).toEqual({ kind: 'capitalChoice', pending: {} })
+    expect(playerView(state, 'p3').capitals).toBeNull()
+    const other = structuredClone(state)
+    other.phase = { kind: 'capitalChoice', pending: { p1: 'peru' } }
+    expect(JSON.stringify(playerView(other, 'p3'))).toBe(JSON.stringify(playerView(state, 'p3')))
+  })
+
+  it('shows the revealed capitals to everybody', () => {
+    const state = newAiGame(['normal', 'normal', 'normal'], 7, { capitals: true })
+    state.capitals = { p1: 'egypt', p2: 'brazil', p3: 'peru' }
+    expect(playerView(state, 'p2').capitals).toEqual({ p1: 'egypt', p2: 'brazil', p3: 'peru' })
+  })
+
   it('has no mission without secret missions', () => {
     expect(playerView(gameWithHands(), 'p1').ownMission).toBeNull()
   })

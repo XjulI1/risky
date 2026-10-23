@@ -18,7 +18,9 @@ export type JournalBatch = {
 }
 
 type DiceRolled = Extract<GameEvent, { type: 'diceRolled' }>
-type SecretEvent = Extract<GameEvent, { type: 'missionConverted' }>
+type SecretEvent = Extract<GameEvent, { type: 'missionConverted' | 'capitalChosen' }>
+
+const SECRET_EVENTS: ReadonlySet<GameEvent['type']> = new Set(['missionConverted', 'capitalChosen'])
 type JournaledEvent = Exclude<GameEvent, DiceRolled | SecretEvent>
 
 function territoryName(id: string): string {
@@ -41,8 +43,20 @@ function lossesText(rolls: DiceRolled[], nameOf: (id: PlayerId) => string): stri
     .join(', ')
 }
 
+function defenderDiceText(roll: DiceRolled): string {
+  return roll.defenderDice.map((die, index) => (index === 0 && roll.defenderBonus > 0 ? `${die}+${roll.defenderBonus}` : `${die}`)).join('-')
+}
+
 function rollLine(roll: DiceRolled, nameOf: (id: PlayerId) => string): string {
-  return `${roll.attackerDice.join('-')} contre ${roll.defenderDice.join('-')} — ${lossesText([roll], nameOf)}`
+  return `${roll.attackerDice.join('-')} contre ${defenderDiceText(roll)} — ${lossesText([roll], nameOf)}`
+}
+
+function capitalsText(capitals: Record<PlayerId, string>, players: Player[], nameOf: (id: PlayerId) => string): string {
+  const listed = players.flatMap((player) => {
+    const territory = capitals[player.id]
+    return territory === undefined ? [] : [`${nameOf(player.id)} — ${territoryName(territory)}`]
+  })
+  return `Capitales : ${listed.join(', ')}`
 }
 
 function attackEntry(rolls: DiceRolled[], nameOf: (id: PlayerId) => string, turn: number): JournalEntry | null {
@@ -68,6 +82,12 @@ function eventText(event: JournaledEvent, players: Player[], nameOf: (id: Player
       return `${nameOf(event.playerId)} revendique ${territoryName(event.territory)}`
     case 'initialArmyPlaced':
       return `${nameOf(event.playerId)} place 1 armée en ${territoryName(event.territory)}`
+    case 'capitalsRevealed':
+      return capitalsText(event.capitals, players, nameOf)
+    case 'capitalCaptured':
+      return event.by === event.from
+        ? `${nameOf(event.by)} reprend sa capitale (${territoryName(event.territory)})`
+        : `${nameOf(event.by)} s'empare de la capitale de ${nameOf(event.from)} (${territoryName(event.territory)})`
     case 'armiesDeployed':
       return `${nameOf(event.playerId)} place ${armiesLabel(event.armies)} en ${territoryName(event.territory)}`
     case 'cardsTraded':
@@ -90,12 +110,24 @@ function eventText(event: JournaledEvent, players: Player[], nameOf: (id: Player
 }
 
 function authorOf(event: JournaledEvent): PlayerId {
-  return event.type === 'playerEliminated' ? event.by : event.playerId
+  switch (event.type) {
+    case 'playerEliminated':
+    case 'capitalCaptured':
+      return event.by
+    case 'capitalsRevealed':
+      return ''
+    default:
+      return event.playerId
+  }
+}
+
+function isSecret(event: GameEvent): event is SecretEvent {
+  return SECRET_EVENTS.has(event.type)
 }
 
 /**
  * Journal entries of the events of one engine answer, `turn` being the turn number before them.
- * The rolls of an attack make a single entry; drawn cards stay anonymous and converted missions secret.
+ * The rolls of an attack make a single entry; drawn cards stay anonymous, converted missions and capital choices secret.
  */
 export function journalBatch(events: GameEvent[], players: Player[], turn: number): JournalBatch {
   const nameOf = (id: PlayerId) => players.find((player) => player.id === id)?.name ?? id
@@ -115,7 +147,7 @@ export function journalBatch(events: GameEvent[], players: Player[], turn: numbe
   }
 
   events.forEach((event, index) => {
-    if (event.type === 'missionConverted') {
+    if (isSecret(event)) {
       return
     }
     if (event.type === 'diceRolled') {
