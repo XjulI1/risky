@@ -1,7 +1,7 @@
 # Les IA de Risky
 
-Ce document décrit, en clair, comment jouent les trois niveaux d'IA : facile, normal et difficile,
-en partie classique puis dans les variantes missions secrètes et mode capitales.
+Ce document décrit, en clair, comment jouent les quatre niveaux d'IA : facile, normal, difficile et
+expert, en partie classique puis dans les variantes missions secrètes et mode capitales.
 Il reflète le code de `src/ai/` tel qu'il est implémenté, réglages issus du tournoi compris.
 
 ## Règles communes à tous les niveaux
@@ -84,7 +84,8 @@ exactement, dans ses attaques comme dans son estimation de la menace :
 - Avec 5 cartes ou plus en main, l'échange est obligatoire : tous les niveaux échangent avant de
   déployer.
 - Une IA met fin à ses attaques après 60 attaques dans le même tour, quelle que soit sa stratégie.
-- Une décision prend moins de 50 ms.
+- Une décision prend moins de 50 ms aux niveaux facile, normal et difficile ; voir plus bas le
+  temps de réflexion de l'expert.
 
 ### Noms
 
@@ -100,8 +101,14 @@ repassée en humain reprend un nom numéroté (« Joueur 2 »). Les noms restent
 Les actions d'une IA s'enchaînent seules, une par une :
 
 - 700 ms entre deux actions en vitesse normale, 300 ms en rapide, aucune pause en instantanée ;
-- avant chaque attaque, le territoire d'origine et la cible sont mis en avant sur le plateau ;
+- l'IA réfléchit pendant cette pause : une décision plus courte ne retarde rien, une décision plus
+  longue fait jouer l'action dès qu'elle est prise ;
+- avant chaque attaque, le territoire d'origine et la cible sont mis en avant sur le plateau, au
+  moins la moitié de la pause quand la décision a été longue ;
 - pendant le tour d'une IA, le HUD affiche « <nom> réfléchit… » et ne propose aucune commande ;
+  au-delà d'une demi-seconde de réflexion, trois points animés s'y ajoutent ;
+- les décisions sont calculées à part (dans un Web Worker) : le plateau reste fluide pendant que
+  l'IA réfléchit ;
 - si un humain vient de piocher une carte, l'IA suivante attend qu'il ait fermé l'avis ;
 - en mode capitales, l'IA attend que l'annonce de révélation des capitales ait été fermée ;
 - quitter la partie arrête l'IA.
@@ -200,6 +207,61 @@ n'échange pas ce tour-ci.
 | Après une conquête | Comme le normal. |
 | Fortification | Comme le normal, mais vers son territoire de front offensif s'il est atteignable ; sinon vers la frontière la plus menacée. |
 
+## Niveau expert
+
+L'expert joue comme le difficile, sauf pour ses deux décisions les plus lourdes de conséquences :
+où déployer ses renforts et quelle attaque lancer. Pour celles-là, au lieu d'appliquer une règle,
+il essaie plusieurs possibilités et regarde ce qu'elles donnent.
+
+### Les possibilités comparées
+
+| Décision | Possibilités |
+|---|---|
+| Déploiement | Le choix du difficile ; toute la réserve sur l'une des 3 frontières d'où l'attaque est la plus prometteuse ; toute la réserve sur l'une des 2 frontières les plus menacées. |
+| Attaque | Le choix du difficile ; arrêter d'attaquer ; l'une des 4 attaques aux meilleures chances de conquête, à partir d'une chance sur quatre. |
+
+Au plus six possibilités, sans doublon. Quand il n'en reste qu'une, il la joue sans réfléchir.
+
+### Comment il les compare
+
+Pour chaque possibilité, l'expert imagine 24 fois la suite :
+
+1. il distribue au hasard les cartes qu'il ne voit pas entre les mains adverses (en respectant le
+   nombre de cartes de chacun) et la pioche ;
+2. il joue la possibilité, puis la fin de son tour et le tour de chaque adversaire, tous joués
+   comme par le difficile, avec des dés tirés au hasard ;
+3. il évalue la position atteinte au début de son tour suivant.
+
+Les possibilités sont comparées sur les mêmes 24 distributions et les mêmes dés : une possibilité
+ne gagne pas parce qu'elle a eu de la chance. Il retient celle dont la position moyenne est la
+meilleure, et le choix du difficile en cas d'égalité.
+
+La position vaut 1 s'il a gagné, 0 s'il est éliminé, et sinon sa part de la force des joueurs
+encore en jeu (neutre exclu), la force d'un joueur valant :
+
+> armées + 3 × renforts attendus au prochain tour + nombre de cartes
+
+### Loyauté et reproductibilité
+
+L'expert ne voit rien de plus que les autres niveaux : les mains adverses et la pioche qu'il
+imagine ne sont que des hypothèses compatibles avec ce qu'il voit. Ses tirages au hasard sont
+dérivés de l'empreinte de sa vue : une même situation donne toujours la même décision, et une partie
+entre IA rejouée avec la même graine se déroule à l'identique.
+
+### Mode classique uniquement
+
+L'expert n'est proposé qu'en partie classique : dès qu'une variante est cochée, le choix « Expert »
+est grisé et le niveau revient à difficile. Ses simulations ignorent en effet les missions et les
+capitales. Si une IA experte se retrouve malgré tout dans une variante, elle joue exactement comme
+le difficile.
+
+### Temps de réflexion
+
+Le nombre de simulations est fixe, pas le temps : c'est ce qui garantit la reproductibilité. Sur un
+ordinateur portable récent, une décision prend en moyenne 77 ms, 95 % d'entre elles moins de 240 ms
+et la plus longue du tournoi 729 ms ; elle reste le plus souvent cachée dans la pause entre deux
+actions.
+
 ## Variantes
 
 ### Missions secrètes
@@ -256,3 +318,9 @@ missions secrètes, il en gagne quelques-unes sans jamais poursuivre sa mission.
 en premier plus souvent que les autres : il se défend assez pour durer, mais ses renforts dispersés,
 ses attaques rares, son plafond de 3 conquêtes et l'absence de bonus de continent l'empêchent de
 finir une partie. Il est conçu pour être battable par un débutant humain.
+
+### Expert contre difficile
+
+Tournoi expert (`pnpm test:expert`) : 60 parties à trois joueurs en partie classique, une IA experte
+contre deux IA difficiles, sur des graines fixées, l'expert occupant chaque place 20 fois. L'expert
+en gagne 41 (68 %), là où le hasard seul lui en donnerait un tiers ; le seuil exigé est de 30.

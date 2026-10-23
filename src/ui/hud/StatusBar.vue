@@ -4,10 +4,16 @@ import type { GameState } from '../../engine'
 import type { InteractionView } from '../../game/interaction'
 import { PHASE_LABELS } from '../../game/labels'
 
-const props = defineProps<{
-  state: GameState
-  view: InteractionView
-}>()
+const props = withDefaults(
+  defineProps<{
+    state: GameState
+    view: InteractionView
+    thinking?: boolean
+  }>(),
+  { thinking: false },
+)
+
+const THINKING_DOT_DELAYS_MS = [0, 150, 300]
 
 const HINTS: Partial<Record<GameState['phase']['kind'], string>> = {
   claim: 'Touchez un territoire libre pour le revendiquer.',
@@ -71,6 +77,19 @@ const hint = computed(() => {
       class="line-clamp-2 h-10 text-sm text-parchment/80"
     >
       {{ hint }}
+      <span
+        v-if="thinking"
+        data-testid="status-thinking"
+        class="ml-1 inline-flex gap-1 align-middle"
+        aria-hidden="true"
+      >
+        <span
+          v-for="delay in THINKING_DOT_DELAYS_MS"
+          :key="delay"
+          class="size-1.5 rounded-full bg-accent motion-safe:animate-bounce"
+          :style="{ animationDelay: `${delay}ms` }"
+        />
+      </span>
     </p>
   </header>
 </template>

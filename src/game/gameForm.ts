@@ -1,4 +1,6 @@
-import { DEFAULT_SETTINGS, type AiLevel, type GameSettings, type PlayerConfig, type PlayerControl } from '../engine'
+import { AI_LEVELS, DEFAULT_SETTINGS, type AiLevel, type GameSettings, type PlayerConfig, type PlayerControl } from '../engine'
+
+export { AI_LEVELS }
 
 /** Players and rules of a game, without the random seed: enough to start it again. */
 export type GameSetup = {
@@ -14,14 +16,12 @@ export const MAX_FORM_PLAYERS = 6
 export const MAX_NAME_LENGTH = 20
 export const MIN_MISSION_PLAYERS = 3
 
-/** Levels offered for an AI player, easiest first. */
-export const AI_LEVELS: AiLevel[] = ['easy', 'normal', 'hard']
-
 /** French labels of the AI levels. */
 export const AI_LEVEL_LABELS: Record<AiLevel, string> = {
   easy: 'Facile',
   normal: 'Normal',
   hard: 'Difficile',
+  expert: 'Expert',
 }
 
 /** Historical war leaders the AI players are named after. */
@@ -158,6 +158,16 @@ export function chooseVariant(settings: GameSettings, variant: Variant, checked:
     return { ...settings, [variant]: false }
   }
   return { ...settings, secretMissions: variant === 'secretMissions', capitals: variant === 'capitals' }
+}
+
+/** Whether `level` can be chosen with these rules: the expert level is reserved to the classic mode. */
+export function isLevelAvailable(level: AiLevel, settings: GameSettings): boolean {
+  return level !== 'expert' || (!settings.secretMissions && !settings.capitals)
+}
+
+/** The level the AIs keep once the rules change: the hard level when the expert one is no longer available. */
+export function levelForSettings(level: AiLevel, settings: GameSettings): AiLevel {
+  return isLevelAvailable(level, settings) ? level : 'hard'
 }
 
 /** Error message for each player whose name is invalid. */

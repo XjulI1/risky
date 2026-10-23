@@ -118,6 +118,47 @@ describe('CreateGameScreen', () => {
     expect(state.players.map((player) => (player.kind === 'ai' ? player.level : null))).toEqual(['hard', 'hard', 'hard', 'hard'])
   })
 
+  it('offers four levels, from easy to expert', () => {
+    const wrapper = mountForm()
+    expect(wrapper.findAll('[data-testid^="ai-level-"]').map((button) => button.text())).toEqual(['Facile', 'Normal', 'Difficile', 'Expert'])
+  })
+
+  it('starts a game of expert AIs', async () => {
+    const wrapper = mountForm()
+    await chooseAiLevel(wrapper, 'expert')
+    await startButton(wrapper).trigger('click')
+    const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
+    expect(state.players.map((player) => (player.kind === 'ai' ? player.level : null))).toEqual([null, 'expert', 'expert'])
+  })
+
+  describe('expert level', () => {
+    const expertButton = (wrapper: ReturnType<typeof mountForm>) => wrapper.get('[data-testid="ai-level-expert"]')
+
+    it('falls back to the hard level when a variant is checked, and is greyed out with the reason', async () => {
+      const wrapper = mountForm()
+      expect(wrapper.text()).not.toContain('Mode classique uniquement')
+      await chooseAiLevel(wrapper, 'expert')
+      await wrapper.get('[data-testid="setting-secretMissions"]').setValue(true)
+      expect(pressedAiLevels(wrapper)).toEqual(['Difficile'])
+      expect(expertButton(wrapper).attributes('disabled')).toBeDefined()
+      expect(wrapper.text()).toContain('Mode classique uniquement')
+      await startButton(wrapper).trigger('click')
+      const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
+      expect(state.players.map((player) => (player.kind === 'ai' ? player.level : null))).toEqual([null, 'hard', 'hard'])
+    })
+
+    it('becomes available again when the variant is unchecked, the chosen level staying the same', async () => {
+      const wrapper = mountForm()
+      await chooseAiLevel(wrapper, 'easy')
+      await wrapper.get('[data-testid="setting-capitals"]').setValue(true)
+      expect(expertButton(wrapper).attributes('disabled')).toBeDefined()
+      await wrapper.get('[data-testid="setting-capitals"]').setValue(false)
+      expect(expertButton(wrapper).attributes('disabled')).toBeUndefined()
+      expect(wrapper.text()).not.toContain('Mode classique uniquement')
+      expect(pressedAiLevels(wrapper)).toEqual(['Facile'])
+    })
+  })
+
   it('gives the common level to a player turned into an AI and to an added player', async () => {
     const wrapper = mountForm()
     await chooseAiLevel(wrapper, 'easy')

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:expert": "EXPERT_TOURNAMENT=1 vitest run src/ai/expert/expertTournament.test.ts --silent=false",
     "lint": "eslint .",
     "type-check": "vue-tsc --noEmit",
     "generate-pwa-assets": "pwa-assets-generator"

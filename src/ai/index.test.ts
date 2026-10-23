@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { applyAction, createGame, type AiLevel, type GameState } from '../engine'
-import { chooseAction, MAX_ATTACKS_PER_TURN, NEW_TURN, nextAiAction, playUntilHumanOrEnd, progressAfter } from './index'
+import { applyAction, createGame, type AiLevel, type GameSettings, type GameState } from '../engine'
+import { expertAction } from './expert/expert'
+import { chooseAction, chooseHeuristicAction, MAX_ATTACKS_PER_TURN, NEW_TURN, nextAiAction, playUntilHumanOrEnd, progressAfter } from './index'
 import { playerView } from './playerView'
 import { aiPlayers, newAiGame, scenario, territoryCard } from './testScenarios'
 
@@ -86,6 +87,46 @@ describe('chooseAction', () => {
         type: 'endAttack',
         playerId: 'p1',
       })
+    }
+  })
+})
+
+function expertDecisionsAgainstHard(settings: Partial<GameSettings>, actionCount: number) {
+  const decisions: { expert: unknown; hard: unknown }[] = []
+  let state = newAiGame(['expert', 'hard', 'hard'], 13, settings)
+  let turn = NEW_TURN
+  for (let i = 0; i < actionCount && state.phase.kind !== 'gameOver'; i++) {
+    const view = playerView(state, state.players[state.currentPlayerIndex]?.id ?? '')
+    const hardChoice = chooseHeuristicAction(view, 'hard', turn)
+    if (view.viewer === 'p1') {
+      decisions.push({ expert: chooseAction(view, 'expert', turn), hard: hardChoice })
+    }
+    const result = applyAction(state, hardChoice)
+    if (!result.ok) {
+      throw new Error(result.error.message)
+    }
+    turn = progressAfter(turn, hardChoice, result.events)
+    state = result.state
+  }
+  return decisions
+}
+
+describe('chooseAction at the expert level', () => {
+  it('plays the action of the expert search in the classic mode', () => {
+    for (const state of midGameStates().filter((s) => s.phase.kind === 'reinforce' || s.phase.kind === 'attack').slice(0, 3)) {
+      const view = playerView(state, state.players[state.currentPlayerIndex]?.id ?? '')
+      expect(chooseAction(view, 'expert')).toEqual(expertAction(view))
+    }
+  })
+
+  it.each([
+    { variant: 'secret missions', settings: { secretMissions: true } },
+    { variant: 'capitals', settings: { capitals: true } },
+  ])('plays exactly like the hard level with $variant', ({ settings }) => {
+    const decisions = expertDecisionsAgainstHard(settings, 300)
+    expect(decisions.length).toBeGreaterThan(20)
+    for (const { expert, hard } of decisions) {
+      expect(expert).toEqual(hard)
     }
   })
 })

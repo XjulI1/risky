@@ -10,6 +10,8 @@ import {
   chooseControl,
   chooseVariant,
   defaultSetup,
+  isLevelAvailable,
+  levelForSettings,
   MAX_FORM_PLAYERS,
   MAX_NAME_LENGTH,
   MIN_FORM_PLAYERS,
@@ -35,6 +37,7 @@ const canStart = computed(() => Object.keys(errors.value).length === 0)
 const withNeutral = computed(() => setup.value.players.length === MIN_FORM_PLAYERS)
 const hasAi = computed(() => setup.value.players.some((player) => player.kind === 'ai'))
 const missionsAllowed = computed(() => setup.value.players.length >= MIN_MISSION_PLAYERS)
+const expertAvailable = computed(() => isLevelAvailable('expert', setup.value.settings))
 
 const diceChoices = [1, 2, 3]
 
@@ -65,6 +68,7 @@ function updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings
 
 function updateVariant(variant: Variant, checked: boolean) {
   setup.value.settings = chooseVariant(setup.value.settings, variant, checked)
+  updateAiLevel(levelForSettings(aiLevel.value, setup.value.settings))
 }
 
 function removePlayerRow(id: string) {
@@ -197,14 +201,21 @@ function start() {
               :key="level"
               type="button"
               :data-testid="`ai-level-${level}`"
-              class="min-h-11 min-w-28 rounded-lg px-5 text-sm"
-              :class="level === aiLevel ? 'bg-accent font-semibold text-ink' : 'bg-ink text-parchment/80 hover:text-parchment'"
+              class="min-h-11 min-w-28 rounded-lg px-5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+              :class="level === aiLevel ? 'bg-accent font-semibold text-ink' : 'bg-ink text-parchment/80 enabled:hover:text-parchment'"
               :aria-pressed="level === aiLevel"
+              :disabled="!isLevelAvailable(level, setup.settings)"
               @click="updateAiLevel(level)"
             >
               {{ AI_LEVEL_LABELS[level] }}
             </button>
           </div>
+          <p
+            v-if="!expertAvailable"
+            class="text-center text-sm text-parchment/70"
+          >
+            Mode classique uniquement pour le niveau Expert
+          </p>
         </div>
         <p
           v-if="withNeutral"

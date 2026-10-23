@@ -1,5 +1,6 @@
 import { computed, inject, provide, ref, shallowRef, type ComputedRef, type InjectionKey, type Ref, type ShallowRef } from 'vue'
-import { NEW_TURN, nextAiAction, progressAfter, type TurnProgress } from '../ai'
+import { NEW_TURN, progressAfter, type TurnProgress } from '../ai'
+import { playerView } from '../ai/playerView'
 import {
   applyAction,
   type Action,
@@ -10,6 +11,7 @@ import {
   type PlayerId,
   type TerritoryId,
 } from '../engine'
+import { createAiDecider, type AiDecider } from './aiDecider'
 import { ANIMATION_DURATIONS, readSpeedPreference, writeSpeedPreference, type AnimationSpeed } from './animationSpeed'
 import type { GameSetup } from './gameForm'
 import { journalBatch, openingJournal, type JournalEntry } from './history/journal'
@@ -48,6 +50,7 @@ export type GameSession = {
   revealedCapitals: ShallowRef<Record<PlayerId, TerritoryId> | null>
   capitalLost: ShallowRef<LostCapital | null>
   thinkingPlayer: ComputedRef<Player | null>
+  aiThinking: Ref<boolean>
   aiFocus: ShallowRef<AiFocus | null>
   journal: ShallowRef<JournalEntry[]>
   visibleJournal: ComputedRef<JournalEntry[]>
@@ -82,12 +85,47 @@ type SessionOptions = {
     storage?: SaveStorage | null
   }
   history?: GameHistory
+  decider?: AiDecider
 }
+
+/** Time after which a decision still running is shown as a thinking AI. */
+export const THINKING_INDICATOR_DELAY_MS = 500
 
 const SETUP_PHASES = new Set(['claim', 'placement'])
 
 function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
+type Timers = {
+  wait: (milliseconds: number) => Promise<void>
+  after: (milliseconds: number, callback: () => void) => ReturnType<typeof setTimeout>
+  cancel: (timer: ReturnType<typeof setTimeout>) => void
+  cancelAll: () => void
+}
+
+function cancellableTimers(): Timers {
+  const pending = new Set<ReturnType<typeof setTimeout>>()
+  const after = (milliseconds: number, callback: () => void) => {
+    const timer = setTimeout(() => {
+      pending.delete(timer)
+      callback()
+    }, milliseconds)
+    pending.add(timer)
+    return timer
+  }
+  return {
+    wait: (milliseconds) => new Promise((resolve) => after(milliseconds, resolve)),
+    after,
+    cancel: (timer) => {
+      clearTimeout(timer)
+      pending.delete(timer)
+    },
+    cancelAll: () => {
+      pending.forEach((timer) => clearTimeout(timer))
+      pending.clear()
+    },
+  }
 }
 
 function currentPlayerOf(state: GameState): Player | undefined {
@@ -185,6 +223,9 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   const revealedCapitals = shallowRef<Record<PlayerId, TerritoryId> | null>(null)
   const capitalLost = shallowRef<LostCapital | null>(null)
   const aiFocus = shallowRef<AiFocus | null>(null)
+  const aiThinking = ref(false)
+  const decider = options.decider ?? createAiDecider()
+  const aiTimers = cancellableTimers()
   const turnNumber = ref(options.history?.turnNumber ?? initialTurnNumber(initial))
   const journal = shallowRef<JournalEntry[]>(options.history?.journal ?? openingJournal(initial, turnNumber.value))
   const visibleCount = ref(journal.value.length)
@@ -195,23 +236,53 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   let revealSteps: number[] = []
   let presentationRun = 0
   let turnProgress: TurnProgress = NEW_TURN
-  let aiTimer: ReturnType<typeof setTimeout> | null = null
+  let aiRun = 0
+  let aiPending = false
   let disposed = false
 
-  const scheduleAiAction = () => {
-    if (disposed || aiTimer !== null || isPresenting.value || drawnCard.value !== null || revealedCapitals.value !== null) {
+  const decideAiAction = async (run: number, player: Player & { kind: 'ai' }) => {
+    const delay = ANIMATION_DURATIONS[speed.value].aiAction
+    const paced = aiTimers.wait(delay)
+    const indicator = aiTimers.after(THINKING_INDICATOR_DELAY_MS, () => {
+      aiThinking.value = true
+    })
+    const action = await decider.decide(playerView(engineState.value, player.id), player.level, turnProgress).catch(() => null)
+    aiTimers.cancel(indicator)
+    if (run !== aiRun) {
       return
     }
-    const action = nextAiAction(engineState.value, turnProgress)
     if (action === null) {
+      aiPending = false
+      aiThinking.value = false
+      error.value = `${player.name} n'a pas pu jouer.`
       return
     }
-    aiFocus.value = action.type === 'attack' && speed.value !== 'instant' ? { from: action.from, to: action.to } : null
-    aiTimer = setTimeout(() => {
-      aiTimer = null
-      aiFocus.value = null
-      dispatch(action)
-    }, ANIMATION_DURATIONS[speed.value].aiAction)
+    if (action.type === 'attack' && speed.value !== 'instant') {
+      aiFocus.value = { from: action.from, to: action.to }
+      await Promise.all([paced, aiTimers.wait(delay / 2)])
+    } else {
+      await paced
+    }
+    if (run !== aiRun) {
+      return
+    }
+    aiPending = false
+    aiFocus.value = null
+    aiThinking.value = false
+    dispatch(action)
+  }
+
+  const scheduleAiAction = () => {
+    if (disposed || aiPending || isPresenting.value || drawnCard.value !== null || revealedCapitals.value !== null) {
+      return
+    }
+    const player = aiPlayerOf(engineState.value)
+    if (player === null || player.kind !== 'ai') {
+      return
+    }
+    aiPending = true
+    aiRun += 1
+    void decideAiAction(aiRun, player)
   }
 
   const revealJournal = (completedSteps: number) => {
@@ -337,6 +408,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     revealedCapitals,
     capitalLost,
     thinkingPlayer,
+    aiThinking,
     aiFocus,
     journal,
     visibleJournal: computed(() => journal.value.slice(0, visibleCount.value)),
@@ -380,10 +452,11 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     dispose: () => {
       disposed = true
       presentationRun += 1
-      if (aiTimer !== null) {
-        clearTimeout(aiTimer)
-        aiTimer = null
-      }
+      aiRun += 1
+      aiTimers.cancelAll()
+      aiFocus.value = null
+      aiThinking.value = false
+      decider.dispose()
     },
   }
 }

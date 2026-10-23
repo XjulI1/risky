@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyAction } from './index'
+import { applyAction, applyActionInPlace } from './index'
 import { currentPlayer } from './state'
 import { createTestGame, deepFreeze, ownedBy, placeAll } from './testUtils'
 import type { Action, GameState } from './types'
@@ -61,6 +61,28 @@ describe('applyAction purity', () => {
     const snapshot = structuredClone(state)
     applyAction(state, { ...deployAction(state), armies: 999 })
     expect(state).toEqual(snapshot)
+  })
+})
+
+describe('applyActionInPlace', () => {
+  it('reaches the same state and events as applyAction', () => {
+    const state = reinforcingGame()
+    const expected = applyAction(state, deployAction(state))
+    const result = applyActionInPlace(structuredClone(state), deployAction(state))
+    expect(result).toEqual(expected)
+  })
+
+  it('modifies and returns the given state', () => {
+    const state = reinforcingGame()
+    const result = applyActionInPlace(state, deployAction(state))
+    expect(result.ok && result.state).toBe(state)
+  })
+
+  it('validates the turn and the phase like applyAction', () => {
+    const state = reinforcingGame()
+    const playerId = currentPlayer(state).id
+    const result = applyActionInPlace(state, { type: 'attack', playerId, from: 'alaska', to: 'kamchatka' })
+    expect(result).toMatchObject({ ok: false, error: { code: 'WRONG_PHASE' } })
   })
 })
 

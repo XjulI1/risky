@@ -129,6 +129,20 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [x] Installer l'application sur iPad (« Sur l'écran d'accueil ») et vérifier en paysage le
   lancement plein écran puis une partie hors ligne.
 
+## Après la V1
+
+### 9. `add-expert-ai` — IA experte par simulation
+
+- [x] Prototype : l'expert gagne 45 parties sur 60 contre deux IA difficiles (22 pour un difficile à
+  la même place).
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-expert-ai/tasks.md) : l'expert
+  gagne 41 parties sur 60 au tournoi expert, en 77 ms par décision en moyenne.
+- [x] Archiver le change.
+- [ ] Vérifier sur ordinateur une partie Expert (tâche 7.3) : plateau fluide pendant la réflexion,
+  indicateur sur les décisions longues, Expert grisé avec une variante.
+- [ ] Vérifier sur iPad une partie Expert, en ligne puis hors ligne (tâche 7.4) : la plupart des
+  décisions sous la seconde, des pics rares de 2 à 3 s au plus.
+
 ## Pistes après la V1
 
 Écartées du périmètre de la V1, à reconsidérer ensuite :
@@ -136,7 +150,6 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - Multijoueur en ligne.
 - Sons et musique.
 - Brouillard de guerre.
-- IA par simulation (Monte-Carlo).
 - Relecture pas à pas d'une partie terminée.
 - Plusieurs emplacements de sauvegarde, export et import de partie.
 - Interface en anglais.

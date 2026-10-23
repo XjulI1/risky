@@ -9,8 +9,9 @@ sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
   conquête ou à l'épuisement de l'attaquant, fortification, cartes territoire.
 - **2 à 6 joueurs**, humains sur le même appareil ou IA, avec une armée neutre à 2 joueurs.
   Entre deux humains, un écran de passage de main cache les informations secrètes.
-- **Adversaires IA** en trois niveaux : facile, normal, difficile. Leur façon de jouer est décrite
-  dans [`docs/ia.md`](docs/ia.md).
+- **Adversaires IA** en quatre niveaux : facile, normal, difficile et expert. L'expert, réservé à la
+  partie classique, simule la suite de la partie avant de déployer et d'attaquer. Leur façon de
+  jouer est décrite dans [`docs/ia.md`](docs/ia.md).
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
   défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
   au choix, placement des armées aléatoire ou un par un.
@@ -57,6 +58,7 @@ Les commandes du projet :
 pnpm install       # installer les dépendances
 pnpm dev           # lancer l'application en développement
 pnpm test          # lancer les tests
+pnpm test:expert   # jouer le tournoi de l'IA experte (plusieurs minutes)
 pnpm lint          # analyser le code
 pnpm type-check    # vérifier les types
 pnpm build         # construire la version de production
@@ -83,6 +85,7 @@ Les changes doivent être appliqués dans l'ordre :
 | 6 | `add-offline-pwa` | Application installable et jouable hors ligne | Terminé |
 | 7 | `add-secret-missions` | Variante missions secrètes | Terminé |
 | 8 | `add-capitals-mode` | Variante capitales | Terminé |
+| 9 | `add-expert-ai` | IA experte par simulation (Monte-Carlo) | Terminé |
 
 Les changes terminés sont archivés dans `openspec/changes/archive/` ; les spécifications de
 référence qui en résultent se trouvent dans `openspec/specs/`. Il reste à tester l'application sur

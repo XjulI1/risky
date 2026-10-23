@@ -23,7 +23,10 @@ export type GameMap = {
   continents: Record<ContinentId, Continent>
 }
 
-export type AiLevel = 'easy' | 'normal' | 'hard'
+export type AiLevel = 'easy' | 'normal' | 'hard' | 'expert'
+
+/** The levels played by heuristics alone, without simulation. */
+export type HeuristicLevel = Exclude<AiLevel, 'expert'>
 
 export type PlayerControl = { kind: 'human' } | { kind: 'ai'; level: AiLevel }
 

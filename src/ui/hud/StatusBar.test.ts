@@ -20,8 +20,8 @@ function game(firstPlayer: PlayerControl): GameState {
   return state
 }
 
-function mountBar(state: GameState) {
-  return mount(StatusBar, { props: { state, view: viewOf(state, IDLE) } })
+function mountBar(state: GameState, thinking = false) {
+  return mount(StatusBar, { props: { state, view: viewOf(state, IDLE), thinking } })
 }
 
 function hintOf(state: GameState): string {
@@ -31,6 +31,16 @@ function hintOf(state: GameState): string {
 describe('StatusBar', () => {
   it('tells that an AI is thinking during its turn', () => {
     expect(hintOf(game({ kind: 'ai', level: 'hard' }))).toBe('Alice réfléchit…')
+  })
+
+  it('shows animated dots after the thinking AI while a decision takes long', () => {
+    const wrapper = mountBar(game({ kind: 'ai', level: 'expert' }), true)
+    expect(wrapper.get('[data-testid="status-hint"]').text()).toContain('Alice réfléchit…')
+    expect(wrapper.findAll('[data-testid="status-thinking"] > span')).toHaveLength(3)
+  })
+
+  it('shows no dots while no decision takes long', () => {
+    expect(mountBar(game({ kind: 'ai', level: 'expert' })).find('[data-testid="status-thinking"]').exists()).toBe(false)
   })
 
   it('guides a human during its turn', () => {

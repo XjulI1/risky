@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, type PlayerConfig } from '../engine'
-import { addPlayer, AI_NAMES, chooseControl, chooseVariant, defaultSetup, MAX_NAME_LENGTH } from './gameForm'
+import { AI_LEVELS as ENGINE_AI_LEVELS, DEFAULT_SETTINGS, type PlayerConfig } from '../engine'
+import {
+  addPlayer,
+  AI_LEVEL_LABELS,
+  AI_LEVELS,
+  AI_NAMES,
+  chooseControl,
+  chooseVariant,
+  defaultSetup,
+  isLevelAvailable,
+  levelForSettings,
+  MAX_NAME_LENGTH,
+} from './gameForm'
 
 function sequence(...values: number[]): () => number {
   let index = 0
@@ -60,6 +71,26 @@ describe('AI names', () => {
     const players = defaultSetup(sequence(0)).players
     const harder = chooseControl(players, 'player-2', { kind: 'ai', level: 'hard' }, sequence(0.9))
     expect(harder[1]?.name).toBe(players[1]?.name)
+  })
+})
+
+describe('AI levels', () => {
+  it('offers the levels of the engine, the expert one included', () => {
+    expect(AI_LEVELS).toEqual(ENGINE_AI_LEVELS)
+    expect(AI_LEVELS.map((level) => AI_LEVEL_LABELS[level])).toEqual(['Facile', 'Normal', 'Difficile', 'Expert'])
+  })
+
+  it('offers the expert level in the classic mode only', () => {
+    expect(isLevelAvailable('expert', DEFAULT_SETTINGS)).toBe(true)
+    expect(isLevelAvailable('expert', { ...DEFAULT_SETTINGS, secretMissions: true })).toBe(false)
+    expect(isLevelAvailable('expert', { ...DEFAULT_SETTINGS, capitals: true })).toBe(false)
+    expect(isLevelAvailable('hard', { ...DEFAULT_SETTINGS, capitals: true })).toBe(true)
+  })
+
+  it('brings the expert level back to the hard one when a variant is on', () => {
+    expect(levelForSettings('expert', { ...DEFAULT_SETTINGS, secretMissions: true })).toBe('hard')
+    expect(levelForSettings('expert', DEFAULT_SETTINGS)).toBe('expert')
+    expect(levelForSettings('easy', { ...DEFAULT_SETTINGS, capitals: true })).toBe('easy')
   })
 })
 

@@ -54,32 +54,49 @@ function handle(state: GameState, action: Action, events: GameEvent[]): RuleErro
   }
 }
 
+function checkTurnAndPhase(state: GameState, action: Action): RuleError | null {
+  if (state.phase.kind === 'gameOver') {
+    return ruleError('GAME_OVER', 'La partie est terminée.')
+  }
+  if (action.playerId !== currentPlayer(state).id) {
+    return ruleError('NOT_YOUR_TURN', "Ce n'est pas votre tour.")
+  }
+  if (!ALLOWED_PHASES[action.type].includes(state.phase.kind)) {
+    return ruleError('WRONG_PHASE', "Cette action n'est pas possible dans la phase en cours.")
+  }
+  return null
+}
+
+function resolve(state: GameState, action: Action): ActionResult {
+  const isSetup = SETUP_PHASES.includes(state.phase.kind)
+  const events: GameEvent[] = []
+  const error = handle(state, action, events)
+  if (error !== null) {
+    return reject(error)
+  }
+  if (!isSetup) {
+    endIfObjectiveReached(state, action.playerId, events)
+  }
+  return { ok: true, state, events }
+}
+
 /**
  * Validates an action against the current state and applies it, then ends the game if the player who
  * played it has accomplished its mission or holds every capital (set-up actions excepted).
  * Returns the new state and the events it caused, or the rule it breaks; the given state is never modified.
  */
 export function applyAction(state: GameState, action: Action): ActionResult {
-  if (state.phase.kind === 'gameOver') {
-    return reject(ruleError('GAME_OVER', 'La partie est terminée.'))
-  }
-  if (action.playerId !== currentPlayer(state).id) {
-    return reject(ruleError('NOT_YOUR_TURN', "Ce n'est pas votre tour."))
-  }
-  if (!ALLOWED_PHASES[action.type].includes(state.phase.kind)) {
-    return reject(ruleError('WRONG_PHASE', "Cette action n'est pas possible dans la phase en cours."))
-  }
+  const error = checkTurnAndPhase(state, action)
+  return error === null ? resolve(structuredClone(state), action) : reject(error)
+}
 
-  const next = structuredClone(state)
-  const events: GameEvent[] = []
-  const error = handle(next, action, events)
-  if (error !== null) {
-    return reject(error)
-  }
-  if (!SETUP_PHASES.includes(state.phase.kind)) {
-    endIfObjectiveReached(next, action.playerId, events)
-  }
-  return { ok: true, state: next, events }
+/**
+ * Same as `applyAction`, but modifies the given state instead of a copy and returns it, for simulations that
+ * play many actions on a throwaway state; once an action is rejected, the state must no longer be used.
+ */
+export function applyActionInPlace(state: GameState, action: Action): ActionResult {
+  const error = checkTurnAndPhase(state, action)
+  return error === null ? resolve(state, action) : reject(error)
 }
 
 export { CAPITAL_DEFENSE_BONUS, capitalOwnerOf, defenderBonusOn, heldCapitals, holdsAllCapitals, isCapital } from './capitals'
@@ -91,5 +108,5 @@ export { FORCED_TRADE_HAND_SIZE, mustTrade } from './reinforcement'
 export { nextFloat, nextInt } from './rng'
 export { CONQUER_24_TERRITORIES, GENERAL_MISSIONS, missionProgress, missionText } from './missions'
 export type { ContinentProgress, MissionProgress } from './missions'
-export { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
+export { AI_LEVELS, buildDeck, createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 export type * from './types'

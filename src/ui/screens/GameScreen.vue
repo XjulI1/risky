@@ -52,6 +52,7 @@ const {
   capitalLost,
   error,
   thinkingPlayer,
+  aiThinking,
   aiFocus,
   storageWarning,
   visibleJournal,
@@ -217,6 +218,7 @@ function trade(cardIds: [number, number, number]) {
       <StatusBar
         :state="displayedState"
         :view="view"
+        :thinking="aiThinking"
       />
       <PlayersPanel :state="displayedState" />
       <MissionPanel

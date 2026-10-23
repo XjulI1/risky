@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { classicMap, CONQUER_24_TERRITORIES, createGame, type GameState, type PlayerControl } from '../engine'
+import { chooseAction, type TurnProgress } from '../ai'
+import type { PlayerView } from '../ai/playerView'
+import { classicMap, CONQUER_24_TERRITORIES, createGame, type Action, type AiLevel, type GameState, type PlayerControl } from '../engine'
 import { capitalColors } from '../board/boardViewModel'
+import type { AiDecider } from './aiDecider'
 import { ANIMATION_DURATIONS, type AnimationSpeed } from './animationSpeed'
 import type { GameSetup } from './gameForm'
-import { loadSavedGame } from './persistence'
+import { loadSavedGame, SAVE_KEY } from './persistence'
 import { createGameSession, createGameSessionFromSave } from './useGameSession'
 
 const HUMAN: PlayerControl = { kind: 'human' }
@@ -32,6 +35,37 @@ function attackingGame(controls: PlayerControl[] = [HUMAN, HUMAN, HUMAN]): GameS
 }
 
 const attack = { type: 'attack', playerId: 'p1', from: 'north_africa', to: 'brazil' } as const
+
+function memoryStorage() {
+  const values = new Map<string, string>()
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => void values.set(key, value),
+    removeItem: (key: string) => void values.delete(key),
+  }
+}
+
+const setup = (state: GameState): GameSetup => ({
+  players: state.players.filter((player) => !player.isNeutral).map(({ id, name, color, ...control }) => ({
+    id,
+    name,
+    color,
+    ...(control.kind === 'ai' ? { kind: 'ai' as const, level: control.level } : { kind: 'human' as const }),
+  })),
+  settings: state.settings,
+})
+
+function slowDecider(milliseconds: number): AiDecider & { disposed: boolean } {
+  const decider = {
+    disposed: false,
+    decide: (view: PlayerView, level: AiLevel, turn: TurnProgress) =>
+      new Promise<Action>((resolve) => setTimeout(() => resolve(chooseAction(view, level, turn)), milliseconds)),
+    dispose: () => {
+      decider.disposed = true
+    },
+  }
+  return decider
+}
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -264,28 +298,29 @@ describe('AI turns', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('waits for the delay of the speed before each action', () => {
+  it('waits for the delay of the speed before each action', async () => {
     const initial = reinforcingGame([AI, HUMAN, HUMAN])
     const session = createGameSession(initial, { speed: 'normal' })
-    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction - 1)
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction - 1)
     expect(session.engineState.value).toBe(initial)
-    vi.advanceTimersByTime(1)
+    await vi.advanceTimersByTimeAsync(1)
     expect(session.engineState.value).not.toBe(initial)
   })
 
-  it('plays without delay at the instant speed', () => {
+  it('plays without delay at the instant speed', async () => {
     const initial = reinforcingGame([AI, HUMAN, HUMAN])
     const session = createGameSession(initial, { speed: 'instant' })
-    vi.advanceTimersByTime(0)
+    await vi.advanceTimersByTimeAsync(0)
     expect(session.engineState.value).not.toBe(initial)
   })
 
-  it('highlights the origin and the target of an attack before rolling the dice', () => {
+  it('highlights the origin and the target of an attack before rolling the dice', async () => {
     const session = createGameSession(attackingGame([AI, HUMAN, HUMAN]), { speed: 'normal' })
+    await vi.advanceTimersByTimeAsync(0)
     const focus = session.aiFocus.value
     expect(focus?.from).toBe('north_africa')
     expect(session.lastEvents.value).toEqual([])
-    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction)
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction)
     expect(session.aiFocus.value).toBeNull()
     expect(session.lastEvents.value[0]).toMatchObject({ type: 'diceRolled', from: focus?.from, to: focus?.to })
   })
@@ -302,16 +337,16 @@ describe('AI turns', () => {
     expect(createGameSession(attackingGame(), { speed: 'normal' }).thinkingPlayer.value).toBeNull()
   })
 
-  it('stops playing when the game is left', () => {
+  it('stops playing when the game is left', async () => {
     const initial = reinforcingGame([AI, HUMAN, HUMAN])
     const session = createGameSession(initial, { speed: 'normal' })
     session.dispose()
-    vi.advanceTimersByTime(ANIMATION_DURATIONS.normal.aiAction * 10)
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction * 10)
     expect(session.engineState.value).toBe(initial)
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('waits for the human to close the notice of the card drawn before the AI plays', () => {
+  it('waits for the human to close the notice of the card drawn before the AI plays', async () => {
     const session = createGameSession(attackingGame([HUMAN, AI, AI]), { speed: 'instant' })
     session.dispatch(attack)
     session.input({ kind: 'confirm', amount: 3 })
@@ -319,34 +354,109 @@ describe('AI turns', () => {
     session.input({ kind: 'skipFortify' })
     expect(session.drawnCard.value).not.toBeNull()
     const afterHumanTurn = session.engineState.value
-    vi.advanceTimersByTime(1000)
+    await vi.advanceTimersByTimeAsync(1000)
     expect(session.engineState.value).toBe(afterHumanTurn)
     session.acknowledgeDrawnCard()
-    vi.advanceTimersByTime(0)
+    await vi.advanceTimersByTimeAsync(0)
     expect(session.engineState.value).not.toBe(afterHumanTurn)
   })
 })
 
-describe('journal, statistics and save', () => {
-  function memoryStorage() {
-    const values = new Map<string, string>()
-    return {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => void values.set(key, value),
-      removeItem: (key: string) => void values.delete(key),
-    }
+describe('AI thinking', () => {
+  function reinforcingGame(): GameState {
+    const state = attackingGame([AI, HUMAN, HUMAN])
+    state.phase = { kind: 'reinforce', reserve: 3 }
+    return state
   }
 
-  const setup = (state: GameState): GameSetup => ({
-    players: state.players.filter((player) => !player.isNeutral).map(({ id, name, color, ...control }) => ({
-      id,
-      name,
-      color,
-      ...(control.kind === 'ai' ? { kind: 'ai' as const, level: control.level } : { kind: 'human' as const }),
-    })),
-    settings: state.settings,
+  it('plays at the end of the delay when the decision is shorter', async () => {
+    const initial = reinforcingGame()
+    const session = createGameSession(initial, { speed: 'normal', decider: slowDecider(300) })
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction - 1)
+    expect(session.engineState.value).toBe(initial)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(session.engineState.value).not.toBe(initial)
   })
 
+  it('plays a deployment as soon as it is decided when the decision is longer than the delay', async () => {
+    const initial = reinforcingGame()
+    const session = createGameSession(initial, { speed: 'fast', decider: slowDecider(1000) })
+    await vi.advanceTimersByTimeAsync(999)
+    expect(session.engineState.value).toBe(initial)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(session.lastEvents.value[0]).toMatchObject({ type: 'armiesDeployed' })
+  })
+
+  it('highlights an attack decided late during half the delay before playing it', async () => {
+    const initial = attackingGame([AI, HUMAN, HUMAN])
+    const session = createGameSession(initial, { speed: 'normal', decider: slowDecider(1000) })
+    await vi.advanceTimersByTimeAsync(999)
+    expect(session.aiFocus.value).toBeNull()
+    await vi.advanceTimersByTimeAsync(1)
+    const focus = session.aiFocus.value
+    expect(focus?.from).toBe('north_africa')
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction / 2 - 1)
+    expect(session.engineState.value).toBe(initial)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(session.aiFocus.value).toBeNull()
+    expect(session.lastEvents.value[0]).toMatchObject({ type: 'diceRolled', from: focus?.from, to: focus?.to })
+  })
+
+  it('waits for nothing but the decision at the instant speed', async () => {
+    const initial = reinforcingGame()
+    const session = createGameSession(initial, { speed: 'instant', decider: slowDecider(200) })
+    await vi.advanceTimersByTimeAsync(199)
+    expect(session.engineState.value).toBe(initial)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(session.engineState.value).not.toBe(initial)
+  })
+
+  it('shows that the AI is thinking half a second after a long decision started, until its action is played', async () => {
+    const session = createGameSession(reinforcingGame(), { speed: 'fast', decider: slowDecider(2000) })
+    await vi.advanceTimersByTimeAsync(499)
+    expect(session.aiThinking.value).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(session.aiThinking.value).toBe(true)
+    await vi.advanceTimersByTimeAsync(1500)
+    expect(session.lastEvents.value[0]).toMatchObject({ type: 'armiesDeployed' })
+    expect(session.aiThinking.value).toBe(false)
+  })
+
+  it('never shows that the AI is thinking for a quick decision', async () => {
+    const session = createGameSession(reinforcingGame(), { speed: 'normal', decider: slowDecider(100) })
+    for (const step of [100, 450, 149]) {
+      await vi.advanceTimersByTimeAsync(step)
+      expect(session.aiThinking.value).toBe(false)
+    }
+  })
+
+  it('tells that the AI could not play when its decision fails', async () => {
+    const initial = reinforcingGame()
+    const failing: AiDecider = { decide: () => Promise.reject(new Error('worker crashed')), dispose: () => {} }
+    const session = createGameSession(initial, { speed: 'normal', decider: failing })
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction)
+    expect(session.engineState.value).toBe(initial)
+    expect(session.error.value).toBe(`${initial.players[0]?.name} n'a pas pu jouer.`)
+    expect(session.aiThinking.value).toBe(false)
+  })
+
+  it('drops the pending decision when the game is left', async () => {
+    const initial = reinforcingGame()
+    const storage = memoryStorage()
+    const decider = slowDecider(2000)
+    const session = createGameSession(initial, { speed: 'normal', decider, persistence: { setup: setup(initial), storage } })
+    const saved = storage.getItem(SAVE_KEY)
+    await vi.advanceTimersByTimeAsync(1000)
+    session.dispose()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(session.engineState.value).toBe(initial)
+    expect(storage.getItem(SAVE_KEY)).toBe(saved)
+    expect(decider.disposed).toBe(true)
+    expect(session.aiThinking.value).toBe(false)
+  })
+})
+
+describe('journal, statistics and save', () => {
   function savedSession(initial: GameState, speed: AnimationSpeed = 'instant') {
     const storage = memoryStorage()
     const session = createGameSession(initial, { speed, persistence: { setup: setup(initial), storage } })
@@ -399,9 +509,9 @@ describe('journal, statistics and save', () => {
     expect(loaded.kind === 'saved' && loaded.game.status).toBe('inProgress')
   })
 
-  it('saves the game after each action of an AI', () => {
+  it('saves the game after each action of an AI', async () => {
     const { session, storage } = savedSession(reinforcing([AI, HUMAN, HUMAN]))
-    vi.advanceTimersByTime(0)
+    await vi.advanceTimersByTimeAsync(0)
     const loaded = loadSavedGame(storage)
     expect(loaded.kind === 'saved' && loaded.game.engineState).toEqual(session.engineState.value)
     expect(loaded.kind === 'saved' && loaded.game.engineState).not.toEqual(reinforcing([AI, HUMAN, HUMAN]))

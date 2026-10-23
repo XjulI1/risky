@@ -36,16 +36,18 @@ describe('createGame', () => {
     const players = testPlayers(3)
     players[1] = { ...players[1]!, kind: 'ai', level: 'easy' }
     players[2] = { ...players[2]!, kind: 'ai', level: 'hard' }
+    players.push({ ...testPlayers(4)[3]!, kind: 'ai', level: 'expert' })
     const result = createGame({ players, seed: 1 })
     expect(result.ok && result.state.players.slice(1)).toMatchObject([
       { kind: 'ai', level: 'easy' },
       { kind: 'ai', level: 'hard' },
+      { kind: 'ai', level: 'expert' },
     ])
   })
 
   it('rejects an unknown AI level', () => {
     const players: unknown[] = testPlayers(3)
-    players[1] = { ...testPlayers(3)[1], kind: 'ai', level: 'expert' }
+    players[1] = { ...testPlayers(3)[1], kind: 'ai', level: 'grandmaster' }
     const result = createGame({ players: players as PlayerConfig[], seed: 1 })
     expect(result).toMatchObject({ ok: false, error: { code: 'INVALID_PLAYER' } })
   })

@@ -41,7 +41,8 @@ const INITIAL_ARMIES: Record<number, number> = { 2: 40, 3: 35, 4: 30, 5: 25, 6: 
 const NEUTRAL_TERRITORY_COUNT = 14
 const CARD_SYMBOLS: CardSymbol[] = ['infantry', 'cavalry', 'artillery']
 const JOKER_COUNT = 2
-const AI_LEVELS: readonly AiLevel[] = ['easy', 'normal', 'hard']
+/** Levels an AI player can have, easiest first. */
+export const AI_LEVELS: readonly AiLevel[] = ['easy', 'normal', 'hard', 'expert']
 
 const ALLOWED_VALUES: { [K in keyof GameSettings]?: readonly GameSettings[K][] } = {
   territoryDistribution: ['random', 'choice'],
@@ -101,7 +102,8 @@ function resolveSettings(overrides: Partial<GameSettings>, playerCount: number):
   return settings
 }
 
-function buildDeck(map: GameMap): Card[] {
+/** Every card of the game for `map`: one per territory, then the jokers. */
+export function buildDeck(map: GameMap): Card[] {
   const territoryCards: Card[] = map.territoryIds.map((territory, index) => ({
     id: index,
     symbol: CARD_SYMBOLS[index % CARD_SYMBOLS.length] as CardSymbol,

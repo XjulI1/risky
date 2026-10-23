@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import type { AiLevel, GameSettings } from '../engine'
+import type { GameSettings, HeuristicLevel } from '../engine'
 import { playUntilHumanOrEnd } from './index'
 import { newAiGame } from './testScenarios'
 
@@ -7,7 +7,7 @@ const GAME_COUNT = 60
 const MAX_TURNS = 500
 const MIN_HARD_WIN_RATE = 0.45
 
-const ORDERS: AiLevel[][] = [
+const ORDERS: HeuristicLevel[][] = [
   ['easy', 'normal', 'hard'],
   ['easy', 'hard', 'normal'],
   ['normal', 'easy', 'hard'],
@@ -16,23 +16,23 @@ const ORDERS: AiLevel[][] = [
   ['hard', 'normal', 'easy'],
 ]
 
-function levelsFor(game: number): AiLevel[] {
+function levelsFor(game: number): HeuristicLevel[] {
   return ORDERS[game % ORDERS.length] ?? []
 }
 
-function winnerLevel(game: number, settings: Partial<GameSettings>): AiLevel | null {
+function winnerLevel(game: number, settings: Partial<GameSettings>): HeuristicLevel | null {
   const { state } = playUntilHumanOrEnd(newAiGame(levelsFor(game), 5000 + game, settings), { maxTurns: MAX_TURNS })
   const winner = state.players.find((player) => player.id === state.winner)
-  return winner?.kind === 'ai' ? winner.level : null
+  return winner?.kind === 'ai' && winner.level !== 'expert' ? winner.level : null
 }
 
 type TournamentResult = {
-  wins: Record<AiLevel, number>
+  wins: Record<HeuristicLevel, number>
   unfinished: number
 }
 
 function playTournament(settings: Partial<GameSettings>): TournamentResult {
-  const wins: Record<AiLevel, number> = { easy: 0, normal: 0, hard: 0 }
+  const wins: Record<HeuristicLevel, number> = { easy: 0, normal: 0, hard: 0 }
   let unfinished = 0
   for (let game = 0; game < GAME_COUNT; game++) {
     const level = winnerLevel(game, settings)
