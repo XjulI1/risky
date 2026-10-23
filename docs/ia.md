@@ -1,6 +1,7 @@
 # Les IA de Risky
 
-Ce document décrit, en clair, comment jouent les trois niveaux d'IA : facile, normal et difficile.
+Ce document décrit, en clair, comment jouent les trois niveaux d'IA : facile, normal et difficile,
+en partie classique puis dans les variantes missions secrètes et mode capitales.
 Il reflète le code de `src/ai/` tel qu'il est implémenté, réglages issus du tournoi compris.
 
 ## Règles communes à tous les niveaux
@@ -12,9 +13,13 @@ L'IA ne triche pas. Elle ne connaît que :
 - les propriétaires et les armées de chaque territoire ;
 - la phase en cours, le joueur courant, les réglages de la partie et le nombre d'échanges déjà faits ;
 - le **nombre** de cartes de chaque joueur ;
-- le **contenu** de sa propre main.
+- le **contenu** de sa propre main ;
+- avec les missions secrètes, **sa propre mission** ;
+- en mode capitales, **sa propre capitale** pendant la phase de choix, puis toutes les capitales une
+  fois révélées.
 
-Elle ne voit ni l'ordre de la pioche, ni la défausse, ni les mains adverses, ni l'état du générateur
+Elle ne voit ni l'ordre de la pioche, ni la défausse, ni les mains adverses, ni les missions
+adverses, ni les capitales déjà choisies par les autres avant la révélation, ni l'état du générateur
 aléatoire de la partie. Deux parties qui ne diffèrent que par ces informations cachées lui font
 prendre exactement la même décision.
 
@@ -23,7 +28,8 @@ prendre exactement la même décision.
 Pour une même situation visible, une IA d'un niveau donné prend toujours la même décision. Quand un
 niveau a besoin de hasard (le facile surtout), il tire ce hasard d'une empreinte de ce qu'il voit, et
 non du générateur de la partie. Une partie entre IA relancée avec la même graine se rejoue donc à
-l'identique.
+l'identique. Sa mission n'entre pas dans cette empreinte : le facile, qui l'ignore, joue de la même
+façon quelle qu'elle soit.
 
 ### Probabilités de combat
 
@@ -46,6 +52,16 @@ l'armée qui doit rester sur place :
 | 5 contre 4 | 0,48 |
 | 6 contre 5 | 0,51 |
 | 8 contre 3 | 0,91 |
+
+En mode capitales, le dé le plus haut du défenseur d'une capitale compte +1. L'IA en tient compte
+exactement, dans ses attaques comme dans son estimation de la menace :
+
+| Attaque contre une capitale | Sans bonus | Avec bonus |
+|---|---|---|
+| 2 contre 1 | 0,42 | 0,28 |
+| 4 contre 2 | 0,66 | 0,49 |
+| 6 contre 3 | 0,77 | 0,59 |
+| 8 contre 5 | 0,74 | 0,51 |
 
 ### Notions utilisées
 
@@ -87,6 +103,7 @@ Les actions d'une IA s'enchaînent seules, une par une :
 - avant chaque attaque, le territoire d'origine et la cible sont mis en avant sur le plateau ;
 - pendant le tour d'une IA, le HUD affiche « <nom> réfléchit… » et ne propose aucune commande ;
 - si un humain vient de piocher une carte, l'IA suivante attend qu'il ait fermé l'avis ;
+- en mode capitales, l'IA attend que l'annonce de révélation des capitales ait été fermée ;
 - quitter la partie arrête l'IA.
 
 ## Niveau facile
@@ -183,18 +200,59 @@ n'échange pas ce tour-ci.
 | Après une conquête | Comme le normal. |
 | Fortification | Comme le normal, mais vers son territoire de front offensif s'il est atteignable ; sinon vers la frontière la plus menacée. |
 
+## Variantes
+
+### Missions secrètes
+
+Le facile ignore sa mission : il joue exactement comme en partie classique et ne gagne par sa
+mission que par hasard. Le normal et le difficile orientent leur plan vers elle.
+
+| Mission | Comportement du normal et du difficile |
+|---|---|
+| Conquérir des continents | Le continent visé est celui que la mission exige et qui manque encore, le plus intéressant d'abord. Une fois les continents exigés tenus, ou pour le « troisième continent au choix », il revient au continent le plus intéressant. |
+| Conquérir 24 territoires | Il attaque les territoires faibles (2 armées ou moins) dès une probabilité de 0,5 au lieu de 0,6, pour multiplier les conquêtes. |
+| Occuper 18 territoires avec 2 armées | Il laisse au moins 2 armées des deux côtés après une conquête quand c'est possible, et en garde 2 sur un territoire intérieur qu'il dégarnit en fortifiant. |
+| Éliminer un joueur | Il attaque les territoires de sa cible dès une probabilité de 0,5. Le normal leur donne une forte prime (+3) et évite d'éliminer quelqu'un d'autre (−2), ce qui lui ferait perdre sa mission au profit de « Conquérir 24 territoires ». Le difficile en fait sa priorité absolue, avant les éliminations rentables et la casse de continents, et ne cherche plus à éliminer les autres joueurs. |
+
+### Mode capitales
+
+**Choix de la capitale**, fait sans connaître le choix des autres :
+
+- le facile prend son territoire le plus garni en armées ;
+- le normal et le difficile prennent le territoire le moins menacé, de préférence un territoire
+  intérieur, puis le plus garni en armées.
+
+**Pendant la partie**, le facile joue comme en partie classique, en subissant seulement le bonus de
+défense des capitales. Le normal et le difficile ajoutent trois règles, prioritaires sur tout le
+reste :
+
+| Situation | Comportement |
+|---|---|
+| Sa capitale est menacée | Si elle compte moins d'armées que l'ensemble des armées adverses voisines et que sa réserve suffit à combler l'écart, il y déploie **toute** sa réserve. Exemple : capitale de 3 armées face à 6, réserve de 5 : les 5 vont sur la capitale. |
+| Sa capitale est tombée | Sa reconquête devient sa première attaque dès une probabilité de 0,5. |
+| Une capitale adverse est attaquable | Il l'attaque dès une probabilité de 0,5, bonus de défense compris, avant ses autres attaques. Exemple : 8 contre 5 (0,51) : il attaque ; 4 contre 2 (0,49) : il s'abstient, alors que contre un territoire ordinaire (0,66) il attaquerait. |
+
+Le difficile ajoute un **mode « dernière capitale »** : dès qu'il tient toutes les capitales sauf
+une, il déploie toute sa réserve sur celui de ses territoires voisins de cette capitale qui compte le
+plus d'armées. S'il n'en a aucun, il prend son territoire le plus proche de la capitale, en nombre de
+territoires traversés.
+
 ## Écart de force mesuré
 
 Tournoi de référence : 60 parties à trois joueurs (un facile, un normal, un difficile) sur des
-graines fixées, chacun des six ordres de jeu représenté 10 fois, réglages par défaut.
+graines fixées, chacun des six ordres de jeu représenté 10 fois. Il est joué aux réglages par
+défaut, puis avec chaque variante.
 
-| Niveau | Victoires |
-|---|---|
-| Facile | 0 |
-| Normal | 22 |
-| Difficile | 38 (63 %) |
+| Niveau | Classique | Missions secrètes | Mode capitales |
+|---|---|---|---|
+| Facile | 0 | 3 | 0 |
+| Normal | 27 | 25 | 28 |
+| Difficile | 33 (55 %) | 32 (53 %) | 32 (53 %) |
 
-Le facile ne gagne jamais contre ces deux IA, ni en duel. Il n'est pourtant pas éliminé en premier
-plus souvent que les autres : il se défend assez pour durer, mais ses renforts dispersés, ses
-attaques rares, son plafond de 3 conquêtes et l'absence de bonus de continent l'empêchent de finir
-une partie. Il est conçu pour être battable par un débutant humain.
+En mode capitales, une partie dure 22 tours en médiane et 56 au plus.
+
+En partie classique et en mode capitales, le facile ne gagne aucune partie du tournoi ; avec les
+missions secrètes, il en gagne quelques-unes sans jamais poursuivre sa mission. Il n'est pas éliminé
+en premier plus souvent que les autres : il se défend assez pour durer, mais ses renforts dispersés,
+ses attaques rares, son plafond de 3 conquêtes et l'absence de bonus de continent l'empêchent de
+finir une partie. Il est conçu pour être battable par un débutant humain.

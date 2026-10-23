@@ -3,22 +3,23 @@
 Jeu Risk en application web, avec un plateau en 3D vu du haut, jouable seul contre l'ordinateur
 sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 
-> **État du projet** : en développement. On peut déjà jouer une partie complète aux règles
-> classiques, sur le plateau 3D, entre humains ou contre des IA de trois niveaux, avec sauvegarde
-> automatique, journal de partie et statistiques de fin. Les variantes (missions secrètes,
-> capitales) restent à faire. Avancement détaillé : [Feuille de route](#feuille-de-route).
-
 ## Le jeu
 
 - **Règles classiques** : 42 territoires, 6 continents, renforts, attaques aux dés menées jusqu'à la
   conquête ou à l'épuisement de l'attaquant, fortification, cartes territoire.
-- **2 à 6 joueurs**, avec une armée neutre à 2 joueurs.
+- **2 à 6 joueurs**, humains sur le même appareil ou IA, avec une armée neutre à 2 joueurs.
+  Entre deux humains, un écran de passage de main cache les informations secrètes.
 - **Adversaires IA** en trois niveaux : facile, normal, difficile. Leur façon de jouer est décrite
   dans [`docs/ia.md`](docs/ia.md).
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
   défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
   au choix, placement des armées aléatoire ou un par un.
-- **Variantes** : missions secrètes, mode capitales (choix secret des capitales, bonus de défense).
+- **Variantes**, au choix et exclusives l'une de l'autre :
+  - **missions secrètes** (à partir de 3 joueurs) : chacun reçoit un objectif caché, comme conquérir
+    deux continents ou éliminer un adversaire, et gagne dès qu'il l'accomplit ;
+  - **mode capitales** : chacun désigne en secret une capitale, révélée en même temps que les autres ;
+    une capitale se défend mieux (+1 au dé le plus haut du défenseur) et le premier qui tient toutes
+    les capitales à la fois gagne.
 - **Plateau 3D** façon jeu de société : territoires en relief, pions et compteurs d'armées, dés
   animés, vitesse d'animation réglable.
 - **Sauvegarde automatique** dans le navigateur, journal de partie et statistiques de fin.
@@ -80,10 +81,12 @@ Les changes doivent être appliqués dans l'ordre :
 | 4 | `add-heuristic-ai` | Adversaires IA à trois niveaux | Terminé |
 | 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques | Terminé |
 | 6 | `add-offline-pwa` | Application installable et jouable hors ligne | Terminé |
-| 7 | `add-secret-missions` | Variante missions secrètes | À faire |
-| 8 | `add-capitals-mode` | Variante capitales | À faire |
+| 7 | `add-secret-missions` | Variante missions secrètes | Terminé |
+| 8 | `add-capitals-mode` | Variante capitales | Terminé |
 
-Les changes terminés sont archivés dans `openspec/changes/archive/`.
+Les changes terminés sont archivés dans `openspec/changes/archive/` ; les spécifications de
+référence qui en résultent se trouvent dans `openspec/specs/`. Il reste à tester l'application sur
+tablette et à la déployer : voir [`TODO.md`](TODO.md).
 
 ## Travailler avec OpenSpec
 

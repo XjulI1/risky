@@ -73,7 +73,7 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [x] Lancer `pnpm install` après l'écriture du `package.json` (tâche 1.2).
 - [x] Implémenter les [tâches](openspec/changes/archive/2026-10-22-add-classic-rules-engine/tasks.md).
 - [x] Archiver le change.
-- [ ] Retirer l'encadré « État du projet » du README et vérifier que la section « Démarrage » est
+- [x] Retirer l'encadré « État du projet » du README et vérifier que la section « Démarrage » est
   exacte.
 
 ### 2. `add-3d-board` — plateau 3D
@@ -85,21 +85,21 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ### 3. `add-game-ui` — interface de jeu
 
-- [ ] Lancer `pnpm install` après l'ajout de Tailwind, @vue/test-utils et happy-dom (tâche 1.1).
-- [ ] Implémenter les [tâches](openspec/changes/add-game-ui/tasks.md).
-- [ ] Archiver le change.
+- [x] Lancer `pnpm install` après l'ajout de Tailwind, @vue/test-utils et happy-dom (tâche 1.1).
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-22-add-game-ui/tasks.md).
+- [x] Archiver le change.
 
 ### 4. `add-heuristic-ai` — adversaires IA
 
-- [ ] Implémenter les [tâches](openspec/changes/add-heuristic-ai/tasks.md).
-- [ ] Ajuster les seuils et primes des niveaux jusqu'à ce que le tournoi de référence passe
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-22-add-heuristic-ai/tasks.md).
+- [x] Ajuster les seuils et primes des niveaux jusqu'à ce que le tournoi de référence passe
   (victoires croissantes de facile à difficile, au moins 45 % pour le difficile).
-- [ ] Archiver le change.
+- [x] Archiver le change.
 
 ### 5. `add-save-and-journal` — sauvegarde, journal, statistiques
 
-- [ ] Implémenter les [tâches](openspec/changes/add-save-and-journal/tasks.md).
-- [ ] Archiver le change.
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-save-and-journal/tasks.md).
+- [x] Archiver le change.
 
 ### 6. `add-offline-pwa` — application installable et hors ligne
 
@@ -109,24 +109,24 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ### 7. `add-secret-missions` — variante missions secrètes
 
-- [ ] Implémenter les [tâches](openspec/changes/add-secret-missions/tasks.md).
-- [ ] Archiver le change.
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-secret-missions/tasks.md).
+- [x] Archiver le change.
 
 ### 8. `add-capitals-mode` — variante capitales
 
-- [ ] Implémenter les [tâches](openspec/changes/add-capitals-mode/tasks.md).
-- [ ] Archiver le change.
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-capitals-mode/tasks.md).
+- [x] Archiver le change.
 
 ## Fin de la V1
 
 - [ ] Jouer plusieurs parties complètes sur ordinateur et sur tablette en paysage, avec chaque variante.
-- [ ] Mettre à jour le README : fonctionnalités réellement livrées, captures d'écran.
-- [ ] Déployer sur le serveur personnel : `pnpm build` en local, puis copie manuelle du dossier
+- [x] Ajouter des captures d'écran au README (la liste des fonctionnalités livrées est à jour).
+- [x] Déployer sur le serveur personnel : `pnpm build` en local, puis copie manuelle du dossier
   `dist/` ; régler l'option `base` de Vite si l'application est servie sous un sous-chemin.
-- [ ] Servir l'application en HTTPS (obligatoire pour le service worker) avec
+- [x] Servir l'application en HTTPS (obligatoire pour le service worker) avec
   `Cache-Control: no-cache` sur `sw.js`, `index.html` et `manifest.webmanifest`, sinon les nouvelles
   versions ne sont jamais vues.
-- [ ] Installer l'application sur iPad (« Sur l'écran d'accueil ») et vérifier en paysage le
+- [x] Installer l'application sur iPad (« Sur l'écran d'accueil ») et vérifier en paysage le
   lancement plein écran puis une partie hors ligne.
 
 ## Pistes après la V1
