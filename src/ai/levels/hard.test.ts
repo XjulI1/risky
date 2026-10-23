@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { classicMap, type AiLevel, type GameState } from '../../engine'
-import { playWhile, decide, scenario, territoryCard } from '../testScenarios'
+import { decide, mustEliminateCarol, playWhile, scenario, territoryCard } from '../testScenarios'
 
 const SOUTH_AMERICA = classicMap.continents.southAmerica?.territories ?? []
 
@@ -107,5 +107,10 @@ describe('hard AI', () => {
     expect(added('venezuela')).toBeGreaterThan(added('brazil'))
     expect(added('brazil')).toBeGreaterThan(0)
     expect(added('peru') + added('argentina')).toBe(0)
+  })
+
+  it('attacks a territory of the player it must eliminate at 0.7 rather than another one at 0.9', () => {
+    expect(decide(mustEliminateCarol(false), 'hard')).toMatchObject({ type: 'attack', to: 'eastern_australia' })
+    expect(decide(mustEliminateCarol(true), 'hard')).toEqual({ type: 'attack', playerId: 'p1', from: 'indonesia', to: 'siam' })
   })
 })

@@ -8,10 +8,17 @@ import {
   interiorTerritories,
   isBorder,
   ownerOf,
-  targetContinent,
   territoriesOwnedBy,
   threat,
 } from '../evaluation'
+import {
+  armiesToKeep,
+  attackThreshold,
+  eliminatesAnotherPlayer,
+  goalContinent,
+  isMissionTarget,
+  keepForMission,
+} from '../missionObjective'
 import type { PlayerView } from '../playerView'
 import {
   attackOptions,
@@ -28,6 +35,8 @@ import {
 export const ATTACK_THRESHOLD = 0.6
 const TARGET_CONTINENT_BONUS = 1
 const COMPLETION_BONUS = 1
+const MISSION_TARGET_BONUS = 3
+const OTHER_ELIMINATION_MALUS = 2
 
 function continentOf(territory: TerritoryId): string | undefined {
   return classicMap.territories[territory]?.continent
@@ -61,7 +70,7 @@ function bestOdds(view: PlayerView, origin: TerritoryId, targets: TerritoryId[],
 
 /** The border territory from which `reserve` more armies best advance into the target continent, else anywhere. */
 export function frontOrigin(view: PlayerView, me: PlayerId, reserve: number): TerritoryId {
-  const continentId = targetContinent(view, me)
+  const continentId = goalContinent(view, me)
   const borders = borderTerritories(view, me)
   const continentTargets = (origin: TerritoryId) =>
     enemyNeighbors(view, origin).filter((target) => continentOf(target) === continentId)
@@ -73,19 +82,23 @@ export function frontOrigin(view: PlayerView, me: PlayerId, reserve: number): Te
   return best ?? territoriesOwnedBy(view, me)[0] ?? ''
 }
 
-/** How much an attack serves the plan of the normal level: odds, target continent and continent completion. */
+/** How much an attack serves the plan of the normal level: odds, target continent, continent completion and mission. */
 export function planScore(view: PlayerView, me: PlayerId, option: AttackOption): number {
-  const continentId = targetContinent(view, me)
+  const continentId = goalContinent(view, me)
   return (
     option.probability +
     (continentOf(option.to) === continentId ? TARGET_CONTINENT_BONUS : 0) +
-    (completesContinent(view, me, option.to) ? COMPLETION_BONUS : 0)
+    (completesContinent(view, me, option.to) ? COMPLETION_BONUS : 0) +
+    (isMissionTarget(view, option.to) ? MISSION_TARGET_BONUS : 0) -
+    (eliminatesAnotherPlayer(view, option.to) ? OTHER_ELIMINATION_MALUS : 0)
   )
 }
 
-/** The attack that best serves the plan among those reaching `threshold`, or `null`. */
+/** The attack that best serves the plan among those reaching `threshold`, lowered by the mission, or `null`. */
 export function plannedAttack(view: PlayerView, me: PlayerId, threshold: number): AttackOption | null {
-  const options = attackOptions(view, me).filter((option) => option.probability >= threshold)
+  const options = attackOptions(view, me).filter(
+    (option) => option.probability >= attackThreshold(view, option.to, threshold),
+  )
   return maxBy(options, (option) => planScore(view, me, option)) ?? null
 }
 
@@ -96,19 +109,20 @@ export type DestinationChoice = (view: PlayerView, me: PlayerId, from: Territory
 export const mostThreatened: DestinationChoice = (view, _me, _from, destinations) =>
   maxBy(destinations, (destination) => threat(view, destination))
 
-/** Moves the armies of the largest interior territory to the border territory chosen by `choose`. */
+/** Moves the armies of the largest interior territory, but those the mission keeps there, to the border territory chosen by `choose`. */
 export function fortifyFromInterior(view: PlayerView, me: PlayerId, choose: DestinationChoice): Fortification | null {
+  const keep = armiesToKeep(view)
   const borderDestinations = (from: TerritoryId) =>
     fortifyDestinations(view, from).filter((destination) => isBorder(view, destination))
   const origins = interiorTerritories(view, me).filter(
-    (id) => armiesOn(view, id) > 1 && borderDestinations(id).length > 0,
+    (id) => armiesOn(view, id) > keep && borderDestinations(id).length > 0,
   )
   const from = maxBy(origins, (id) => armiesOn(view, id))
   if (from === undefined) {
     return null
   }
   const to = choose(view, me, from, borderDestinations(from))
-  return to === undefined ? null : { from, to, armies: armiesOn(view, from) - 1 }
+  return to === undefined ? null : { from, to, armies: armiesOn(view, from) - keep }
 }
 
 function splitAfterConquest(view: PlayerView, move: ConquestMove): number {
@@ -121,13 +135,13 @@ function splitAfterConquest(view: PlayerView, move: ConquestMove): number {
   return Math.ceil(armiesOn(view, move.from) / 2)
 }
 
-/** Aims at a continent, concentrates its reinforcements on its front and attacks with good odds. */
+/** Aims at a continent, or at what its mission asks, concentrates its reinforcements on its front and attacks with good odds. */
 export const normal: Strategy = {
   claim: ({ view, me }) => claimForContinent(view, me),
   place: ({ view, me }) => frontOrigin(view, me, 1),
   trade: ({ view }) => bestSet(view),
   deploy: ({ view, me }, reserve) => ({ territory: frontOrigin(view, me, reserve), armies: reserve }),
   attack: ({ view, me }) => plannedAttack(view, me, ATTACK_THRESHOLD),
-  conquestMove: ({ view }, move) => splitAfterConquest(view, move),
+  conquestMove: ({ view }, move) => keepForMission(view, move, splitAfterConquest(view, move)),
   fortify: ({ view, me }) => fortifyFromInterior(view, me, mostThreatened),
 }

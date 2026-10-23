@@ -119,7 +119,7 @@ export function attack(state: GameState, action: AttackAction, events: GameEvent
   return null
 }
 
-function moveArmies(
+export function moveArmies(
   state: GameState,
   playerId: PlayerId,
   from: string,

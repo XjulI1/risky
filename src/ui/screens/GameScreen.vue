@@ -13,6 +13,8 @@ import DrawnCardNotice from '../hud/DrawnCardNotice.vue'
 import ErrorToast from '../hud/ErrorToast.vue'
 import JournalPanel from '../hud/JournalPanel.vue'
 import HandoffScreen from '../hud/HandoffScreen.vue'
+import MissionConvertedNotice from '../hud/MissionConvertedNotice.vue'
+import MissionPanel from '../hud/MissionPanel.vue'
 import PlayersPanel from '../hud/PlayersPanel.vue'
 import SpeedSelector from '../hud/SpeedSelector.vue'
 import StatusBar from '../hud/StatusBar.vue'
@@ -42,6 +44,7 @@ const {
   speed,
   handoffTo,
   drawnCard,
+  convertedMission,
   error,
   thinkingPlayer,
   aiFocus,
@@ -177,10 +180,15 @@ function trade(cardIds: [number, number, number]) {
         :card="drawnCard"
         @dismiss="session.acknowledgeDrawnCard()"
       />
+      <MissionConvertedNotice
+        v-if="showOverlays && convertedMission && !handoffTo && !drawnCard"
+        :player="convertedMission"
+        @dismiss="session.acknowledgeConvertedMission()"
+      />
       <GameOverOverlay
         v-if="winner"
         :winner="winner"
-        :players="displayedState.players"
+        :state="displayedState"
         :statistics="statistics"
         @replay="emit('replay')"
         @home="emit('home')"
@@ -193,6 +201,10 @@ function trade(cardIds: [number, number, number]) {
         :view="view"
       />
       <PlayersPanel :state="displayedState" />
+      <MissionPanel
+        v-if="!handoffTo"
+        :state="displayedState"
+      />
 
       <template v-if="!isPresenting && !winner && !thinkingPlayer">
         <AmountPicker

@@ -1,12 +1,14 @@
 import {
   applyAction,
   classicMap,
+  CONQUER_24_TERRITORIES,
   createGame,
   type Action,
   type AiLevel,
   type Card,
   type GameSettings,
   type GameState,
+  type Mission,
   type Phase,
   type PlayerConfig,
   type PlayerId,
@@ -44,6 +46,7 @@ export type Scenario = {
   playerCount?: number
   hands?: Record<PlayerId, Card[]>
   settings?: Partial<GameSettings>
+  missions?: Record<PlayerId, Mission>
 }
 
 export function scenario({
@@ -54,6 +57,7 @@ export function scenario({
   playerCount = 3,
   hands = {},
   settings = {},
+  missions,
 }: Scenario): GameState {
   const state = newAiGame(Array.from({ length: playerCount }, () => 'normal'), 1, settings)
   for (const id of classicMap.territoryIds) {
@@ -63,7 +67,28 @@ export function scenario({
   state.currentPlayerIndex = state.players.findIndex((player) => player.id === current)
   state.phase = phase
   state.hands = { ...state.hands, ...hands }
+  state.missions = missions ?? null
   return state
+}
+
+export function mustEliminateCarol(withMission: boolean): GameState {
+  return scenario({
+    layout: {
+      indonesia: ['p1', 7],
+      new_guinea: ['p1', 8],
+      western_australia: ['p1', 1],
+      siam: ['p3', 4],
+      china: ['p3', 9],
+      eastern_australia: ['p2', 3],
+      alaska: ['p2', 9],
+    },
+    phase: { kind: 'attack' },
+    filler: 'p4',
+    playerCount: 4,
+    missions: withMission
+      ? { p1: { kind: 'eliminate', target: 'p3' }, p2: CONQUER_24_TERRITORIES, p3: CONQUER_24_TERRITORIES, p4: CONQUER_24_TERRITORIES }
+      : undefined,
+  })
 }
 
 export function territoryCard(id: number, symbol: 'infantry' | 'cavalry' | 'artillery', territory: TerritoryId): Card {

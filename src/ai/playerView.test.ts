@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { attackTargets, classicMap, type GameState } from '../engine'
+import { attackTargets, classicMap, CONQUER_24_TERRITORIES, GENERAL_MISSIONS, type GameState } from '../engine'
 import { playerView } from './playerView'
 import { newAiGame, territoryCard } from './testScenarios'
 
@@ -51,6 +51,21 @@ describe('playerView', () => {
     other.territories = Object.fromEntries(Object.entries(other.territories).reverse())
     other.hands.p2 = [territoryCard(30, 'infantry', 'brazil'), territoryCard(31, 'infantry', 'iceland'), territoryCard(32, 'infantry', 'ural')]
     expect(JSON.stringify(playerView(other, 'p1'))).toBe(JSON.stringify(playerView(state, 'p1')))
+  })
+
+  it('keeps the mission of the viewer and none of the others', () => {
+    const state = newAiGame(['normal', 'normal', 'normal'], 7, { secretMissions: true })
+    state.missions = { p1: CONQUER_24_TERRITORIES, p2: { kind: 'eliminate', target: 'p1' }, p3: GENERAL_MISSIONS[0]! }
+    const view = playerView(state, 'p1')
+    expect(view.ownMission).toEqual(CONQUER_24_TERRITORIES)
+    expect(view).not.toHaveProperty('missions')
+    const other = structuredClone(state)
+    other.missions = { ...state.missions, p2: GENERAL_MISSIONS[3]!, p3: { kind: 'eliminate', target: 'p2' } }
+    expect(JSON.stringify(playerView(other, 'p1'))).toBe(JSON.stringify(view))
+  })
+
+  it('has no mission without secret missions', () => {
+    expect(playerView(gameWithHands(), 'p1').ownMission).toBeNull()
   })
 
   it('can be given to the queries of the engine', () => {

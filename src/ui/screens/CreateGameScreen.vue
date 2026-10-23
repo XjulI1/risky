@@ -12,6 +12,7 @@ import {
   MAX_FORM_PLAYERS,
   MAX_NAME_LENGTH,
   MIN_FORM_PLAYERS,
+  MIN_MISSION_PLAYERS,
   nameErrors,
   PLAYER_PALETTE,
   removePlayer,
@@ -31,6 +32,7 @@ const errors = computed(() => nameErrors(setup.value.players))
 const canStart = computed(() => Object.keys(errors.value).length === 0)
 const withNeutral = computed(() => setup.value.players.length === MIN_FORM_PLAYERS)
 const hasAi = computed(() => setup.value.players.some((player) => player.kind === 'ai'))
+const missionsAllowed = computed(() => setup.value.players.length >= MIN_MISSION_PLAYERS)
 
 const diceChoices = [1, 2, 3]
 
@@ -57,6 +59,13 @@ function addAiPlayer() {
 
 function updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
   setup.value.settings = { ...setup.value.settings, [key]: value }
+}
+
+function removePlayerRow(id: string) {
+  setup.value.players = removePlayer(setup.value.players, id)
+  if (!missionsAllowed.value) {
+    updateSetting('secretMissions', false)
+  }
 }
 
 function start() {
@@ -149,7 +158,7 @@ function start() {
             :aria-label="`Retirer ${player.name}`"
             :title="`Retirer ${player.name}`"
             :disabled="setup.players.length <= MIN_FORM_PLAYERS"
-            @click="setup.players = removePlayer(setup.players, player.id)"
+            @click="removePlayerRow(player.id)"
           >
             ✕
           </button>
@@ -276,6 +285,24 @@ function start() {
             <option value="connected">Par chemin de territoires possédés</option>
             <option value="adjacent">Vers un territoire voisin</option>
           </select>
+        </label>
+        <label
+          class="flex min-h-11 items-center gap-3 sm:col-span-2"
+          :class="missionsAllowed ? '' : 'opacity-60'"
+        >
+          <input
+            data-testid="setting-secretMissions"
+            type="checkbox"
+            class="size-5 accent-accent"
+            :checked="setup.settings.secretMissions"
+            :disabled="!missionsAllowed"
+            @change="updateSetting('secretMissions', ($event.target as HTMLInputElement).checked)"
+          >
+          <span>Missions secrètes</span>
+          <span
+            v-if="!missionsAllowed"
+            class="text-sm text-parchment/80"
+          >3 joueurs minimum</span>
         </label>
       </section>
 

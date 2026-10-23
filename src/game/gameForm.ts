@@ -12,6 +12,7 @@ export const PLAYER_PALETTE = ['#d64541', '#3a7bd5', '#3fa34d', '#e3b23c', '#8e5
 export const MIN_FORM_PLAYERS = 2
 export const MAX_FORM_PLAYERS = 6
 export const MAX_NAME_LENGTH = 20
+export const MIN_MISSION_PLAYERS = 3
 
 /** Levels offered for an AI player, easiest first. */
 export const AI_LEVELS: AiLevel[] = ['easy', 'normal', 'hard']

@@ -1,4 +1,5 @@
 import { classicMap } from './maps/classic'
+import { CONQUER_24_TERRITORIES, missionDeck } from './missions'
 import { placeRemainingArmiesAtRandom } from './placement'
 import { rollInt, ruleError, shuffleWithState } from './state'
 import type {
@@ -10,6 +11,7 @@ import type {
   GameMap,
   GameSettings,
   GameState,
+  Mission,
   Player,
   PlayerConfig,
   PlayerId,
@@ -28,9 +30,11 @@ export const DEFAULT_SETTINGS: GameSettings = {
   attackerMaxDice: 3,
   defenderMaxDice: 2,
   fortifyMode: 'connected',
+  secretMissions: false,
 }
 
 const MIN_PLAYERS = 2
+const MIN_MISSION_PLAYERS = 3
 const MAX_PLAYERS = 6
 const INITIAL_ARMIES: Record<number, number> = { 2: 40, 3: 35, 4: 30, 5: 25, 6: 20 }
 const NEUTRAL_TERRITORY_COUNT = 14
@@ -74,8 +78,14 @@ function isValidDiceCount(value: number): boolean {
   return Number.isInteger(value) && value >= 1 && value <= 3
 }
 
-function resolveSettings(overrides: Partial<GameSettings> = {}): GameSettings | RuleError {
+function resolveSettings(overrides: Partial<GameSettings>, playerCount: number): GameSettings | RuleError {
   const settings = { ...DEFAULT_SETTINGS, ...overrides }
+  if (typeof settings.secretMissions !== 'boolean') {
+    return ruleError('INVALID_SETTING', 'Un réglage de la partie est invalide.')
+  }
+  if (settings.secretMissions && playerCount < MIN_MISSION_PLAYERS) {
+    return ruleError('INVALID_SETTING', 'Les missions secrètes exigent au moins 3 joueurs.')
+  }
   const enumKeys = Object.keys(ALLOWED_VALUES) as (keyof typeof ALLOWED_VALUES)[]
   const invalidEnum = enumKeys.some((key) => {
     const allowed: readonly unknown[] = ALLOWED_VALUES[key] ?? []
@@ -139,16 +149,28 @@ function dealTerritories(
   })
 }
 
+/** Gives the cards of `deck` to the players in order; a player drawing its own elimination gets 24 territories instead. */
+export function dealMissions(deck: readonly Mission[], playerIds: readonly PlayerId[]): Record<PlayerId, Mission> {
+  return Object.fromEntries(
+    playerIds.map((playerId, index) => {
+      const mission = deck[index] ?? CONQUER_24_TERRITORIES
+      const ownElimination = mission.kind === 'eliminate' && mission.target === playerId
+      return [playerId, ownElimination ? CONQUER_24_TERRITORIES : mission]
+    }),
+  )
+}
+
 /**
  * Creates a new game: validates players and settings, adds the neutral army in a 2-player game,
- * shuffles the deck, draws the first player and distributes territories according to the settings.
+ * shuffles the deck, draws the first player, distributes territories according to the settings
+ * and, when secret missions are on, deals one mission to each player.
  */
 export function createGame(config: GameConfig): CreateGameResult {
   const playersError = validatePlayers(config.players)
   if (playersError !== null) {
     return { ok: false, error: playersError }
   }
-  const settings = resolveSettings(config.settings)
+  const settings = resolveSettings(config.settings ?? {}, config.players.length)
   if ('code' in settings) {
     return { ok: false, error: settings }
   }
@@ -179,6 +201,8 @@ export function createGame(config: GameConfig): CreateGameResult {
     conqueredThisTurn: false,
     rngState: config.seed | 0,
     winner: null,
+    winReason: null,
+    missions: null,
   }
 
   state.deck = shuffleWithState(state, buildDeck(map))
@@ -198,6 +222,11 @@ export function createGame(config: GameConfig): CreateGameResult {
     } else {
       state.phase = { kind: 'placement', remaining }
     }
+  }
+
+  if (settings.secretMissions) {
+    const playerIds = config.players.map((player) => player.id)
+    state.missions = dealMissions(shuffleWithState(state, missionDeck(playerIds)), playerIds)
   }
 
   return { ok: true, state }

@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Player } from '../../engine'
+import { computed, ref } from 'vue'
+import type { GameState, Player } from '../../engine'
 import type { GameStatistics } from '../../game/history/statistics'
+import { revealedMissions, winReasonText } from '../../game/missionDisplay'
 import StatisticsTab from './StatisticsTab.vue'
 
-defineProps<{
+const props = defineProps<{
   winner: Player
-  players: Player[]
+  state: GameState
   statistics: GameStatistics
 }>()
+
+const reason = computed(() => winReasonText(props.state))
+const missions = computed(() => revealedMissions(props.state))
 
 const emit = defineEmits<{
   replay: []
@@ -36,6 +40,13 @@ const TABS: { id: Tab; label: string }[] = [
       >
         {{ winner.name }} remporte la partie
       </p>
+      <p
+        v-if="reason"
+        data-testid="win-reason"
+        class="-mt-4 text-lg"
+      >
+        {{ reason }}
+      </p>
       <div
         role="tablist"
         class="flex gap-2"
@@ -57,9 +68,26 @@ const TABS: { id: Tab; label: string }[] = [
       <StatisticsTab
         v-if="tab === 'statistics'"
         :statistics="statistics"
-        :players="players"
+        :players="state.players"
         :winner="winner.id"
       />
+      <ul
+        v-else-if="missions.length > 0"
+        data-testid="revealed-missions"
+        class="space-y-2 text-left text-sm"
+      >
+        <li
+          v-for="{ player, text } in missions"
+          :key="player.id"
+          class="rounded-lg bg-ink/60 p-2"
+        >
+          <span
+            class="font-semibold"
+            :style="{ color: player.color }"
+          >{{ player.name }}</span>
+          <span class="text-parchment/80"> — {{ text }}</span>
+        </li>
+      </ul>
       <div
         class="flex flex-col gap-2"
         :class="tab === 'statistics' ? 'sm:flex-row sm:justify-end' : ''"

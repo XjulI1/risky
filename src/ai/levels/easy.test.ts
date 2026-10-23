@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { CONQUER_24_TERRITORIES, GENERAL_MISSIONS, type Mission } from '../../engine'
 import { isBorder } from '../evaluation'
 import { playerView } from '../playerView'
 import { decide, newAiGame, playWhile, scenario, territoryCard } from '../testScenarios'
@@ -56,5 +57,18 @@ describe('easy AI', () => {
     expect(decide(withHand(3), 'easy').type).toBe('deploy')
     expect(decide(withHand(4), 'easy').type).toBe('deploy')
     expect(decide(withHand(5), 'easy').type).toBe('tradeCards')
+  })
+
+  it('plays the same action whatever its mission', () => {
+    const missions: Mission[] = [CONQUER_24_TERRITORIES, GENERAL_MISSIONS[3]!, { kind: 'eliminate', target: 'p2' }]
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const { steps } = playWhile(newAiGame(['easy', 'easy', 'easy'], seed, { secretMissions: true }), 'easy', (current) => current.phase.kind !== 'gameOver' && current.currentPlayerIndex === current.firstPlayerIndex)
+      expect(steps.length).toBeGreaterThan(1)
+      for (const { before } of steps) {
+        const me = before.players[before.currentPlayerIndex]?.id ?? ''
+        const actions = missions.map((mission) => decide({ ...before, missions: { ...before.missions, [me]: mission } }, 'easy'))
+        expect(actions.every((action) => JSON.stringify(action) === JSON.stringify(actions[0]))).toBe(true)
+      }
+    }
   })
 })

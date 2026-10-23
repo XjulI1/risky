@@ -2,17 +2,19 @@ import {
   classicMap,
   type Card,
   type GameState,
+  type Mission,
   type PlayerId,
   type PublicState,
   type TerritoryId,
   type TerritoryState,
 } from '../engine'
 
-/** Everything a player may know: the public state, its own hand and the size of every hand. */
+/** Everything a player may know: the public state, its own hand and mission, and the size of every hand. */
 export type PlayerView = PublicState & {
   viewer: PlayerId
   hand: Card[]
   handSizes: Record<PlayerId, number>
+  ownMission: Mission | null
 }
 
 function territoriesInMapOrder(state: GameState): Record<TerritoryId, TerritoryState> {
@@ -37,8 +39,10 @@ export function playerView(state: GameState, viewer: PlayerId): PlayerView {
     tradeCount: state.tradeCount,
     conqueredThisTurn: state.conqueredThisTurn,
     winner: state.winner,
+    winReason: state.winReason,
     viewer,
     hand: state.hands[viewer] ?? [],
     handSizes: Object.fromEntries(state.players.map((player) => [player.id, state.hands[player.id]?.length ?? 0])),
+    ownMission: state.missions?.[viewer] ?? null,
   }
 }

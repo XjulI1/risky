@@ -52,7 +52,15 @@ export type GameSettings = {
   attackerMaxDice: number
   defenderMaxDice: number
   fortifyMode: FortifyMode
+  secretMissions: boolean
 }
+
+export type Mission =
+  | { kind: 'continents'; required: ContinentId[]; extraContinents: number }
+  | { kind: 'territories'; count: number; minArmies: number }
+  | { kind: 'eliminate'; target: PlayerId }
+
+export type WinReason = 'domination' | 'mission'
 
 export type CardSymbol = 'infantry' | 'cavalry' | 'artillery'
 
@@ -102,9 +110,11 @@ export type GameState = {
   conqueredThisTurn: boolean
   rngState: number
   winner: PlayerId | null
+  winReason: WinReason | null
+  missions: Record<PlayerId, Mission> | null
 }
 
-/** The part of the game state every player can see: no deck, discard, hands or generator state. */
+/** The part of the game state every player can see: no deck, discard, hands, missions or generator state. */
 export type PublicState = Pick<
   GameState,
   | 'settings'
@@ -117,6 +127,7 @@ export type PublicState = Pick<
   | 'tradeCount'
   | 'conqueredThisTurn'
   | 'winner'
+  | 'winReason'
 >
 
 export type Action =
@@ -166,6 +177,8 @@ export type GameEvent =
   | { type: 'fortified'; playerId: PlayerId; from: TerritoryId; to: TerritoryId; armies: number }
   | { type: 'cardDrawn'; playerId: PlayerId; cardId: number }
   | { type: 'playerEliminated'; playerId: PlayerId; by: PlayerId; cardsTaken: number }
+  | { type: 'missionConverted'; playerId: PlayerId }
+  | { type: 'missionAccomplished'; playerId: PlayerId; mission: Mission }
   | { type: 'gameWon'; playerId: PlayerId }
 
 export type RuleErrorCode =

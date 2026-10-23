@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import type { AiLevel } from '../engine'
+import type { AiLevel, GameSettings } from '../engine'
 import { playUntilHumanOrEnd } from './index'
 import { newAiGame } from './testScenarios'
 
@@ -20,25 +20,39 @@ function levelsFor(game: number): AiLevel[] {
   return ORDERS[game % ORDERS.length] ?? []
 }
 
-function winnerLevel(game: number): AiLevel | null {
-  const { state } = playUntilHumanOrEnd(newAiGame(levelsFor(game), 5000 + game), { maxTurns: MAX_TURNS })
+function winnerLevel(game: number, settings: Partial<GameSettings>): AiLevel | null {
+  const { state } = playUntilHumanOrEnd(newAiGame(levelsFor(game), 5000 + game, settings), { maxTurns: MAX_TURNS })
   const winner = state.players.find((player) => player.id === state.winner)
   return winner?.kind === 'ai' ? winner.level : null
 }
 
-describe('reference tournament', () => {
+type TournamentResult = {
+  wins: Record<AiLevel, number>
+  unfinished: number
+}
+
+function playTournament(settings: Partial<GameSettings>): TournamentResult {
   const wins: Record<AiLevel, number> = { easy: 0, normal: 0, hard: 0 }
   let unfinished = 0
+  for (let game = 0; game < GAME_COUNT; game++) {
+    const level = winnerLevel(game, settings)
+    if (level === null) {
+      unfinished += 1
+    } else {
+      wins[level] += 1
+    }
+  }
+  return { wins, unfinished }
+}
+
+describe.each([
+  { variant: 'classic', settings: {} },
+  { variant: 'with secret missions', settings: { secretMissions: true } },
+])('reference tournament, $variant', ({ variant, settings }) => {
+  let result: TournamentResult = { wins: { easy: 0, normal: 0, hard: 0 }, unfinished: 0 }
 
   beforeAll(() => {
-    for (let game = 0; game < GAME_COUNT; game++) {
-      const level = winnerLevel(game)
-      if (level === null) {
-        unfinished += 1
-      } else {
-        wins[level] += 1
-      }
-    }
+    result = playTournament(settings)
   }, 120_000)
 
   it('plays every order of the levels as often', () => {
@@ -49,15 +63,15 @@ describe('reference tournament', () => {
   })
 
   it('ends every game with a winner', () => {
-    expect(unfinished).toBe(0)
+    expect(result.unfinished).toBe(0)
   })
 
   it('makes each level win more than the one below', () => {
-    expect(wins.normal).toBeGreaterThan(wins.easy)
-    expect(wins.hard).toBeGreaterThan(wins.normal)
+    expect(result.wins.normal).toBeGreaterThan(result.wins.easy)
+    expect(result.wins.hard).toBeGreaterThan(result.wins.normal)
   })
 
-  it(`makes the hard level win at least ${MIN_HARD_WIN_RATE * 100} % of the games`, () => {
-    expect(wins.hard / GAME_COUNT).toBeGreaterThanOrEqual(MIN_HARD_WIN_RATE)
+  it.runIf(variant === 'classic')(`makes the hard level win at least ${MIN_HARD_WIN_RATE * 100} % of the games`, () => {
+    expect(result.wins.hard / GAME_COUNT).toBeGreaterThanOrEqual(MIN_HARD_WIN_RATE)
   })
 })

@@ -8,7 +8,7 @@ import type { GameStatistics } from './history/statistics'
 export const SAVE_KEY = 'risk.savedGame'
 
 /** Version of the save format; a save of another version is rejected. */
-export const SAVE_FORMAT_VERSION = 1
+export const SAVE_FORMAT_VERSION = 2
 
 export type SaveStatus = 'inProgress' | 'finished'
 
@@ -77,6 +77,7 @@ function isEngineState(value: unknown): value is GameState {
     playerIds.size === value.players.length &&
     typeof value.phase.kind === 'string' &&
     typeof value.currentPlayerIndex === 'number' &&
+    (value.missions === null || isRecord(value.missions)) &&
     Object.keys(territories).length === classicMap.territoryIds.length &&
     classicMap.territoryIds.every((id) => {
       const territory = territories[id]

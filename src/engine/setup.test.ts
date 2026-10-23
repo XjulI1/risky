@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { classicMap } from './maps/classic'
-import { createGame, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
+import { CONQUER_24_TERRITORIES } from './missions'
+import { createGame, dealMissions, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 import { armiesOf, claimAll, createTestGame, ownedBy, testPlayers } from './testUtils'
-import type { PlayerConfig } from './types'
+import type { Mission, PlayerConfig } from './types'
 
 describe('createGame', () => {
   it('creates a game with the players in the given order', () => {
@@ -66,6 +67,7 @@ describe('game settings', () => {
       attackerMaxDice: 3,
       defenderMaxDice: 2,
       fortifyMode: 'connected',
+      secretMissions: false,
     })
     expect(createTestGame(3).settings).toEqual(DEFAULT_SETTINGS)
   })
@@ -83,6 +85,7 @@ describe('game settings', () => {
     { cardTradeScale: 'random' },
     { territoryDistribution: 'auction' },
     { armyPlacement: 'parachute' },
+    { secretMissions: 'yes' },
   ])('rejects the out-of-range setting %o', (settings) => {
     const result = createGame({
       players: testPlayers(3),
@@ -216,5 +219,74 @@ describe('random army placement', () => {
     for (const player of state.players) {
       expect(armiesOf(state, player.id)).toBe(35)
     }
+  })
+})
+
+describe('secret missions', () => {
+  const withMissions = { settings: { secretMissions: true } }
+
+  it('are not dealt by default', () => {
+    expect(createTestGame(4).missions).toBeNull()
+  })
+
+  it('are refused with 2 players', () => {
+    const result = createGame({ players: testPlayers(2), seed: 1, ...withMissions })
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: 'INVALID_SETTING', message: 'Les missions secrètes exigent au moins 3 joueurs.' },
+    })
+  })
+
+  it('give exactly one mission to each player', () => {
+    const state = createTestGame(4, withMissions)
+    expect(Object.keys(state.missions ?? {}).sort()).toEqual(['p1', 'p2', 'p3', 'p4'])
+  })
+
+  it('never deal the same card twice', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const missions = Object.values(createTestGame(4, { ...withMissions, seed }).missions ?? {})
+      const cards = missions.filter((mission) => mission.kind !== 'territories' || mission.count !== 24)
+      expect(new Set(cards.map((mission) => JSON.stringify(mission))).size).toBe(cards.length)
+    }
+  })
+
+  it('deal the same missions for the same seed and players', () => {
+    expect(createTestGame(5, { ...withMissions, seed: 31 }).missions).toEqual(
+      createTestGame(5, { ...withMissions, seed: 31 }).missions,
+    )
+  })
+
+  it('deal missions from the whole deck over several seeds', () => {
+    const dealt = new Set<string>()
+    for (let seed = 1; seed <= 100; seed++) {
+      for (const mission of Object.values(createTestGame(4, { ...withMissions, seed }).missions ?? {})) {
+        dealt.add(mission.kind === 'eliminate' ? `eliminate:${mission.target}` : JSON.stringify(mission))
+      }
+    }
+    expect(dealt.size).toBe(12)
+  })
+
+  it('never ask a player to eliminate itself', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const missions = createTestGame(4, { ...withMissions, seed }).missions ?? {}
+      for (const [playerId, mission] of Object.entries(missions)) {
+        expect(mission).not.toEqual({ kind: 'eliminate', target: playerId })
+      }
+    }
+  })
+})
+
+describe('dealMissions', () => {
+  it('gives the cards in order and replaces an own elimination by 24 territories', () => {
+    const deck: Mission[] = [
+      { kind: 'eliminate', target: 'p2' },
+      { kind: 'eliminate', target: 'p2' },
+      { kind: 'eliminate', target: 'p1' },
+    ]
+    expect(dealMissions(deck, ['p1', 'p2', 'p3'])).toEqual({
+      p1: { kind: 'eliminate', target: 'p2' },
+      p2: CONQUER_24_TERRITORIES,
+      p3: { kind: 'eliminate', target: 'p1' },
+    })
   })
 })

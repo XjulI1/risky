@@ -1,6 +1,15 @@
 import { computed, inject, provide, ref, shallowRef, type ComputedRef, type InjectionKey, type Ref, type ShallowRef } from 'vue'
 import { NEW_TURN, nextAiAction, progressAfter, type TurnProgress } from '../ai'
-import { applyAction, type Action, type Card, type GameEvent, type GameState, type Player, type TerritoryId } from '../engine'
+import {
+  applyAction,
+  type Action,
+  type Card,
+  type GameEvent,
+  type GameState,
+  type Player,
+  type PlayerId,
+  type TerritoryId,
+} from '../engine'
 import { ANIMATION_DURATIONS, readSpeedPreference, writeSpeedPreference, type AnimationSpeed } from './animationSpeed'
 import type { GameSetup } from './gameForm'
 import { journalBatch, openingJournal, type JournalEntry } from './history/journal'
@@ -29,6 +38,7 @@ export type GameSession = {
   speed: Ref<AnimationSpeed>
   handoffTo: ShallowRef<Player | null>
   drawnCard: ShallowRef<Card | null>
+  convertedMission: ShallowRef<Player | null>
   thinkingPlayer: ComputedRef<Player | null>
   aiFocus: ShallowRef<AiFocus | null>
   journal: ShallowRef<JournalEntry[]>
@@ -42,6 +52,7 @@ export type GameSession = {
   dismissError: () => void
   acknowledgeHandoff: () => void
   acknowledgeDrawnCard: () => void
+  acknowledgeConvertedMission: () => void
   setSpeed: (speed: AnimationSpeed) => void
   dismissStorageWarning: () => void
   dispose: () => void
@@ -106,6 +117,19 @@ function drawnCardOf(state: GameState, events: GameEvent[]): Card | null {
   return state.hands[drawn.playerId]?.find((card) => card.id === drawn.cardId) ?? null
 }
 
+function convertedHumans(state: GameState, events: GameEvent[]): PlayerId[] {
+  return events.flatMap((event) =>
+    event.type === 'missionConverted' && state.players.some((player) => player.id === event.playerId && player.kind === 'human')
+      ? [event.playerId]
+      : [],
+  )
+}
+
+function startedTurnOf(state: GameState, events: GameEvent[]): Player | null {
+  const started = events.findLast((event) => event.type === 'turnStarted')
+  return started === undefined ? null : (state.players.find((player) => player.id === started.playerId) ?? null)
+}
+
 function warnOnDivergence(projected: GameState, actual: GameState): void {
   if (import.meta.env.DEV && JSON.stringify(projected.territories) !== JSON.stringify(actual.territories)) {
     console.warn('Presentation diverged from the engine state', { projected, actual })
@@ -124,6 +148,8 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   const speed = ref<AnimationSpeed>(options.speed ?? readSpeedPreference())
   const handoffTo = shallowRef<Player | null>(null)
   const drawnCard = shallowRef<Card | null>(null)
+  const convertedMission = shallowRef<Player | null>(null)
+  const pendingConversions = new Set<PlayerId>()
   const aiFocus = shallowRef<AiFocus | null>(null)
   const turnNumber = ref(options.history?.turnNumber ?? initialTurnNumber(initial))
   const journal = shallowRef<JournalEntry[]>(options.history?.journal ?? openingJournal(initial, turnNumber.value))
@@ -210,6 +236,14 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     finishPresentation()
   }
 
+  const notifyConversion = (state: GameState, events: GameEvent[]) => {
+    convertedHumans(state, events).forEach((playerId) => pendingConversions.add(playerId))
+    const started = startedTurnOf(state, events)
+    if (started !== null && pendingConversions.delete(started.id)) {
+      convertedMission.value = started
+    }
+  }
+
   const dispatch = (action: Action) => {
     const before = engineState.value
     const result = applyAction(before, action)
@@ -230,6 +264,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     lastEvents.value = result.events
     drawnCard.value = drawnCardOf(result.state, result.events)
     handoffTo.value = needsHandoff(before, result.state)
+    notifyConversion(result.state, result.events)
     save()
     void present(presentationSteps(result.events))
   }
@@ -262,6 +297,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     speed,
     handoffTo,
     drawnCard,
+    convertedMission,
     thinkingPlayer,
     aiFocus,
     journal,
@@ -285,6 +321,9 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     acknowledgeDrawnCard: () => {
       drawnCard.value = null
       scheduleAiAction()
+    },
+    acknowledgeConvertedMission: () => {
+      convertedMission.value = null
     },
     setSpeed: (next: AnimationSpeed) => {
       speed.value = next

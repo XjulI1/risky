@@ -151,4 +151,42 @@ describe('CreateGameScreen', () => {
     const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
     expect(state.settings).toEqual({ ...DEFAULT_SETTINGS, fortifyMode: 'adjacent', defenderMaxDice: 3 })
   })
+
+  describe('secret missions option', () => {
+    const missionsBox = (wrapper: ReturnType<typeof mountForm>) => wrapper.get('[data-testid="setting-secretMissions"]')
+    const isChecked = (wrapper: ReturnType<typeof mountForm>) => (missionsBox(wrapper).element as HTMLInputElement).checked
+    const removeLastPlayer = (wrapper: ReturnType<typeof mountForm>) => wrapper.findAll('[data-testid="remove-player"]').at(-1)?.trigger('click')
+
+    it('is unchecked by default', () => {
+      const wrapper = mountForm()
+      expect(isChecked(wrapper)).toBe(false)
+      expect(missionsBox(wrapper).attributes('disabled')).toBeUndefined()
+      expect(wrapper.text()).not.toContain('3 joueurs minimum')
+    })
+
+    it('is disabled with 2 players, with the reason', async () => {
+      const wrapper = mountForm()
+      await removeLastPlayer(wrapper)
+      expect(missionsBox(wrapper).attributes('disabled')).toBeDefined()
+      expect(wrapper.text()).toContain('3 joueurs minimum')
+    })
+
+    it('is unchecked when going down to 2 players', async () => {
+      const wrapper = mountForm()
+      await missionsBox(wrapper).setValue(true)
+      expect(isChecked(wrapper)).toBe(true)
+      await removeLastPlayer(wrapper)
+      expect(isChecked(wrapper)).toBe(false)
+      expect(missionsBox(wrapper).attributes('disabled')).toBeDefined()
+    })
+
+    it('starts a game with secret missions when checked', async () => {
+      const wrapper = mountForm()
+      await missionsBox(wrapper).setValue(true)
+      await startButton(wrapper).trigger('click')
+      const [state] = (wrapper.emitted('start')?.[0] ?? []) as [GameState]
+      expect(state.settings.secretMissions).toBe(true)
+      expect(Object.keys(state.missions ?? {})).toHaveLength(3)
+    })
+  })
 })

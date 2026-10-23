@@ -21,10 +21,10 @@ export function fnv1a(text: string): number {
   return hash >>> 0
 }
 
-/** A generator seeded with the hash of the serialized view and the level, computed at the first draw. */
+/** A generator seeded with the hash of the serialized view, its mission aside, and the level, computed at the first draw. */
 export function aiRandom(view: PlayerView, level: AiLevel): AiRandom {
   let state: number | null = null
-  const currentState = () => state ?? fnv1a(`${level}:${JSON.stringify(view)}`)
+  const currentState = () => state ?? fnv1a(`${level}:${JSON.stringify({ ...view, ownMission: undefined })}`)
 
   const int = (min: number, max: number) => {
     const draw = nextInt(currentState(), min, max)

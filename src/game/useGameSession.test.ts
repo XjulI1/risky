@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { classicMap, createGame, type GameState, type PlayerControl } from '../engine'
+import { classicMap, CONQUER_24_TERRITORIES, createGame, type GameState, type PlayerControl } from '../engine'
 import { ANIMATION_DURATIONS, type AnimationSpeed } from './animationSpeed'
 import type { GameSetup } from './gameForm'
 import { loadSavedGame } from './persistence'
@@ -119,6 +119,46 @@ describe('hand-off between humans', () => {
 
   it('does not interrupt a game with a single human', () => {
     expect(endTurn([HUMAN, AI, AI]).handoffTo.value).toBeNull()
+  })
+})
+
+describe('converted mission', () => {
+  function carolEliminatedByP1(controls: PlayerControl[]) {
+    const state = attackingGame(controls)
+    state.territories.brazil = { owner: 'p3', armies: 1 }
+    state.missions = { p1: CONQUER_24_TERRITORIES, p2: { kind: 'eliminate', target: 'p3' }, p3: CONQUER_24_TERRITORIES }
+    const session = createGameSession(state, { speed: 'instant' })
+    session.dispatch(attack)
+    session.input({ kind: 'confirm', amount: 3 })
+    return session
+  }
+
+  function passTurn(session: ReturnType<typeof carolEliminatedByP1>) {
+    session.input({ kind: 'endAttack' })
+    session.input({ kind: 'skipFortify' })
+  }
+
+  it('tells the human holder at the start of its next turn, after the hand-off', () => {
+    const session = carolEliminatedByP1([HUMAN, HUMAN, HUMAN])
+    expect(session.engineState.value.missions?.p2).toEqual(CONQUER_24_TERRITORIES)
+    expect(session.convertedMission.value).toBeNull()
+    passTurn(session)
+    expect(session.handoffTo.value?.id).toBe('p2')
+    expect(session.convertedMission.value?.id).toBe('p2')
+    session.acknowledgeConvertedMission()
+    expect(session.convertedMission.value).toBeNull()
+  })
+
+  it('keeps the conversion out of the journal', () => {
+    const session = carolEliminatedByP1([HUMAN, HUMAN, HUMAN])
+    passTurn(session)
+    expect(session.journal.value.some((entry) => entry.text.includes('mission'))).toBe(false)
+  })
+
+  it('tells nothing when the holder is an AI', () => {
+    const session = carolEliminatedByP1([HUMAN, AI, HUMAN])
+    passTurn(session)
+    expect(session.convertedMission.value).toBeNull()
   })
 })
 

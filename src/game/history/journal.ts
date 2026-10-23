@@ -1,4 +1,4 @@
-import { classicMap, type GameEvent, type GameState, type Player, type PlayerId } from '../../engine'
+import { classicMap, missionText, type GameEvent, type GameState, type Player, type PlayerId } from '../../engine'
 import { armiesLabel } from '../labels'
 import { presentationSteps } from '../presentation'
 
@@ -18,6 +18,8 @@ export type JournalBatch = {
 }
 
 type DiceRolled = Extract<GameEvent, { type: 'diceRolled' }>
+type SecretEvent = Extract<GameEvent, { type: 'missionConverted' }>
+type JournaledEvent = Exclude<GameEvent, DiceRolled | SecretEvent>
 
 function territoryName(id: string): string {
   return classicMap.territories[id]?.name ?? id
@@ -58,7 +60,7 @@ function attackEntry(rolls: DiceRolled[], nameOf: (id: PlayerId) => string, turn
   }
 }
 
-function eventText(event: Exclude<GameEvent, DiceRolled>, nameOf: (id: PlayerId) => string, turn: number): string {
+function eventText(event: JournaledEvent, players: Player[], nameOf: (id: PlayerId) => string, turn: number): string {
   switch (event.type) {
     case 'turnStarted':
       return `Tour ${turn} — ${nameOf(event.playerId)}`
@@ -80,18 +82,20 @@ function eventText(event: Exclude<GameEvent, DiceRolled>, nameOf: (id: PlayerId)
       return `${nameOf(event.playerId)} pioche une carte`
     case 'playerEliminated':
       return `${nameOf(event.playerId)} est éliminé par ${nameOf(event.by)}`
+    case 'missionAccomplished':
+      return `${nameOf(event.playerId)} accomplit sa mission : ${missionText(event.mission, players)}`
     case 'gameWon':
       return `${nameOf(event.playerId)} remporte la partie`
   }
 }
 
-function authorOf(event: Exclude<GameEvent, DiceRolled>): PlayerId {
+function authorOf(event: JournaledEvent): PlayerId {
   return event.type === 'playerEliminated' ? event.by : event.playerId
 }
 
 /**
  * Journal entries of the events of one engine answer, `turn` being the turn number before them.
- * The rolls of an attack make a single entry; drawn cards stay anonymous.
+ * The rolls of an attack make a single entry; drawn cards stay anonymous and converted missions secret.
  */
 export function journalBatch(events: GameEvent[], players: Player[], turn: number): JournalBatch {
   const nameOf = (id: PlayerId) => players.find((player) => player.id === id)?.name ?? id
@@ -111,6 +115,9 @@ export function journalBatch(events: GameEvent[], players: Player[], turn: numbe
   }
 
   events.forEach((event, index) => {
+    if (event.type === 'missionConverted') {
+      return
+    }
     if (event.type === 'diceRolled') {
       rolls.push(event)
       return
@@ -122,7 +129,7 @@ export function journalBatch(events: GameEvent[], players: Player[], turn: numbe
     entries.push({
       turn: currentTurn,
       playerId: authorOf(event),
-      text: eventText(event, nameOf, currentTurn),
+      text: eventText(event, players, nameOf, currentTurn),
       header: event.type === 'turnStarted',
       details: [],
     })

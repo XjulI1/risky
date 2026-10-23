@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createGame, DEFAULT_SETTINGS, type GameState } from '../engine'
 import { initialStatistics } from './history/statistics'
-import { deleteSavedGame, loadSavedGame, SAVE_KEY, writeSavedGame, type SavedGame } from './persistence'
+import { deleteSavedGame, loadSavedGame, SAVE_FORMAT_VERSION, SAVE_KEY, writeSavedGame, type SavedGame } from './persistence'
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const values = new Map(Object.entries(initial))
@@ -19,8 +19,8 @@ const players = [
   { id: 'p3', name: 'Foch', color: '#3fa34d', kind: 'ai' as const, level: 'hard' as const },
 ]
 
-function engineState(): GameState {
-  const created = createGame({ players, seed: 9 })
+function engineState(secretMissions = false): GameState {
+  const created = createGame({ players, seed: 9, settings: { secretMissions } })
   if (!created.ok) throw new Error(created.error.message)
   return created.state
 }
@@ -28,7 +28,7 @@ function engineState(): GameState {
 function savedGame(overrides: Partial<SavedGame> = {}): SavedGame {
   const state = engineState()
   return {
-    formatVersion: 1,
+    formatVersion: SAVE_FORMAT_VERSION,
     savedAt: '2026-10-23T08:30:00.000Z',
     status: 'inProgress',
     creation: { players, settings: { ...DEFAULT_SETTINGS } },
@@ -62,10 +62,30 @@ describe('saved game', () => {
     expect(storage.values.has(SAVE_KEY)).toBe(false)
   })
 
-  it('treats an unknown format version as unreadable', () => {
-    const storage = storageWith({ ...savedGame(), formatVersion: 2 })
+  it('is at version 2 since the secret missions', () => {
+    expect(SAVE_FORMAT_VERSION).toBe(2)
+  })
+
+  it.each([1, 3])('treats a save of version %i as unreadable and deletes it', (formatVersion) => {
+    const storage = storageWith({ ...savedGame(), formatVersion })
     expect(loadSavedGame(storage)).toEqual({ kind: 'unreadable' })
     expect(storage.values.has(SAVE_KEY)).toBe(false)
+  })
+
+  it('keeps the missions of a game saved then resumed', () => {
+    const storage = memoryStorage()
+    const state = engineState(true)
+    const game = savedGame({ engineState: state, creation: { players, settings: { ...DEFAULT_SETTINGS, secretMissions: true } } })
+    writeSavedGame(game, storage)
+    const loaded = loadSavedGame(storage)
+    expect(loaded.kind === 'saved' && loaded.game.engineState.missions).toEqual(state.missions)
+    expect(Object.keys(state.missions ?? {})).toHaveLength(3)
+  })
+
+  it('treats an engine state without missions as unreadable', () => {
+    const game: SavedGame = structuredClone(savedGame())
+    delete (game.engineState as Partial<GameState>).missions
+    expect(loadSavedGame(storageWith(game))).toEqual({ kind: 'unreadable' })
   })
 
   it.each(['savedAt', 'status', 'creation', 'engineState', 'journal', 'statistics', 'turnNumber'])(

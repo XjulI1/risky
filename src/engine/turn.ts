@@ -1,4 +1,5 @@
 import { drawCard } from './cards'
+import { CONQUER_24_TERRITORIES } from './missions'
 import { reinforcementCount } from './reinforcement'
 import { currentPlayer, isInPlay, playerById, territoriesOf } from './state'
 import type { GameEvent, GameState, Player, PlayerId } from './types'
@@ -45,7 +46,18 @@ export function eliminateIfDefeated(state: GameState, playerId: PlayerId, by: Pl
   state.hands[by] = [...(state.hands[by] ?? []), ...taken]
   state.hands[playerId] = []
   events.push({ type: 'playerEliminated', playerId, by, cardsTaken: taken.length })
+  convertMissionsTargeting(state, playerId, by, events)
   return true
+}
+
+function convertMissionsTargeting(state: GameState, eliminated: PlayerId, by: PlayerId, events: GameEvent[]): void {
+  const missions = state.missions ?? {}
+  for (const [holder, mission] of Object.entries(missions)) {
+    if (mission.kind === 'eliminate' && mission.target === eliminated && holder !== by) {
+      missions[holder] = CONQUER_24_TERRITORIES
+      events.push({ type: 'missionConverted', playerId: holder })
+    }
+  }
 }
 
 export function isLastStanding(state: GameState): boolean {
@@ -59,5 +71,6 @@ export function declareWinner(state: GameState, events: GameEvent[]): void {
   }
   state.phase = { kind: 'gameOver' }
   state.winner = winner.id
+  state.winReason = 'domination'
   events.push({ type: 'gameWon', playerId: winner.id })
 }

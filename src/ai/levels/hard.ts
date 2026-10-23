@@ -6,10 +6,10 @@ import {
   neighborsOf,
   opponentsOf,
   ownerOf,
-  targetContinent,
   territoriesOwnedBy,
   threat,
 } from '../evaluation'
+import { eliminationTarget, goalContinent, isMissionTarget } from '../missionObjective'
 import type { PlayerView } from '../playerView'
 import {
   attackOptions,
@@ -35,6 +35,7 @@ import {
 
 const PRIORITY_THRESHOLD = 0.5
 const MAX_ELIMINATION_TERRITORIES = 3
+const MISSION_TARGET_PRIORITY = 3
 const ELIMINATION_PRIORITY = 2
 const BREAK_PRIORITY = 1
 const OFFENSIVE_SHARE = 0.75
@@ -77,7 +78,10 @@ function priorityOf(view: PlayerView, me: PlayerId, target: TerritoryId, extraAr
   if (owner === undefined || !opponentsOf(view, me).includes(owner)) {
     return 0
   }
-  if (eliminationOdds(view, me, owner, extraArmies) >= PRIORITY_THRESHOLD) {
+  if (isMissionTarget(view, target)) {
+    return MISSION_TARGET_PRIORITY
+  }
+  if (eliminationTarget(view) === null && eliminationOdds(view, me, owner, extraArmies) >= PRIORITY_THRESHOLD) {
     return ELIMINATION_PRIORITY
   }
   return inHeldContinent(view, target) ? BREAK_PRIORITY : 0
@@ -111,7 +115,7 @@ function defensiveWeights(view: PlayerView, me: PlayerId): Map<TerritoryId, numb
 function deployByThreat(view: PlayerView, me: PlayerId, reserve: number): Deployment {
   const weights = defensiveWeights(view, me)
   const totalThreat = [...weights.values()].reduce((sum, weight) => sum + weight, 0)
-  if (targetContinent(view, me) !== null || totalThreat === 0) {
+  if (goalContinent(view, me) !== null || totalThreat === 0) {
     const front = frontOrigin(view, me, reserve)
     const offensiveWeight = totalThreat === 0 ? 1 : (totalThreat * OFFENSIVE_SHARE) / (1 - OFFENSIVE_SHARE)
     weights.set(front, (weights.get(front) ?? 0) + offensiveWeight)
@@ -155,7 +159,7 @@ const towardOffensiveFront: DestinationChoice = (view, me, from, destinations) =
   return destinations.includes(front) ? front : mostThreatened(view, me, from, destinations)
 }
 
-/** The normal strategy, plus breaking continents, eliminating opponents, defending by threat and keeping its cards. */
+/** The normal strategy, plus breaking continents, eliminating opponents (its target first), defending by threat and keeping its cards. */
 export const hard: Strategy = {
   claim: ({ view, me }) => blockingClaim(view, me) ?? claimForContinent(view, me),
   place: ({ view, me }) => deploy(view, me, 1).territory,

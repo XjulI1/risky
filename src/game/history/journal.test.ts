@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createGame, type GameEvent, type Player } from '../../engine'
+import { CONQUER_24_TERRITORIES, createGame, type GameEvent, type Player } from '../../engine'
 import { groupByTurn, journalBatch, openingJournal, type JournalEntry } from './journal'
 
 const players: Player[] = [
@@ -24,6 +24,31 @@ function roll(attackerDice: number[], defenderDice: number[], attackerLosses: nu
 const texts = (events: GameEvent[], turn = 3) => journalBatch(events, players, turn).entries.map((entry) => entry.text)
 
 describe('journal entries', () => {
+  it('reveals the accomplished mission of the winner', () => {
+    expect(
+      texts([
+        { type: 'missionAccomplished', playerId: 'p1', mission: CONQUER_24_TERRITORIES },
+        { type: 'gameWon', playerId: 'p1' },
+      ]),
+    ).toEqual(['Alice accomplit sa mission : Conquérir 24 territoires', 'Alice remporte la partie'])
+    expect(texts([{ type: 'missionAccomplished', playerId: 'p2', mission: { kind: 'eliminate', target: 'p1' } }])).toEqual([
+      'Bob accomplit sa mission : Éliminer Alice',
+    ])
+  })
+
+  it('keeps a converted mission secret', () => {
+    const batch = journalBatch(
+      [
+        { type: 'playerEliminated', playerId: 'p2', by: 'p1', cardsTaken: 0 },
+        { type: 'missionConverted', playerId: 'p1' },
+      ],
+      players,
+      3,
+    )
+    expect(batch.entries.map((entry) => entry.text)).toEqual(['Bob est éliminé par Alice'])
+    expect(batch.revealSteps).toHaveLength(1)
+  })
+
   it('opens a turn with a header', () => {
     const [entry] = journalBatch([{ type: 'turnStarted', playerId: 'p2', reserve: 3 }], players, 4).entries
     expect(entry).toEqual({ turn: 5, playerId: 'p2', text: 'Tour 5 — Bob', header: true, details: [] })

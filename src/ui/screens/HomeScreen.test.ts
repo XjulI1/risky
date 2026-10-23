@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { createGame, DEFAULT_SETTINGS, type PlayerConfig } from '../../engine'
 import { initialStatistics } from '../../game/history/statistics'
-import type { SavedGame, SaveStatus } from '../../game/persistence'
+import { SAVE_FORMAT_VERSION, type SavedGame, type SaveStatus } from '../../game/persistence'
 import HomeScreen from './HomeScreen.vue'
 
 const players: PlayerConfig[] = [
@@ -15,7 +15,7 @@ function saved(status: SaveStatus): SavedGame {
   const created = createGame({ players, seed: 4 })
   if (!created.ok) throw new Error(created.error.message)
   return {
-    formatVersion: 1,
+    formatVersion: SAVE_FORMAT_VERSION,
     savedAt: '2026-10-23T08:30:00.000Z',
     status,
     creation: { players, settings: { ...DEFAULT_SETTINGS } },
