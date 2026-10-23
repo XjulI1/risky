@@ -22,6 +22,9 @@ sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 - **Plateau 3D** façon jeu de société : territoires en relief, pions et compteurs d'armées, dés
   animés, vitesse d'animation réglable.
 - **Sauvegarde automatique** dans le navigateur, journal de partie et statistiques de fin.
+- **Jouable hors ligne et installable** : après une première visite, l'application se lance et se
+  joue sans connexion ; elle s'installe sur l'écran d'accueil d'une tablette ou comme application de
+  bureau. Une nouvelle version déployée est proposée depuis l'écran d'accueil.
 
 ## Stack technique
 
@@ -56,7 +59,12 @@ pnpm test          # lancer les tests
 pnpm lint          # analyser le code
 pnpm type-check    # vérifier les types
 pnpm build         # construire la version de production
+pnpm preview       # servir la version de production (service worker compris)
+pnpm generate-pwa-assets  # régénérer les icônes PNG à partir de public/icon.svg
 ```
+
+Le service worker n'est actif que dans la version de production : le fonctionnement hors ligne se
+teste avec `pnpm build` puis `pnpm preview`.
 
 ## Feuille de route
 
@@ -71,8 +79,9 @@ Les changes doivent être appliqués dans l'ordre :
 | 3 | `add-game-ui` | Écrans, interface de jeu, dés animés, cartes | Terminé |
 | 4 | `add-heuristic-ai` | Adversaires IA à trois niveaux | Terminé |
 | 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques | Terminé |
-| 6 | `add-secret-missions` | Variante missions secrètes | À faire |
-| 7 | `add-capitals-mode` | Variante capitales | À faire |
+| 6 | `add-offline-pwa` | Application installable et jouable hors ligne | Terminé |
+| 7 | `add-secret-missions` | Variante missions secrètes | À faire |
+| 8 | `add-capitals-mode` | Variante capitales | À faire |
 
 Les changes terminés sont archivés dans `openspec/changes/archive/`.
 

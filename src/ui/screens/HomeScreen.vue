@@ -6,11 +6,13 @@ import ConfirmDialog from '../ConfirmDialog.vue'
 const props = defineProps<{
   saved: SavedGame | null
   loadError: boolean
+  updateReady: boolean
 }>()
 
 const emit = defineEmits<{
   create: []
   resume: []
+  reload: []
 }>()
 
 const confirmingReplace = ref(false)
@@ -75,6 +77,21 @@ function create() {
         @click="create"
       >
         Nouvelle partie
+      </button>
+    </div>
+    <div
+      v-if="updateReady"
+      data-testid="update-banner"
+      role="status"
+      class="fixed bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-4 rounded-xl bg-panel-strong py-2 pr-2 pl-5 shadow-lg"
+    >
+      <span>Nouvelle version disponible</span>
+      <button
+        type="button"
+        class="min-h-11 rounded-lg bg-accent px-5 font-bold text-ink"
+        @click="emit('reload')"
+      >
+        Recharger
       </button>
     </div>
     <ConfirmDialog

@@ -26,8 +26,8 @@ function saved(status: SaveStatus): SavedGame {
   }
 }
 
-function mountHome(props: { saved?: SavedGame | null; loadError?: boolean } = {}) {
-  return mount(HomeScreen, { props: { saved: null, loadError: false, ...props } })
+function mountHome(props: { saved?: SavedGame | null; loadError?: boolean; updateReady?: boolean } = {}) {
+  return mount(HomeScreen, { props: { saved: null, loadError: false, updateReady: false, ...props } })
 }
 
 const button = (wrapper: ReturnType<typeof mountHome>, label: string) =>
@@ -81,5 +81,18 @@ describe('HomeScreen', () => {
       await button(wrapper, 'Nouvelle partie')?.trigger('click')
       expect(wrapper.emitted('create')).toHaveLength(1)
     }
+  })
+
+  it('offers to reload when a new version is ready', async () => {
+    const wrapper = mountHome({ updateReady: true })
+    expect(wrapper.get('[data-testid="update-banner"]').text()).toContain('Nouvelle version disponible')
+    await button(wrapper, 'Recharger')?.trigger('click')
+    expect(wrapper.emitted('reload')).toHaveLength(1)
+  })
+
+  it('shows no update banner without a new version', () => {
+    const wrapper = mountHome()
+    expect(wrapper.find('[data-testid="update-banner"]').exists()).toBe(false)
+    expect(button(wrapper, 'Recharger')).toBeUndefined()
   })
 })

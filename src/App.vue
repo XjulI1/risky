@@ -4,6 +4,8 @@ import { createGame, type GameState } from './engine'
 import type { GameSetup } from './game/gameForm'
 import { deleteSavedGame, loadSavedGame, type SavedGame } from './game/persistence'
 import { setupOf, type GameStart } from './game/useGameSession'
+import { serviceWorkerRegistration } from './pwa/registration'
+import { watchAppUpdate } from './pwa/updateState'
 import OffTargetBanner from './ui/OffTargetBanner.vue'
 import CreateGameScreen from './ui/screens/CreateGameScreen.vue'
 import GameScreen from './ui/screens/GameScreen.vue'
@@ -17,6 +19,7 @@ type Screen =
 const screen = shallowRef<Screen>({ kind: 'home' })
 const savedGame = shallowRef<SavedGame | null>(null)
 const loadError = ref(false)
+const { updateReady, applyUpdate } = watchAppUpdate(serviceWorkerRegistration())
 let gameCount = 0
 
 function readSave() {
@@ -67,8 +70,10 @@ readSave()
     v-if="screen.kind === 'home'"
     :saved="savedGame"
     :load-error="loadError"
+    :update-ready="updateReady"
     @create="loadError = false; screen = { kind: 'create' }"
     @resume="resume"
+    @reload="applyUpdate"
   />
   <CreateGameScreen
     v-else-if="screen.kind === 'create'"

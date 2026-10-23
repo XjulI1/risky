@@ -101,12 +101,18 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [ ] Implémenter les [tâches](openspec/changes/add-save-and-journal/tasks.md).
 - [ ] Archiver le change.
 
-### 6. `add-secret-missions` — variante missions secrètes
+### 6. `add-offline-pwa` — application installable et hors ligne
+
+- [x] Lancer `pnpm add -D vite-plugin-pwa @vite-pwa/assets-generator workbox-window` (tâche 1.1).
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-offline-pwa/tasks.md).
+- [x] Archiver le change.
+
+### 7. `add-secret-missions` — variante missions secrètes
 
 - [ ] Implémenter les [tâches](openspec/changes/add-secret-missions/tasks.md).
 - [ ] Archiver le change.
 
-### 7. `add-capitals-mode` — variante capitales
+### 8. `add-capitals-mode` — variante capitales
 
 - [ ] Implémenter les [tâches](openspec/changes/add-capitals-mode/tasks.md).
 - [ ] Archiver le change.
@@ -117,6 +123,11 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [ ] Mettre à jour le README : fonctionnalités réellement livrées, captures d'écran.
 - [ ] Déployer sur le serveur personnel : `pnpm build` en local, puis copie manuelle du dossier
   `dist/` ; régler l'option `base` de Vite si l'application est servie sous un sous-chemin.
+- [ ] Servir l'application en HTTPS (obligatoire pour le service worker) avec
+  `Cache-Control: no-cache` sur `sw.js`, `index.html` et `manifest.webmanifest`, sinon les nouvelles
+  versions ne sont jamais vues.
+- [ ] Installer l'application sur iPad (« Sur l'écran d'accueil ») et vérifier en paysage le
+  lancement plein écran puis une partie hors ligne.
 
 ## Pistes après la V1
 
