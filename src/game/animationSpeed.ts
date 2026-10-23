@@ -42,7 +42,7 @@ function isSpeed(value: string | null): value is AnimationSpeed {
 }
 
 /** The browser storage, or `null` when the browser refuses access to it. */
-export function browserStorage(): SpeedStorage | null {
+export function browserStorage(): Storage | null {
   try {
     return window.localStorage
   } catch {

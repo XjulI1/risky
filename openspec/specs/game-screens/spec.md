@@ -37,26 +37,21 @@ un écran d'au moins 1024 px de large en mode paysage ». Le bandeau SHALL NOT b
 - **WHEN** l'application s'ouvre dans une fenêtre de 1024 × 768
 - **THEN** aucun bandeau ne s'affiche
 
-### Requirement: Écran de partie
+### Requirement: Écran de partie et sortie
 
 Une fois la partie créée, l'application SHALL afficher le plateau 3D en plein écran avec le HUD
-superposé. L'utilisateur SHALL pouvoir abandonner la partie et revenir à l'accueil après
-confirmation.
+superposé. L'utilisateur SHALL pouvoir quitter la partie à tout moment et revenir à l'accueil, sans
+confirmation : la partie reste sauvegardée et peut être reprise depuis l'accueil.
 
 #### Scenario: Démarrage d'une partie
 
 - **WHEN** l'utilisateur valide la création d'une partie
 - **THEN** l'écran de partie s'affiche avec le plateau et le HUD du premier joueur
 
-#### Scenario: Abandon confirmé
+#### Scenario: Quitter la partie
 
-- **WHEN** l'utilisateur choisit « Quitter la partie » puis confirme
-- **THEN** l'écran d'accueil s'affiche
-
-#### Scenario: Abandon annulé
-
-- **WHEN** l'utilisateur choisit « Quitter la partie » puis annule
-- **THEN** la partie continue sans changement
+- **WHEN** l'utilisateur choisit « Quitter la partie »
+- **THEN** l'écran d'accueil s'affiche aussitôt, sans confirmation, et propose « Reprendre la partie »
 
 ### Requirement: Écran de fin de partie
 

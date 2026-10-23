@@ -4,9 +4,9 @@ Jeu Risk en application web, avec un plateau en 3D vu du haut, jouable seul cont
 sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 
 > **État du projet** : en développement. On peut déjà jouer une partie complète aux règles
-> classiques, sur le plateau 3D, entre humains ou contre des IA de trois niveaux. La sauvegarde, le
-> journal de partie et les variantes (missions secrètes, capitales) restent à faire. Avancement
-> détaillé : [Feuille de route](#feuille-de-route).
+> classiques, sur le plateau 3D, entre humains ou contre des IA de trois niveaux, avec sauvegarde
+> automatique, journal de partie et statistiques de fin. Les variantes (missions secrètes,
+> capitales) restent à faire. Avancement détaillé : [Feuille de route](#feuille-de-route).
 
 ## Le jeu
 
@@ -70,7 +70,7 @@ Les changes doivent être appliqués dans l'ordre :
 | 2 | `add-3d-board` | Plateau 3D : carte, pions, caméra, sélection | Terminé |
 | 3 | `add-game-ui` | Écrans, interface de jeu, dés animés, cartes | Terminé |
 | 4 | `add-heuristic-ai` | Adversaires IA à trois niveaux | Terminé |
-| 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques | À faire |
+| 5 | `add-save-and-journal` | Sauvegarde, reprise, journal et statistiques | Terminé |
 | 6 | `add-secret-missions` | Variante missions secrètes | À faire |
 | 7 | `add-capitals-mode` | Variante capitales | À faire |
 

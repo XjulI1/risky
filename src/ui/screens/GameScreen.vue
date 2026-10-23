@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import type { Highlights } from '../../board/boardViewModel'
 import GameBoard, { type BoardTransit } from '../../board/GameBoard.vue'
-import { classicMap, type GameState, type TerritoryId } from '../../engine'
+import { classicMap, type TerritoryId } from '../../engine'
 import { ANIMATION_DURATIONS } from '../../game/animationSpeed'
-import type { GameSetup } from '../../game/gameForm'
-import { attackSummary } from '../../game/labels'
-import { createGameSession, provideGameSession } from '../../game/useGameSession'
-import ConfirmDialog from '../ConfirmDialog.vue'
+import { provideGameSession, startGameSession, type GameStart } from '../../game/useGameSession'
 import AmountPicker from '../hud/AmountPicker.vue'
 import AttackPanel from '../hud/AttackPanel.vue'
 import CardHand from '../hud/CardHand.vue'
 import DiceTray from '../hud/DiceTray.vue'
 import DrawnCardNotice from '../hud/DrawnCardNotice.vue'
 import ErrorToast from '../hud/ErrorToast.vue'
+import JournalPanel from '../hud/JournalPanel.vue'
 import HandoffScreen from '../hud/HandoffScreen.vue'
 import PlayersPanel from '../hud/PlayersPanel.vue'
 import SpeedSelector from '../hud/SpeedSelector.vue'
@@ -21,16 +19,18 @@ import StatusBar from '../hud/StatusBar.vue'
 import GameOverOverlay from './GameOverOverlay.vue'
 
 const props = defineProps<{
-  initialState: GameState
-  setup: GameSetup
+  start: GameStart
 }>()
 
 const emit = defineEmits<{
+  quit: []
   home: []
   replay: []
 }>()
 
-const session = createGameSession(props.initialState)
+const STORAGE_WARNING = 'La partie ne peut pas être sauvegardée sur cet appareil'
+
+const session = startGameSession(props.start)
 provideGameSession(session)
 
 const {
@@ -45,9 +45,21 @@ const {
   error,
   thinkingPlayer,
   aiFocus,
+  storageWarning,
+  visibleJournal,
+  statistics,
 } = session
 onUnmounted(() => session.dispose())
-const confirmingQuit = ref(false)
+
+const notice = computed(() => error.value ?? (storageWarning.value ? STORAGE_WARNING : null))
+
+function dismissNotice() {
+  if (error.value !== null) {
+    session.dismissError()
+  } else {
+    session.dismissStorageWarning()
+  }
+}
 
 const currentPlayer = computed(() => displayedState.value.players[displayedState.value.currentPlayerIndex])
 const colorOf = (playerId: string) =>
@@ -85,9 +97,6 @@ const transit = computed<BoardTransit | null>(() => {
   }
 })
 
-const instantResult = computed(() =>
-  speed.value === 'instant' ? attackSummary(session.lastEvents.value, displayedState.value.players) : null,
-)
 
 const winner = computed(() => {
   const state = displayedState.value
@@ -159,8 +168,8 @@ function trade(cardIds: [number, number, number]) {
         @skip="session.skipAnimation()"
       />
       <ErrorToast
-        :message="error"
-        @dismiss="session.dismissError()"
+        :message="notice"
+        @dismiss="dismissNotice"
       />
       <DrawnCardNotice
         v-if="showOverlays && drawnCard"
@@ -171,6 +180,8 @@ function trade(cardIds: [number, number, number]) {
       <GameOverOverlay
         v-if="winner"
         :winner="winner"
+        :players="displayedState.players"
+        :statistics="statistics"
         @replay="emit('replay')"
         @home="emit('home')"
       />
@@ -180,7 +191,6 @@ function trade(cardIds: [number, number, number]) {
       <StatusBar
         :state="displayedState"
         :view="view"
-        :instant-result="instantResult"
       />
       <PlayersPanel :state="displayedState" />
 
@@ -221,8 +231,9 @@ function trade(cardIds: [number, number, number]) {
         </button>
       </template>
       <p
-        v-else-if="isPresenting"
+        v-else-if="isPresenting || (thinkingPlayer && !winner)"
         class="text-sm text-parchment/70"
+        :class="isPresenting ? '' : 'invisible'"
       >
         Touchez le plateau pour passer l'animation.
       </p>
@@ -236,6 +247,11 @@ function trade(cardIds: [number, number, number]) {
         @trade="trade"
       />
 
+      <JournalPanel
+        :entries="visibleJournal"
+        :players="displayedState.players"
+      />
+
       <div class="mt-auto space-y-3">
         <SpeedSelector
           :speed="speed"
@@ -244,7 +260,7 @@ function trade(cardIds: [number, number, number]) {
         <button
           type="button"
           class="min-h-11 w-full rounded-lg text-parchment/70 hover:text-parchment"
-          @click="confirmingQuit = true"
+          @click="winner ? emit('home') : emit('quit')"
         >
           Quitter la partie
         </button>
@@ -255,13 +271,6 @@ function trade(cardIds: [number, number, number]) {
       v-if="showOverlays && handoffTo && !drawnCard"
       :player="handoffTo"
       @ready="session.acknowledgeHandoff()"
-    />
-    <ConfirmDialog
-      v-if="confirmingQuit"
-      message="Quitter la partie en cours ?"
-      confirm-label="Quitter"
-      @confirm="emit('home')"
-      @cancel="confirmingQuit = false"
     />
   </div>
 </template>

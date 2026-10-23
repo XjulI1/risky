@@ -49,7 +49,8 @@ l'animation restante d'une attaque d'un toucher.
 
 L'utilisateur SHALL pouvoir choisir la vitesse d'animation parmi normale, rapide et instantanée,
 depuis le HUD, à tout moment. Le choix SHALL être mémorisé sur l'appareil. En vitesse instantanée,
-aucun dé n'est animé : le résultat du lancer est affiché sous forme de texte.
+aucun dé n'est animé : le résultat de l'attaque est affiché sous forme de texte dans le journal de
+partie, et nulle part ailleurs dans le HUD.
 
 #### Scenario: Vitesse mémorisée
 
@@ -59,7 +60,7 @@ aucun dé n'est animé : le résultat du lancer est affiché sous forme de texte
 #### Scenario: Vitesse instantanée
 
 - **WHEN** la vitesse est « instantanée » et qu'une attaque est lancée
-- **THEN** le plateau est mis à jour sans animation et le résultat s'affiche en texte dans le HUD
+- **THEN** le plateau est mis à jour sans animation et le résultat s'affiche en texte dans le journal de partie
 
 ### Requirement: Animation de conquête
 

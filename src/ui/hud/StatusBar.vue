@@ -2,12 +2,11 @@
 import { computed } from 'vue'
 import type { GameState } from '../../engine'
 import type { InteractionView } from '../../game/interaction'
-import { armiesLabel, PHASE_LABELS } from '../../game/labels'
+import { PHASE_LABELS } from '../../game/labels'
 
 const props = defineProps<{
   state: GameState
   view: InteractionView
-  instantResult: string | null
 }>()
 
 const HINTS: Partial<Record<GameState['phase']['kind'], string>> = {
@@ -24,10 +23,10 @@ const player = computed(() => props.state.players[props.state.currentPlayerIndex
 const reserveText = computed(() => {
   const phase = props.state.phase
   if (phase.kind === 'reinforce' || phase.kind === 'eliminationTrade') {
-    return `${armiesLabel(phase.reserve)} à placer`
+    return `${phase.reserve} à placer`
   }
   if (props.view.armiesToPlace !== null) {
-    return `${armiesLabel(props.view.armiesToPlace)} restant à placer`
+    return `${props.view.armiesToPlace} à placer`
   }
   return null
 })
@@ -50,26 +49,27 @@ const hint = computed(() => {
         class="size-4 shrink-0 rounded-full"
         :style="{ backgroundColor: player?.color }"
       />
-      <span data-testid="status-title">{{ player?.name }} — {{ PHASE_LABELS[state.phase.kind] }}</span>
+      <span
+        data-testid="status-title"
+        class="truncate"
+      >{{ player?.name }}</span>
+    </p>
+    <p class="flex items-baseline gap-2 font-semibold">
+      <span
+        data-testid="status-phase"
+        class="min-w-0 flex-1 truncate"
+      >{{ PHASE_LABELS[state.phase.kind] }}</span>
+      <span
+        v-if="reserveText"
+        data-testid="status-reserve"
+        class="shrink-0 text-accent"
+      >{{ reserveText }}</span>
     </p>
     <p
-      v-if="reserveText"
-      class="font-semibold text-accent"
-    >
-      {{ reserveText }}
-    </p>
-    <p
-      v-if="hint"
       data-testid="status-hint"
-      class="text-sm text-parchment/80"
+      class="line-clamp-2 h-10 text-sm text-parchment/80"
     >
       {{ hint }}
-    </p>
-    <p
-      v-if="instantResult"
-      class="rounded-lg bg-panel-strong p-2 text-sm"
-    >
-      {{ instantResult }}
     </p>
   </header>
 </template>

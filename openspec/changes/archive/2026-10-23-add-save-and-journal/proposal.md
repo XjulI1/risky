@@ -27,7 +27,9 @@ passé pendant leurs tours ou de comprendre a posteriori comment la partie a bas
 
 ### Modified Capabilities
 
-(aucune)
+- `game-screens` : « Quitter la partie » revient à l'accueil sans confirmation et conserve la partie.
+- `combat-display` : en vitesse instantanée, le résultat d'une attaque n'apparaît plus que dans le journal.
+- `turn-controls` : bandeau d'état à lignes fixes, nom seul sur sa ligne et réserve courte sur la ligne de la phase.
 
 ## Hors périmètre
 

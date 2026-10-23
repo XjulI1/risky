@@ -20,9 +20,12 @@ function game(firstPlayer: PlayerControl): GameState {
   return state
 }
 
+function mountBar(state: GameState) {
+  return mount(StatusBar, { props: { state, view: viewOf(state, IDLE) } })
+}
+
 function hintOf(state: GameState): string {
-  const wrapper = mount(StatusBar, { props: { state, view: viewOf(state, IDLE), instantResult: null } })
-  return wrapper.get('[data-testid="status-hint"]').text()
+  return mountBar(state).get('[data-testid="status-hint"]').text()
 }
 
 describe('StatusBar', () => {
@@ -32,5 +35,26 @@ describe('StatusBar', () => {
 
   it('guides a human during its turn', () => {
     expect(hintOf(game({ kind: 'human' }))).toBe("Choisissez un territoire d'où attaquer.")
+  })
+
+  it('shows the name and the phase on two lines, so that a long phase never wraps the name', () => {
+    const state = game({ kind: 'human' })
+    state.phase = { kind: 'conquestMove', from: 'peru', to: 'brazil', minArmies: 1, maxArmies: 3 }
+    const wrapper = mountBar(state)
+    expect(wrapper.get('[data-testid="status-title"]').text()).toBe('Alice')
+    expect(wrapper.get('[data-testid="status-phase"]').text()).toBe('Déplacement après conquête')
+  })
+
+  it('shows the armies left to place on the line of the phase', () => {
+    const attacking = mountBar(game({ kind: 'human' }))
+    expect(attacking.find('[data-testid="status-reserve"]').exists()).toBe(false)
+    const reinforcing = game({ kind: 'human' })
+    reinforcing.phase = { kind: 'reinforce', reserve: 5 }
+    const wrapper = mountBar(reinforcing)
+    expect(wrapper.get('[data-testid="status-phase"]').text()).toBe('Renforts')
+    expect(wrapper.get('[data-testid="status-reserve"]').text()).toBe('5 à placer')
+    expect(wrapper.get('[data-testid="status-reserve"]').element.parentElement).toBe(
+      wrapper.get('[data-testid="status-phase"]').element.parentElement,
+    )
   })
 })

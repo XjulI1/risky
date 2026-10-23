@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue'
+import { ref, shallowRef } from 'vue'
 import { createGame, type GameState } from './engine'
 import type { GameSetup } from './game/gameForm'
+import { deleteSavedGame, loadSavedGame, type SavedGame } from './game/persistence'
+import { setupOf, type GameStart } from './game/useGameSession'
 import OffTargetBanner from './ui/OffTargetBanner.vue'
 import CreateGameScreen from './ui/screens/CreateGameScreen.vue'
 import GameScreen from './ui/screens/GameScreen.vue'
@@ -10,14 +12,43 @@ import HomeScreen from './ui/screens/HomeScreen.vue'
 type Screen =
   | { kind: 'home' }
   | { kind: 'create' }
-  | { kind: 'game'; id: number; state: GameState; setup: GameSetup }
+  | { kind: 'game'; id: number; start: GameStart }
 
 const screen = shallowRef<Screen>({ kind: 'home' })
+const savedGame = shallowRef<SavedGame | null>(null)
+const loadError = ref(false)
 let gameCount = 0
 
-function startGame(state: GameState, setup: GameSetup) {
+function readSave() {
+  const loaded = loadSavedGame()
+  savedGame.value = loaded.kind === 'saved' ? loaded.game : null
+  loadError.value = loaded.kind === 'unreadable'
+}
+
+function goHome() {
+  readSave()
+  screen.value = { kind: 'home' }
+}
+
+function openGame(start: GameStart) {
   gameCount += 1
-  screen.value = { kind: 'game', id: gameCount, state, setup }
+  loadError.value = false
+  screen.value = { kind: 'game', id: gameCount, start }
+}
+
+function startGame(state: GameState, setup: GameSetup) {
+  openGame({ kind: 'new', state, setup })
+}
+
+function resume() {
+  if (savedGame.value !== null) {
+    openGame({ kind: 'saved', game: savedGame.value })
+  }
+}
+
+function leaveEndScreen() {
+  deleteSavedGame()
+  goHome()
 }
 
 function replay(setup: GameSetup) {
@@ -26,25 +57,30 @@ function replay(setup: GameSetup) {
     startGame(result.state, setup)
   }
 }
+
+readSave()
 </script>
 
 <template>
   <OffTargetBanner />
   <HomeScreen
     v-if="screen.kind === 'home'"
-    @create="screen = { kind: 'create' }"
+    :saved="savedGame"
+    :load-error="loadError"
+    @create="loadError = false; screen = { kind: 'create' }"
+    @resume="resume"
   />
   <CreateGameScreen
     v-else-if="screen.kind === 'create'"
     @start="startGame"
-    @back="screen = { kind: 'home' }"
+    @back="goHome"
   />
   <GameScreen
     v-else
     :key="screen.id"
-    :initial-state="screen.state"
-    :setup="screen.setup"
-    @home="screen = { kind: 'home' }"
-    @replay="replay(screen.setup)"
+    :start="screen.start"
+    @quit="goHome"
+    @home="leaveEndScreen"
+    @replay="replay(setupOf(screen.start))"
   />
 </template>

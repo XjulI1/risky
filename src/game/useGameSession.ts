@@ -2,7 +2,12 @@ import { computed, inject, provide, ref, shallowRef, type ComputedRef, type Inje
 import { NEW_TURN, nextAiAction, progressAfter, type TurnProgress } from '../ai'
 import { applyAction, type Action, type Card, type GameEvent, type GameState, type Player, type TerritoryId } from '../engine'
 import { ANIMATION_DURATIONS, readSpeedPreference, writeSpeedPreference, type AnimationSpeed } from './animationSpeed'
+import type { GameSetup } from './gameForm'
+import { journalBatch, openingJournal, type JournalEntry } from './history/journal'
+import { initialStatistics, recordStatistics, type GameStatistics } from './history/statistics'
+import { initialTurnNumber, nextTurnNumber } from './history/turnCounter'
 import { IDLE, reduceInteraction, viewOf, type Interaction, type InteractionInput, type InteractionView } from './interaction'
+import { SAVE_FORMAT_VERSION, writeSavedGame, type SavedGame, type SaveStorage } from './persistence'
 import { presentationSteps, projectStep, stepDuration, type PresentationStep } from './presentation'
 
 /** The attack an AI is about to launch, shown on the board before the dice are rolled. */
@@ -26,6 +31,11 @@ export type GameSession = {
   drawnCard: ShallowRef<Card | null>
   thinkingPlayer: ComputedRef<Player | null>
   aiFocus: ShallowRef<AiFocus | null>
+  journal: ShallowRef<JournalEntry[]>
+  visibleJournal: ComputedRef<JournalEntry[]>
+  statistics: ShallowRef<GameStatistics>
+  turnNumber: Ref<number>
+  storageWarning: Ref<boolean>
   dispatch: (action: Action) => void
   input: (input: InteractionInput) => void
   skipAnimation: () => void
@@ -33,11 +43,24 @@ export type GameSession = {
   acknowledgeHandoff: () => void
   acknowledgeDrawnCard: () => void
   setSpeed: (speed: AnimationSpeed) => void
+  dismissStorageWarning: () => void
   dispose: () => void
+}
+
+/** Journal, statistics and turn number of a game, restored from a save. */
+export type GameHistory = {
+  journal: JournalEntry[]
+  statistics: GameStatistics
+  turnNumber: number
 }
 
 type SessionOptions = {
   speed?: AnimationSpeed
+  persistence?: {
+    setup: GameSetup
+    storage?: SaveStorage | null
+  }
+  history?: GameHistory
 }
 
 const SETUP_PHASES = new Set(['claim', 'placement'])
@@ -102,6 +125,14 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
   const handoffTo = shallowRef<Player | null>(null)
   const drawnCard = shallowRef<Card | null>(null)
   const aiFocus = shallowRef<AiFocus | null>(null)
+  const turnNumber = ref(options.history?.turnNumber ?? initialTurnNumber(initial))
+  const journal = shallowRef<JournalEntry[]>(options.history?.journal ?? openingJournal(initial, turnNumber.value))
+  const visibleCount = ref(journal.value.length)
+  const statistics = shallowRef<GameStatistics>(options.history?.statistics ?? initialStatistics(initial, turnNumber.value))
+  const storageWarning = ref(false)
+  let storageWarned = false
+  let revealBase = journal.value.length
+  let revealSteps: number[] = []
   let presentationRun = 0
   let turnProgress: TurnProgress = NEW_TURN
   let aiTimer: ReturnType<typeof setTimeout> | null = null
@@ -123,11 +154,36 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     }, ANIMATION_DURATIONS[speed.value].aiAction)
   }
 
+  const revealJournal = (completedSteps: number) => {
+    visibleCount.value = revealBase + revealSteps.filter((steps) => steps <= completedSteps).length
+  }
+
+  const save = () => {
+    if (options.persistence === undefined) {
+      return
+    }
+    const game: SavedGame = {
+      formatVersion: SAVE_FORMAT_VERSION,
+      savedAt: new Date().toISOString(),
+      status: engineState.value.phase.kind === 'gameOver' ? 'finished' : 'inProgress',
+      creation: options.persistence.setup,
+      engineState: engineState.value,
+      journal: journal.value,
+      statistics: statistics.value,
+      turnNumber: turnNumber.value,
+    }
+    if (!writeSavedGame(game, options.persistence.storage) && !storageWarned) {
+      storageWarned = true
+      storageWarning.value = true
+    }
+  }
+
   const finishPresentation = () => {
     presentationRun += 1
     currentStep.value = null
     isPresenting.value = false
     displayedState.value = engineState.value
+    visibleCount.value = journal.value.length
     scheduleAiAction()
   }
 
@@ -137,7 +193,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     let projected = displayedState.value
     isPresenting.value = steps.length > 0 && speed.value !== 'instant'
     if (isPresenting.value) {
-      for (const step of steps) {
+      for (const [index, step] of steps.entries()) {
         currentStep.value = step
         await wait(stepDuration(step, durations))
         if (run !== presentationRun) {
@@ -145,6 +201,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
         }
         projected = projectStep(projected, step)
         displayedState.value = projected
+        revealJournal(index + 1)
       }
     } else {
       projected = steps.reduce(projectStep, projected)
@@ -162,10 +219,18 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     }
     error.value = null
     turnProgress = progressAfter(turnProgress, action, result.events)
+    const batch = journalBatch(result.events, result.state.players, turnNumber.value)
+    statistics.value = recordStatistics(statistics.value, result.events, result.state, turnNumber.value)
+    turnNumber.value = nextTurnNumber(turnNumber.value, result.events)
+    revealBase = journal.value.length
+    revealSteps = batch.revealSteps
+    journal.value = [...journal.value, ...batch.entries]
+    revealJournal(0)
     engineState.value = result.state
     lastEvents.value = result.events
     drawnCard.value = drawnCardOf(result.state, result.events)
     handoffTo.value = needsHandoff(before, result.state)
+    save()
     void present(presentationSteps(result.events))
   }
 
@@ -182,6 +247,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     }
   }
 
+  save()
   scheduleAiAction()
 
   return {
@@ -198,6 +264,11 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     drawnCard,
     thinkingPlayer,
     aiFocus,
+    journal,
+    visibleJournal: computed(() => journal.value.slice(0, visibleCount.value)),
+    statistics,
+    turnNumber,
+    storageWarning,
     dispatch,
     input,
     skipAnimation: () => {
@@ -219,6 +290,9 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
       speed.value = next
       writeSpeedPreference(next)
     },
+    dismissStorageWarning: () => {
+      storageWarning.value = false
+    },
     dispose: () => {
       disposed = true
       presentationRun += 1
@@ -228,6 +302,35 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
       }
     },
   }
+}
+
+type ResumeOptions = {
+  speed?: AnimationSpeed
+  storage?: SaveStorage | null
+}
+
+/** Resumes a saved game as it was: no animation is replayed and the whole journal shows; an AI goes on with its turn. */
+export function createGameSessionFromSave(saved: SavedGame, options: ResumeOptions = {}): GameSession {
+  return createGameSession(saved.engineState, {
+    speed: options.speed,
+    persistence: { setup: saved.creation, storage: options.storage },
+    history: { journal: saved.journal, statistics: saved.statistics, turnNumber: saved.turnNumber },
+  })
+}
+
+/** How a game screen opens: a new game, or a saved one resumed. */
+export type GameStart = { kind: 'new'; state: GameState; setup: GameSetup } | { kind: 'saved'; game: SavedGame }
+
+/** Players and rules a game was created with, to start it again. */
+export function setupOf(start: GameStart): GameSetup {
+  return start.kind === 'new' ? start.setup : start.game.creation
+}
+
+/** A saving session for a new game, or one resumed from its save. */
+export function startGameSession(start: GameStart): GameSession {
+  return start.kind === 'new'
+    ? createGameSession(start.state, { persistence: { setup: start.setup } })
+    : createGameSessionFromSave(start.game)
 }
 
 const SESSION_KEY: InjectionKey<GameSession> = Symbol('game-session')

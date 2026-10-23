@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { classicMap, createGame, type GameState, type PlayerControl } from '../engine'
-import { ANIMATION_DURATIONS } from './animationSpeed'
-import { createGameSession } from './useGameSession'
+import { ANIMATION_DURATIONS, type AnimationSpeed } from './animationSpeed'
+import type { GameSetup } from './gameForm'
+import { loadSavedGame } from './persistence'
+import { createGameSession, createGameSessionFromSave } from './useGameSession'
 
 const HUMAN: PlayerControl = { kind: 'human' }
 const AI: PlayerControl = { kind: 'ai', level: 'normal' }
@@ -198,5 +200,147 @@ describe('AI turns', () => {
     session.acknowledgeDrawnCard()
     vi.advanceTimersByTime(0)
     expect(session.engineState.value).not.toBe(afterHumanTurn)
+  })
+})
+
+describe('journal, statistics and save', () => {
+  function memoryStorage() {
+    const values = new Map<string, string>()
+    return {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => void values.set(key, value),
+      removeItem: (key: string) => void values.delete(key),
+    }
+  }
+
+  const setup = (state: GameState): GameSetup => ({
+    players: state.players.filter((player) => !player.isNeutral).map(({ id, name, color, ...control }) => ({
+      id,
+      name,
+      color,
+      ...(control.kind === 'ai' ? { kind: 'ai' as const, level: control.level } : { kind: 'human' as const }),
+    })),
+    settings: state.settings,
+  })
+
+  function savedSession(initial: GameState, speed: AnimationSpeed = 'instant') {
+    const storage = memoryStorage()
+    const session = createGameSession(initial, { speed, persistence: { setup: setup(initial), storage } })
+    return { session, storage }
+  }
+
+  const deploy = { type: 'deploy', playerId: 'p1', territory: 'north_africa', armies: 3 } as const
+
+  function reinforcing(controls: PlayerControl[] = [HUMAN, HUMAN, HUMAN]): GameState {
+    const state = attackingGame(controls)
+    state.phase = { kind: 'reinforce', reserve: 3 }
+    return state
+  }
+
+  it('adds the entries and updates the statistics of each action', () => {
+    const { session } = savedSession(reinforcing())
+    session.dispatch(deploy)
+    expect(session.journal.value.at(-1)?.text).toBe('Joueur 1 place 3 armées en Afrique du Nord')
+    session.input({ kind: 'endAttack' })
+    session.input({ kind: 'skipFortify' })
+    expect(session.turnNumber.value).toBe(2)
+    expect(session.statistics.value.snapshots.at(-1)?.turn).toBe(2)
+    expect(session.journal.value.at(-1)).toMatchObject({ header: true, text: 'Tour 2 — Joueur 2' })
+  })
+
+  it('shows an attack in the journal only once its rolls have been animated', async () => {
+    const { session } = savedSession(attackingGame(), 'normal')
+    session.dispatch(attack)
+    const attackEntry = session.journal.value.find((entry) => entry.text.includes('attaque'))
+    expect(attackEntry).toBeDefined()
+    expect(session.visibleJournal.value).not.toContain(attackEntry)
+    await vi.runAllTimersAsync()
+    expect(session.visibleJournal.value).toContain(attackEntry)
+    expect(session.visibleJournal.value).toHaveLength(session.journal.value.length)
+  })
+
+  it('shows the whole journal at once when the animation is skipped', () => {
+    const { session } = savedSession(attackingGame(), 'normal')
+    session.dispatch(attack)
+    session.skipAnimation()
+    expect(session.visibleJournal.value).toEqual(session.journal.value)
+  })
+
+  it('saves the game after each action of a human', () => {
+    const { session, storage } = savedSession(reinforcing())
+    session.dispatch(deploy)
+    const loaded = loadSavedGame(storage)
+    expect(loaded.kind === 'saved' && loaded.game.engineState).toEqual(session.engineState.value)
+    expect(loaded.kind === 'saved' && loaded.game.journal).toEqual(session.journal.value)
+    expect(loaded.kind === 'saved' && loaded.game.status).toBe('inProgress')
+  })
+
+  it('saves the game after each action of an AI', () => {
+    const { session, storage } = savedSession(reinforcing([AI, HUMAN, HUMAN]))
+    vi.advanceTimersByTime(0)
+    const loaded = loadSavedGame(storage)
+    expect(loaded.kind === 'saved' && loaded.game.engineState).toEqual(session.engineState.value)
+    expect(loaded.kind === 'saved' && loaded.game.engineState).not.toEqual(reinforcing([AI, HUMAN, HUMAN]))
+  })
+
+  it('saves a game as soon as it starts, replacing the previous save', () => {
+    const { storage } = savedSession(reinforcing())
+    expect(loadSavedGame(storage).kind).toBe('saved')
+  })
+
+  it('warns once that the game cannot be saved', () => {
+    const initial = reinforcing()
+    const full = {
+      ...memoryStorage(),
+      setItem: () => {
+        throw new DOMException('quota', 'QuotaExceededError')
+      },
+    }
+    const session = createGameSession(initial, { speed: 'instant', persistence: { setup: setup(initial), storage: full } })
+    expect(session.storageWarning.value).toBe(true)
+    session.dismissStorageWarning()
+    session.dispatch(deploy)
+    expect(session.storageWarning.value).toBe(false)
+    expect(session.engineState.value.phase.kind).toBe('attack')
+  })
+
+  it('resumes a saved game without animation and lets an AI go on with its turn', async () => {
+    const { session: first, storage } = savedSession(attackingGame())
+    first.dispatch(attack)
+    first.input({ kind: 'confirm', amount: 3 })
+    first.input({ kind: 'endAttack' })
+    first.input({ kind: 'skipFortify' })
+    first.dispose()
+    const loaded = loadSavedGame(storage)
+    if (loaded.kind !== 'saved') throw new Error('no save')
+    const aiTurn = structuredClone(loaded.game)
+    aiTurn.engineState.players = aiTurn.engineState.players.map((player) =>
+      player.id === 'p2' ? { ...player, kind: 'ai', level: 'normal' } : player,
+    )
+
+    const resumed = createGameSessionFromSave(aiTurn, { speed: 'normal', storage })
+    expect(resumed.isPresenting.value).toBe(false)
+    expect(resumed.displayedState.value).toBe(resumed.engineState.value)
+    expect(resumed.visibleJournal.value).toEqual(aiTurn.journal)
+    expect(resumed.turnNumber.value).toBe(aiTurn.turnNumber)
+    expect(resumed.statistics.value).toEqual(aiTurn.statistics)
+    expect(resumed.thinkingPlayer.value?.id).toBe('p2')
+    await vi.advanceTimersByTimeAsync(ANIMATION_DURATIONS.normal.aiAction)
+    expect(resumed.engineState.value).not.toEqual(aiTurn.engineState)
+  })
+
+  it('marks the save as finished once the game is won', () => {
+    const initial = attackingGame()
+    for (const id of Object.keys(initial.territories)) {
+      initial.territories[id] = { owner: 'p1', armies: 1 }
+    }
+    initial.territories.north_africa = { owner: 'p1', armies: 30 }
+    initial.territories.brazil = { owner: 'p2', armies: 1 }
+    initial.players = initial.players.map((player) => (player.id === 'p3' ? { ...player, eliminated: true } : player))
+    const { session, storage } = savedSession(initial)
+    session.dispatch(attack)
+    expect(session.engineState.value.phase.kind).toBe('gameOver')
+    const loaded = loadSavedGame(storage)
+    expect(loaded.kind === 'saved' && loaded.game.status).toBe('finished')
   })
 })
