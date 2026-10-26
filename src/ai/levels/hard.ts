@@ -10,6 +10,7 @@ import {
   territoriesOwnedBy,
   threat,
 } from '../evaluation'
+import { leaderAttack } from '../leaderObjective'
 import { eliminationTarget, goalContinent, isMissionTarget } from '../missionObjective'
 import type { PlayerView } from '../playerView'
 import {
@@ -171,7 +172,8 @@ const towardOffensiveFront: DestinationChoice = (view, me, from, destinations) =
 }
 
 /**
- * The normal strategy, plus breaking continents, eliminating opponents (its target first), defending by threat and keeping its cards;
+ * The normal strategy, plus breaking continents, eliminating opponents (its target first), attacking a runaway leader,
+ * defending by threat and keeping its cards;
  * in the capitals mode, gathers its whole reserve toward the last capital it lacks.
  */
 export const hard: Strategy = {
@@ -190,6 +192,7 @@ export const hard: Strategy = {
   attack: ({ view, me }) =>
     capitalAttack(view, me) ??
     priorityAttack(view, me) ??
+    leaderAttack(view, me) ??
     plannedAttack(view, me, view.conqueredThisTurn ? ATTACK_THRESHOLD : CARD_ATTACK_THRESHOLD),
   conquestMove: normal.conquestMove,
   fortify: ({ view, me }) => fortifyFromInterior(view, me, towardOffensiveFront),

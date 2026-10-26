@@ -1,7 +1,10 @@
-import { expectedReinforcement, type GameState, type PlayerId } from '../../engine'
+import { classicMap, tradeValue, type GameState, type PlayerId } from '../../engine'
 
 const INCOME_WEIGHT = 3
-const CARD_WEIGHT = 1
+const TERRITORIES_PER_ARMY = 3
+const CARDS_PER_SET = 3
+/** Mean of the fixed scale (4, 6, 8 and 10 armies). */
+const FIXED_SET_VALUE = 7
 
 function armiesOf(state: GameState, playerId: PlayerId): number {
   return Object.values(state.territories).reduce(
@@ -10,11 +13,32 @@ function armiesOf(state: GameState, playerId: PlayerId): number {
   )
 }
 
+/**
+ * Reinforcements without the minimum of 3, so that every territory counts:
+ * with fewer than 12 territories, a conquest would otherwise add nothing.
+ */
+function incomeOf(state: GameState, playerId: PlayerId): number {
+  const territories = Object.values(state.territories).filter((territory) => territory.owner === playerId).length
+  const continentBonus = classicMap.continentIds.reduce((sum, continentId) => {
+    const continent = classicMap.continents[continentId]
+    const held = continent?.territories.every((id) => state.territories[id]?.owner === playerId) ?? false
+    return held && continent !== undefined ? sum + continent.bonus : sum
+  }, 0)
+  return territories / TERRITORIES_PER_ARMY + continentBonus
+}
+
+/** What a card is worth: a third of the armies of the next set. */
+function cardValue(state: GameState): number {
+  const setValue =
+    state.settings.cardTradeScale === 'progressive' ? tradeValue([], 'progressive', state.tradeCount) : FIXED_SET_VALUE
+  return setValue / CARDS_PER_SET
+}
+
 function strengthOf(state: GameState, playerId: PlayerId): number {
   return (
     armiesOf(state, playerId) +
-    INCOME_WEIGHT * expectedReinforcement(state, playerId) +
-    CARD_WEIGHT * (state.hands[playerId]?.length ?? 0)
+    INCOME_WEIGHT * incomeOf(state, playerId) +
+    cardValue(state) * (state.hands[playerId]?.length ?? 0)
   )
 }
 

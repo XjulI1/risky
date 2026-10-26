@@ -45,3 +45,21 @@ describe('positionValue', () => {
     expect(positionValue(state, 'p1')).toBeGreaterThan(before)
   })
 })
+
+describe('positionValue, with few territories', () => {
+  it('grows with a conquest even below the minimum of 3 reinforcements', () => {
+    const state = newAiGame(['expert', 'hard', 'hard', 'hard', 'hard', 'hard'], 3)
+    const before = positionValue(state, 'p1')
+    const conquered = Object.entries(state.territories).find(([, t]) => t.owner === 'p2')?.[0] ?? ''
+    state.territories[conquered] = { owner: 'p1', armies: state.territories[conquered]!.armies }
+    expect(positionValue(state, 'p1')).toBeGreaterThan(before)
+  })
+
+  it('values the cards more as the progressive trades go up', () => {
+    const state = newAiGame(['expert', 'hard', 'hard'], 3)
+    state.hands.p1 = state.deck.splice(0, 3)
+    const early = positionValue(state, 'p1')
+    state.tradeCount = 6
+    expect(positionValue(state, 'p1')).toBeGreaterThan(early)
+  })
+})

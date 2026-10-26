@@ -154,8 +154,8 @@ Exemples :
 
 ## Niveau difficile
 
-Le difficile reprend la stratégie du normal et y ajoute quatre priorités : éliminer, casser les
-continents adverses, défendre selon la menace et garder ses cartes.
+Le difficile reprend la stratégie du normal et y ajoute cinq priorités : éliminer, casser les
+continents adverses, freiner le joueur qui s'échappe, défendre selon la menace et garder ses cartes.
 
 ### Attaques prioritaires
 
@@ -168,7 +168,14 @@ Avant son plan habituel, le difficile cherche, dans cet ordre :
 2. **Un continent adverse à casser** : un territoire d'un continent entièrement tenu par un
    adversaire, attaquable avec une probabilité d'au moins **0,5**.
 
-S'il n'y a ni l'un ni l'autre, il attaque comme le normal. Une différence : tant qu'il n'a rien
+3. **Le joueur qui s'échappe** (partie à 4 joueurs ou plus encore en jeu) : un adversaire dont la
+   force dépasse d'au moins 30 % celle de chacun des autres joueurs, le difficile compris. La force
+   d'un joueur vaut ses armées, plus 3 fois ses renforts attendus, plus 2 par carte en main. Le
+   difficile attaque alors ce joueur dès une probabilité de 0,5, un territoire d'un de ses continents
+   d'abord. À 3 joueurs, affaiblir le premier profiterait surtout au troisième : cette règle ne joue
+   pas.
+
+S'il n'y a rien de tout cela, il attaque comme le normal. Une différence : tant qu'il n'a rien
 conquis dans le tour, il accepte une probabilité de 0,5 au lieu de 0,6, pour s'assurer une carte en
 fin de tour.
 
@@ -239,7 +246,16 @@ meilleure, et le choix du difficile en cas d'égalité.
 La position vaut 1 s'il a gagné, 0 s'il est éliminé, et sinon sa part de la force des joueurs
 encore en jeu (neutre exclu), la force d'un joueur valant :
 
-> armées + 3 × renforts attendus au prochain tour + nombre de cartes
+> armées + 3 × revenu + valeur d'une carte × nombre de cartes
+
+- Le **revenu** compte les territoires divisés par 3, sans arrondi ni minimum de 3, plus les
+  bonus de continent : chaque conquête y ajoute quelque chose, même avec moins de 12 territoires.
+- Une **carte** vaut le tiers des armées du prochain échange : en barème progressif, 4 ÷ 3 au
+  premier échange puis de plus en plus ; en barème fixe, 7 ÷ 3, la moyenne du barème.
+
+Avec le minimum de 3 renforts et une carte valant 1, une conquête ne rapportait presque rien dans
+cette évaluation, alors que l'attaque coûtait des armées : à 6 joueurs, où chacun commence avec
+7 territoires, l'expert concluait presque toujours qu'il valait mieux ne pas attaquer.
 
 ### Loyauté et reproductibilité
 
@@ -258,8 +274,8 @@ le difficile.
 ### Temps de réflexion
 
 Le nombre de simulations est fixe, pas le temps : c'est ce qui garantit la reproductibilité. Sur un
-ordinateur portable récent, une décision prend en moyenne 77 ms, 95 % d'entre elles moins de 240 ms
-et la plus longue du tournoi 729 ms ; elle reste le plus souvent cachée dans la pause entre deux
+ordinateur portable récent, une décision prend en moyenne 45 ms, 95 % d'entre elles moins de 140 ms
+et la plus longue du tournoi 766 ms ; elle reste le plus souvent cachée dans la pause entre deux
 actions.
 
 ## Variantes
@@ -323,4 +339,9 @@ finir une partie. Il est conçu pour être battable par un débutant humain.
 
 Tournoi expert (`pnpm test:expert`) : 60 parties à trois joueurs en partie classique, une IA experte
 contre deux IA difficiles, sur des graines fixées, l'expert occupant chaque place 20 fois. L'expert
-en gagne 41 (68 %), là où le hasard seul lui en donnerait un tiers ; le seuil exigé est de 30.
+en gagne 49 (82 %), là où le hasard seul lui en donnerait un tiers ; le seuil exigé est de 30.
+
+À 6 joueurs, sur 30 parties contre cinq IA difficiles, l'expert en gagne 19 (le hasard lui en
+donnerait 5) et lance en moyenne 4 attaques par tour. Avant la correction de son évaluation, il en
+gagnait 5 et n'attaquait qu'une fois et demie par tour ; contre des difficiles sans la règle du
+joueur qui s'échappe, l'expert corrigé en gagne 24.
