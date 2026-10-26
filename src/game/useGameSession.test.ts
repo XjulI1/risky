@@ -53,6 +53,7 @@ const setup = (state: GameState): GameSetup => ({
     ...(control.kind === 'ai' ? { kind: 'ai' as const, level: control.level } : { kind: 'human' as const }),
   })),
   settings: state.settings,
+  mapId: state.mapId,
 })
 
 function slowDecider(milliseconds: number): AiDecider & { disposed: boolean } {

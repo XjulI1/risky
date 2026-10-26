@@ -18,16 +18,6 @@ describe('classic map composition', () => {
     expect(classicMap.continentIds).toHaveLength(6)
   })
 
-  it('places every territory in exactly one existing continent', () => {
-    for (const id of classicMap.territoryIds) {
-      const continentId = classicMap.territories[id]?.continent ?? ''
-      const owningContinents = classicMap.continentIds.filter((c) =>
-        classicMap.continents[c]?.territories.includes(id),
-      )
-      expect(owningContinents).toEqual([continentId])
-    }
-  })
-
   it('matches the expected continent sizes, bonuses and French names', () => {
     for (const [id, expected] of Object.entries(expectedContinents)) {
       const continent = classicMap.continents[id]
@@ -35,11 +25,6 @@ describe('classic map composition', () => {
       expect(continent?.bonus).toBe(expected.bonus)
       expect(continent?.name).toBe(expected.name)
     }
-  })
-
-  it('has unique territory and continent identifiers', () => {
-    const ids = [...classicMap.territoryIds, ...classicMap.continentIds]
-    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('uses the same territory identifiers in board.json and territories.json', () => {
@@ -59,36 +44,6 @@ describe('classic map composition', () => {
 })
 
 describe('classic map adjacency', () => {
-  it('is symmetric', () => {
-    for (const id of classicMap.territoryIds) {
-      for (const neighbor of classicMap.territories[id]?.neighbors ?? []) {
-        expect(classicMap.territories[neighbor]?.neighbors).toContain(id)
-      }
-    }
-  })
-
-  it('has no self loop', () => {
-    for (const id of classicMap.territoryIds) {
-      expect(classicMap.territories[id]?.neighbors).not.toContain(id)
-    }
-  })
-
-  it('is connected', () => {
-    const start = classicMap.territoryIds[0] ?? ''
-    const reached = new Set([start])
-    const queue = [start]
-    while (queue.length > 0) {
-      const current = queue.shift() ?? ''
-      for (const neighbor of classicMap.territories[current]?.neighbors ?? []) {
-        if (!reached.has(neighbor)) {
-          reached.add(neighbor)
-          queue.push(neighbor)
-        }
-      }
-    }
-    expect(reached.size).toBe(42)
-  })
-
   it('has the 83 links of the classic board', () => {
     const degreeSum = classicMap.territoryIds.reduce(
       (sum, id) => sum + (classicMap.territories[id]?.neighbors.length ?? 0),

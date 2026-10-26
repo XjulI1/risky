@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { attackTargets, classicMap, CONQUER_24_TERRITORIES, GENERAL_MISSIONS, type GameState } from '../engine'
+import { attackTargets, classicMap, CONQUER_24_TERRITORIES, generalMissions, type GameState } from '../engine'
 import { playerView } from './playerView'
 import { newAiGame, territoryCard } from './testScenarios'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 function gameWithHands(): GameState {
   const state = newAiGame(['normal', 'normal', 'normal'], 7)

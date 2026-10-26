@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { CONQUER_24_TERRITORIES, createGame, GENERAL_MISSIONS, type GameState, type Mission } from '../engine'
+import { classicMap, CONQUER_24_TERRITORIES, createGame, generalMissions, type GameState, type Mission } from '../engine'
 import { revealedMissions, winReasonText } from './missionDisplay'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 function finishedGame(secretMissions: boolean): GameState {
   const created = createGame({

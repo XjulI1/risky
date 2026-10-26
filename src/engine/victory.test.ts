@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { applyAction } from './index'
 import { classicMap } from './maps/classic'
-import { CONQUER_24_TERRITORIES, GENERAL_MISSIONS } from './missions'
+import { CONQUER_24_TERRITORIES, generalMissions } from './missions'
 import { assignTerritories, createTestGame, giveAllTerritoriesTo } from './testUtils'
 import type { ActionResult, ContinentId, GameState, Mission, PlayerId } from './types'
 
+const GENERAL_MISSIONS = generalMissions(classicMap)
 const NORTH_AMERICA_AND_OCEANIA = GENERAL_MISSIONS[1] as Mission
 const EUROPE_SOUTH_AMERICA_AND_ONE = GENERAL_MISSIONS[4] as Mission
 const EIGHTEEN_WITH_TWO = GENERAL_MISSIONS[7] as Mission

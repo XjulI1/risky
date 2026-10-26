@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { classicMap, type Player, type TerritoryId } from '../../engine'
+import { mapById, type MapId, type Player, type TerritoryId } from '../../engine'
 
 const props = defineProps<{
   player: Player
   territory: TerritoryId
+  mapId: MapId
 }>()
 
 const emit = defineEmits<{
   dismiss: []
 }>()
 
-const territoryName = computed(() => classicMap.territories[props.territory]?.name ?? props.territory)
+const territoryName = computed(() => mapById(props.mapId).territories[props.territory]?.name ?? props.territory)
 </script>
 
 <template>

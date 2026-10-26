@@ -1,4 +1,4 @@
-import { classicMap, missionProgress, missionText, type GameState, type Mission, type Player } from '../engine'
+import { mapOf, missionProgress, missionText, type GameState, type Mission, type Player } from '../engine'
 
 /** A mission revealed on the end screen. */
 export type RevealedMission = {
@@ -33,15 +33,20 @@ export function missionHolder(state: GameState): Player | null {
   return humans.length === 1 ? (humans[0] ?? null) : null
 }
 
+function capitalized(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 function progressLines(mission: Mission, state: GameState, holder: Player): string[] {
+  const map = mapOf(state)
   const progress = missionProgress(mission, state, holder.id)
   switch (progress.kind) {
     case 'continents':
       return [
         ...progress.required.map(
-          ({ continent, held, total }) => `${classicMap.continents[continent]?.name ?? continent} ${held}/${total}`,
+          ({ continent, held, total }) => `${map.continents[continent]?.name ?? continent} ${held}/${total}`,
         ),
-        ...(progress.extraContinents > 0 ? [`Continent au choix ${progress.extraHeld}/${progress.extraContinents}`] : []),
+        ...(progress.extraContinents > 0 ? [`${capitalized(map.continentTerm.singular)} au choix ${progress.extraHeld}/${progress.extraContinents}`] : []),
       ]
     case 'territories':
       return progress.minArmies > 1
@@ -61,7 +66,7 @@ export function missionSummary(state: GameState): MissionSummary | null {
   if (holder === null || mission === undefined) {
     return null
   }
-  return { holder, text: missionText(mission, state.players), progress: progressLines(mission, state, holder) }
+  return { holder, text: missionText(mission, state.players, mapOf(state)), progress: progressLines(mission, state, holder) }
 }
 
 /** How the winner won, completing « <winner> remporte la partie », or `null` in a game without missions nor capitals. */
@@ -71,7 +76,7 @@ export function winReasonText(state: GameState): string | null {
   }
   const mission = state.winner === null ? undefined : state.missions?.[state.winner]
   if (state.winReason === 'mission' && mission !== undefined) {
-    return `en accomplissant sa mission : ${missionText(mission, state.players)}`
+    return `en accomplissant sa mission : ${missionText(mission, state.players, mapOf(state))}`
   }
   return state.winReason === 'capitals' ? 'en contrôlant toutes les capitales' : 'en éliminant tous ses adversaires'
 }
@@ -80,6 +85,6 @@ export function winReasonText(state: GameState): string | null {
 export function revealedMissions(state: GameState): RevealedMission[] {
   return state.players.flatMap((player) => {
     const mission = state.missions?.[player.id]
-    return mission === undefined ? [] : [{ player, text: missionText(mission, state.players) }]
+    return mission === undefined ? [] : [{ player, text: missionText(mission, state.players, mapOf(state)) }]
   })
 }

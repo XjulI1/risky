@@ -1,12 +1,10 @@
-import { classicMap } from './maps/classic'
+import { MAPS } from './maps'
 import { nextInt, shuffle } from './rng'
 import type { GameMap, GameState, Player, PlayerId, PublicState, RuleError, RuleErrorCode, TerritoryId } from './types'
 
-export function mapOf(state: PublicState): GameMap {
-  switch (state.mapId) {
-    case 'classic':
-      return classicMap
-  }
+/** The map the game is played on. */
+export function mapOf(state: Pick<PublicState, 'mapId'>): GameMap {
+  return MAPS[state.mapId]
 }
 
 export function currentPlayer(state: PublicState): Player {

@@ -27,8 +27,11 @@ de format, la date, la configuration de création, l'état du moteur, le journal
 
 Quand une sauvegarde d'une partie non terminée existe, l'accueil SHALL proposer « Reprendre la
 partie » avec un résumé (joueurs, numéro de tour, date de dernière sauvegarde). La reprise SHALL
-restaurer l'état du moteur, le journal et les statistiques, sans rejouer d'animation, puis
-poursuivre la partie : si le joueur courant est une IA, elle reprend son tour.
+restaurer l'état du moteur, la carte de la partie, le journal et les statistiques, sans rejouer
+d'animation, puis poursuivre la partie : si le joueur courant est une IA, elle reprend son tour. Une
+sauvegarde dont la configuration ne précise pas de carte SHALL être reprise sur la carte classique.
+Une sauvegarde dont les territoires ne correspondent pas à ceux de sa carte SHALL être traitée comme
+illisible.
 
 #### Scenario: Reprise après rechargement
 
@@ -49,6 +52,16 @@ poursuivre la partie : si le joueur courant est une IA, elle reprend son tour.
 
 - **WHEN** aucune sauvegarde n'existe
 - **THEN** l'accueil ne propose pas « Reprendre la partie »
+
+#### Scenario: Sauvegarde antérieure sans carte
+
+- **WHEN** la sauvegarde a été écrite avant l'introduction du choix de carte et sa configuration ne précise pas de carte
+- **THEN** la partie est reprise sur la carte classique
+
+#### Scenario: Territoires d'une autre carte
+
+- **WHEN** la sauvegarde désigne la carte classique mais ses territoires ne sont pas ceux de la carte classique
+- **THEN** elle est traitée comme illisible
 
 ### Requirement: Quitter et remplacer
 

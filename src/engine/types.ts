@@ -12,15 +12,30 @@ export type Territory = {
 export type Continent = {
   id: ContinentId
   name: string
+  /** The name preceded by its article, as written inside a sentence (« l'Amérique du Nord »). */
+  nameWithArticle: string
   bonus: number
   territories: TerritoryId[]
 }
 
+/** Identifier of a map of the catalog. */
+export type MapId = 'classic'
+
+/** The word a map uses for its continents in texts, with its grammatical gender. */
+export type ContinentTerm = {
+  singular: string
+  feminine: boolean
+}
+
 export type GameMap = {
+  id: MapId
   territoryIds: TerritoryId[]
   continentIds: ContinentId[]
   territories: Record<TerritoryId, Territory>
   continents: Record<ContinentId, Continent>
+  continentTerm: ContinentTerm
+  /** The missions of the deck that ask for continents of this map, in the order of its rules. */
+  continentMissions: Mission[]
 }
 
 export type AiLevel = 'easy' | 'normal' | 'hard' | 'expert'
@@ -102,7 +117,7 @@ export type PhaseKind = Phase['kind']
 
 export type GameState = {
   settings: GameSettings
-  mapId: 'classic'
+  mapId: MapId
   players: Player[]
   territories: Record<TerritoryId, TerritoryState>
   firstPlayerIndex: number
@@ -212,6 +227,7 @@ export type RuleErrorCode =
   | 'CARD_NOT_IN_HAND'
   | 'INVALID_CARD_SET'
   | 'TRADE_REQUIRED'
+  | 'UNKNOWN_MAP'
 
 export type RuleError = {
   code: RuleErrorCode
@@ -226,6 +242,8 @@ export type GameConfig = {
   players: PlayerConfig[]
   seed: number
   settings?: Partial<GameSettings>
+  /** The map of the game, the classic map when absent. */
+  mapId?: MapId
 }
 
 export type CreateGameResult =

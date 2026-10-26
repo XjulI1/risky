@@ -3,6 +3,7 @@ import { NEW_TURN, progressAfter, type TurnProgress } from '../ai'
 import { playerView } from '../ai/playerView'
 import {
   applyAction,
+  mapOf,
   type Action,
   type Card,
   type GameEvent,
@@ -358,7 +359,7 @@ export function createGameSession(initial: GameState, options: SessionOptions = 
     }
     error.value = null
     turnProgress = progressAfter(turnProgress, action, result.events)
-    const batch = journalBatch(result.events, result.state.players, turnNumber.value)
+    const batch = journalBatch(result.events, result.state.players, turnNumber.value, mapOf(result.state))
     statistics.value = recordStatistics(statistics.value, result.events, result.state, turnNumber.value)
     turnNumber.value = nextTurnNumber(turnNumber.value, result.events)
     revealBase = journal.value.length

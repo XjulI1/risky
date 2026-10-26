@@ -5,6 +5,7 @@ import { onBeforeUnmount, watch } from 'vue'
 import type { TerritoryId } from '../engine'
 import { TILE_HEIGHT } from './boardLayout'
 import type { MapPoint } from './geometry/polygon'
+import type { BoardMap } from './maps'
 import { isTap, nearestTerritory, TOUCH_TOLERANCE, type PointerSample } from './tapDetector'
 import { useBoardCamera, type BoardCamera } from './useBoardCamera'
 
@@ -13,6 +14,10 @@ export type HoveredTerritory = {
   x: number
   y: number
 }
+
+const props = defineProps<{
+  board: BoardMap
+}>()
 
 const emit = defineEmits<{
   select: [territory: TerritoryId | null]
@@ -66,7 +71,7 @@ function onPointerUp(event: PointerEvent) {
   }
   const point = mapPointAt(event)
   const tolerance = event.pointerType === 'mouse' ? 0 : TOUCH_TOLERANCE
-  emit('select', point === null ? null : nearestTerritory(point, tolerance))
+  emit('select', point === null ? null : nearestTerritory(point, props.board.geometry, tolerance))
 }
 
 function onPointerCancel(event: PointerEvent) {
@@ -78,7 +83,7 @@ function onPointerMove(event: PointerEvent) {
     return
   }
   const point = mapPointAt(event)
-  const id = point === null ? null : nearestTerritory(point, 0)
+  const id = point === null ? null : nearestTerritory(point, props.board.geometry, 0)
   const rect = element.getBoundingClientRect()
   emit('hover', id === null ? null : { id, x: event.clientX - rect.left, y: event.clientY - rect.top })
 }
@@ -93,7 +98,7 @@ watch(
   camera,
   (active) => {
     if (boardCamera === null && active instanceof PerspectiveCamera) {
-      boardCamera = useBoardCamera(active, element)
+      boardCamera = useBoardCamera(active, element, props.board)
     }
   },
   { immediate: true },

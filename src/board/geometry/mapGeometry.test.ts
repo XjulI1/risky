@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import geometry from '../../../data/maps/classic/territories.json'
-import { classicMap } from '../../engine'
-import { MAP_WORLD_DEPTH, MAP_WORLD_WIDTH, mapGeometry, svgToWorld } from './mapGeometry'
+import { BOARD_MAP_IDS, boardMapFor } from '../maps'
+import { MAP_WORLD_WIDTH, svgProjection, worldSize } from './mapGeometry'
 import { pointInPolygon } from './polygon'
 
 const [minX, minY, width, height] = geometry.viewBox as [number, number, number, number]
+const svgToWorld = svgProjection(geometry.viewBox)
+const MAP_WORLD_DEPTH = worldSize(geometry.viewBox).depth
+const mapGeometry = boardMapFor('classic').geometry
 
 describe('svgToWorld', () => {
   it('maps the view box to a 100-unit wide map centered on the origin', () => {
     expect(MAP_WORLD_WIDTH).toBe(100)
+    expect(worldSize(geometry.viewBox).width).toBe(100)
     expect(MAP_WORLD_DEPTH).toBeCloseTo((height * 100) / width)
     expect(svgToWorld(minX, minY)).toEqual({ x: -50, z: -MAP_WORLD_DEPTH / 2 })
     const corner = svgToWorld(minX + width, minY + height)
@@ -22,14 +26,25 @@ describe('svgToWorld', () => {
   })
 })
 
-describe('mapGeometry', () => {
-  it('has one entry per engine territory and no other', () => {
-    expect(Object.keys(mapGeometry).sort()).toEqual([...classicMap.territoryIds].sort())
-  })
-
+describe('classic map geometry', () => {
   it('splits island territories into several shapes', () => {
     expect(mapGeometry.indonesia?.shapes).toHaveLength(4)
     expect(mapGeometry.uk?.shapes).toHaveLength(2)
+  })
+
+  it('draws shapes in the (x, -z) plane so that a -90° rotation around X lays them on the map', () => {
+    const egypt = mapGeometry.egypt
+    const firstShapePoint = egypt?.shapes[0]?.getPoints()[0]
+    const firstOutlinePoint = egypt?.outlines[0]?.[0]
+    expect(firstShapePoint?.x).toBeCloseTo(firstOutlinePoint?.x ?? NaN)
+    expect(firstShapePoint?.y).toBeCloseTo(-(firstOutlinePoint?.z ?? NaN))
+  })
+})
+
+describe.each(BOARD_MAP_IDS)('geometry of the %s map', (mapId) => {
+  const { geometry: mapGeometry, size } = boardMapFor(mapId)
+
+  it('gives every territory at least one shape, each with its outline', () => {
     for (const territory of Object.values(mapGeometry)) {
       expect(territory.shapes.length).toBeGreaterThan(0)
       expect(territory.outlines).toHaveLength(territory.shapes.length)
@@ -52,17 +67,9 @@ describe('mapGeometry', () => {
     const margin = 0.5
     for (const territory of Object.values(mapGeometry)) {
       for (const point of territory.outlines.flat()) {
-        expect(Math.abs(point.x)).toBeLessThanOrEqual(MAP_WORLD_WIDTH / 2 + margin)
-        expect(Math.abs(point.z)).toBeLessThanOrEqual(MAP_WORLD_DEPTH / 2 + margin)
+        expect(Math.abs(point.x)).toBeLessThanOrEqual(size.width / 2 + margin)
+        expect(Math.abs(point.z)).toBeLessThanOrEqual(size.depth / 2 + margin)
       }
     }
-  })
-
-  it('draws shapes in the (x, -z) plane so that a -90° rotation around X lays them on the map', () => {
-    const egypt = mapGeometry.egypt
-    const firstShapePoint = egypt?.shapes[0]?.getPoints()[0]
-    const firstOutlinePoint = egypt?.outlines[0]?.[0]
-    expect(firstShapePoint?.x).toBeCloseTo(firstOutlinePoint?.x ?? NaN)
-    expect(firstShapePoint?.y).toBeCloseTo(-(firstOutlinePoint?.z ?? NaN))
   })
 })

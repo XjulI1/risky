@@ -80,12 +80,12 @@ function removePlayerRow(id: string) {
 
 function start() {
   const players = setup.value.players.map((player) => ({ ...player, name: player.name.trim() }))
-  const result = createGame({ players, settings: setup.value.settings, seed: Date.now() })
+  const result = createGame({ players, settings: setup.value.settings, mapId: setup.value.mapId, seed: Date.now() })
   if (!result.ok) {
     engineError.value = result.error.message
     return
   }
-  emit('start', result.state, { players, settings: { ...setup.value.settings } })
+  emit('start', result.state, { players, settings: { ...setup.value.settings }, mapId: setup.value.mapId })
 }
 </script>
 

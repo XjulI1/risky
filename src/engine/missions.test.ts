@@ -1,14 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import { classicMap } from './maps/classic'
-import { CONQUER_24_TERRITORIES, GENERAL_MISSIONS, missionDeck, missionProgress, missionText } from './missions'
+import { CONQUER_24_TERRITORIES, generalMissions, missionDeck, missionProgress, missionText } from './missions'
 import { assignTerritories, createTestGame, giveAllTerritoriesTo } from './testUtils'
-import type { ContinentId, GameState, Mission } from './types'
+import type { ContinentId, GameMap, GameState, Mission } from './types'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 const players = [
   { id: 'p1', name: 'Alice' },
   { id: 'p2', name: 'Bob' },
   { id: 'p3', name: 'Carol' },
 ]
+
+/** A test map whose continents are « régions », a feminine word. */
+const regionMap: GameMap = {
+  ...classicMap,
+  continents: {
+    ...classicMap.continents,
+    europe: { ...(classicMap.continents.europe as GameMap['continents'][string]), nameWithArticle: 'la Bretagne' },
+    asia: { ...(classicMap.continents.asia as GameMap['continents'][string]), nameWithArticle: 'la Corse' },
+  },
+  continentTerm: { singular: 'région', feminine: true },
+  continentMissions: [
+    { kind: 'continents', required: ['europe'], extraContinents: 1 },
+    { kind: 'continents', required: ['europe', 'asia'], extraContinents: 0 },
+  ],
+}
 
 function territoriesOf(continent: ContinentId): string[] {
   return classicMap.continents[continent]?.territories ?? []
@@ -20,7 +37,7 @@ function board(): GameState {
 
 describe('mission deck', () => {
   it('holds the 8 general missions, in the order of the rules', () => {
-    expect(GENERAL_MISSIONS.map((mission) => missionText(mission, players))).toEqual([
+    expect(generalMissions(classicMap).map((mission) => missionText(mission, players, classicMap))).toEqual([
       "Conquérir l'Amérique du Nord et l'Afrique",
       "Conquérir l'Amérique du Nord et l'Océanie",
       "Conquérir l'Asie et l'Amérique du Sud",
@@ -33,7 +50,7 @@ describe('mission deck', () => {
   })
 
   it('adds one elimination mission per player of the game', () => {
-    const deck = missionDeck(['p1', 'p2', 'p3', 'p4'])
+    const deck = missionDeck(classicMap, ['p1', 'p2', 'p3', 'p4'])
     expect(deck).toHaveLength(12)
     expect(deck.slice(8)).toEqual([
       { kind: 'eliminate', target: 'p1' },
@@ -43,8 +60,19 @@ describe('mission deck', () => {
     ])
   })
 
+  it('starts with the general missions of the given map', () => {
+    expect(missionDeck(regionMap, ['p1']).slice(0, 3)).toEqual([...regionMap.continentMissions, CONQUER_24_TERRITORIES])
+  })
+
+  it('words the missions of a map with feminine continents', () => {
+    expect(generalMissions(regionMap).map((mission) => missionText(mission, players, regionMap)).slice(0, 2)).toEqual([
+      'Conquérir la Bretagne et une troisième région au choix',
+      'Conquérir la Bretagne et la Corse',
+    ])
+  })
+
   it('names the target of an elimination mission', () => {
-    expect(missionText({ kind: 'eliminate', target: 'p3' }, players)).toBe('Éliminer Carol')
+    expect(missionText({ kind: 'eliminate', target: 'p3' }, players, classicMap)).toBe('Éliminer Carol')
   })
 })
 

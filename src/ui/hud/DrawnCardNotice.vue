@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { classicMap, type Card } from '../../engine'
+import { mapById, type Card, type MapId } from '../../engine'
 
 const props = defineProps<{
   card: Card
+  mapId: MapId
 }>()
 
 const emit = defineEmits<{
@@ -14,7 +15,7 @@ const DISPLAY_MS = 3500
 const SYMBOL_LABELS = { infantry: 'Fantassin', cavalry: 'Cavalier', artillery: 'Artillerie', joker: 'Joker' }
 
 const territory = computed(() =>
-  props.card.territory === null ? '' : (classicMap.territories[props.card.territory]?.name ?? ''),
+  props.card.territory === null ? '' : (mapById(props.mapId).territories[props.card.territory]?.name ?? ''),
 )
 
 let timer: ReturnType<typeof setTimeout> | undefined

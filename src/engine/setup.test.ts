@@ -3,7 +3,7 @@ import { classicMap } from './maps/classic'
 import { CONQUER_24_TERRITORIES } from './missions'
 import { createGame, dealMissions, DEFAULT_SETTINGS, NEUTRAL_PLAYER_ID } from './setup'
 import { armiesOf, claimAll, createTestGame, ownedBy, placeAll, testPlayers } from './testUtils'
-import type { Mission, PlayerConfig } from './types'
+import type { GameConfig, Mission, PlayerConfig } from './types'
 
 describe('createGame', () => {
   it('creates a game with the players in the given order', () => {
@@ -57,6 +57,19 @@ describe('createGame', () => {
     players[0] = { ...players[0]!, id: NEUTRAL_PLAYER_ID }
     const result = createGame({ players, seed: 1 })
     expect(result).toMatchObject({ ok: false, error: { code: 'DUPLICATE_PLAYER' } })
+  })
+
+  it('plays on the classic map when none is given', () => {
+    expect(createTestGame(3).mapId).toBe('classic')
+    expect(createTestGame(3, { mapId: 'classic' }).mapId).toBe('classic')
+  })
+
+  it('rejects an unknown map', () => {
+    const config: unknown = { players: testPlayers(3), seed: 1, mapId: 'atlantide' }
+    expect(createGame(config as GameConfig)).toEqual({
+      ok: false,
+      error: { code: 'UNKNOWN_MAP', message: 'Carte inconnue : atlantide' },
+    })
   })
 })
 

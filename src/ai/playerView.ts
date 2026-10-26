@@ -1,5 +1,5 @@
 import {
-  classicMap,
+  mapOf,
   type Card,
   type GameState,
   type Mission,
@@ -20,7 +20,7 @@ export type PlayerView = PublicState & {
 
 function territoriesInMapOrder(state: GameState): Record<TerritoryId, TerritoryState> {
   return Object.fromEntries(
-    classicMap.territoryIds.flatMap((id) => {
+    mapOf(state).territoryIds.flatMap((id) => {
       const territory = state.territories[id]
       return territory === undefined ? [] : [[id, territory]]
     }),

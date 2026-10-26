@@ -1,4 +1,4 @@
-import { classicMap, type GameState, type PlayerId, type TerritoryId } from '../engine'
+import { mapOf, type GameState, type PlayerId, type TerritoryId } from '../engine'
 
 /** Highlight state of a territory, decided by the caller of the board. */
 export type Highlight = 'none' | 'selectable' | 'selected' | 'target'
@@ -46,13 +46,13 @@ export function capitalColors(state: GameState): Partial<Record<TerritoryId, str
   )
 }
 
-/** Turns a game state and the caller's highlights into the display data of the 42 territories. */
+/** Turns a game state and the caller's highlights into the display data of every territory of its map. */
 export function boardViewModel(state: GameState, highlights: Highlights): Record<TerritoryId, TerritoryView> {
   const colors = new Map(state.players.map((player) => [player.id, player.color]))
   const anySelectable = Object.values(highlights).includes('selectable')
 
   return Object.fromEntries(
-    classicMap.territoryIds.map((id) => {
+    mapOf(state).territoryIds.map((id) => {
       const territory = state.territories[id]
       const highlight = highlights[id] ?? 'none'
       const view: TerritoryView = {

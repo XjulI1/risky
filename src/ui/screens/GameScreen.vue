@@ -2,7 +2,7 @@
 import { computed, onUnmounted } from 'vue'
 import { capitalColors, type Highlights } from '../../board/boardViewModel'
 import GameBoard, { type BoardTransit } from '../../board/GameBoard.vue'
-import { classicMap, type TerritoryId } from '../../engine'
+import { mapOf, type TerritoryId } from '../../engine'
 import { ANIMATION_DURATIONS } from '../../game/animationSpeed'
 import { provideGameSession, startGameSession, type GameStart } from '../../game/useGameSession'
 import AmountPicker from '../hud/AmountPicker.vue'
@@ -73,7 +73,7 @@ function dismissNotice() {
 const currentPlayer = computed(() => displayedState.value.players[displayedState.value.currentPlayerIndex])
 const colorOf = (playerId: string) =>
   displayedState.value.players.find((player) => player.id === playerId)?.color ?? '#ffffff'
-const nameOf = (territory: TerritoryId) => classicMap.territories[territory]?.name ?? territory
+const nameOf = (territory: TerritoryId) => mapOf(displayedState.value).territories[territory]?.name ?? territory
 
 const presentationHighlights = computed<Highlights>(() => {
   const step = currentStep.value
@@ -185,23 +185,27 @@ function trade(cardIds: [number, number, number]) {
         v-if="showOverlays && drawnCard"
         :key="drawnCard.id"
         :card="drawnCard"
+        :map-id="displayedState.mapId"
         @dismiss="session.acknowledgeDrawnCard()"
       />
       <MissionConvertedNotice
         v-if="showOverlays && convertedMission && !handoffTo && !drawnCard"
         :player="convertedMission"
+        :map-id="displayedState.mapId"
         @dismiss="session.acknowledgeConvertedMission()"
       />
       <CapitalLostAlert
         v-if="showOverlays && capitalLost && !winner"
         :player="capitalLost.player"
         :territory="capitalLost.territory"
+        :map-id="displayedState.mapId"
         @dismiss="session.acknowledgeCapitalLost()"
       />
       <CapitalsRevealedNotice
         v-if="showOverlays && revealedCapitals && !handoffTo && !drawnCard"
         :capitals="revealedCapitals"
         :players="displayedState.players"
+        :map-id="displayedState.mapId"
         @dismiss="session.acknowledgeRevealedCapitals()"
       />
       <GameOverOverlay

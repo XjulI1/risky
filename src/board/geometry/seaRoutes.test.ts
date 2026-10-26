@@ -1,20 +1,31 @@
 import { describe, expect, it } from 'vitest'
 import seaData from '../../../data/maps/classic/sea-routes.json'
-import { areAdjacent, classicMap } from '../../engine'
-import { MAP_WORLD_WIDTH, svgToWorld } from './mapGeometry'
-import { seaRouteSegments, wrapStubs } from './seaRoutes'
+import { areAdjacent, classicMap, mapById } from '../../engine'
+import { BOARD_MAP_IDS, boardMapFor } from '../maps'
+import { MAP_WORLD_WIDTH } from './mapGeometry'
 
+const { seaRoutes: seaRouteSegments, wrapStubs, svgToWorld } = boardMapFor('classic')
 const pairs = seaRouteSegments.map((segment) => [segment.a, segment.b].sort().join('|'))
+
+describe.each(BOARD_MAP_IDS)('sea links of the %s map', (mapId) => {
+  const board = boardMapFor(mapId)
+
+  it('only link territories that are adjacent in the engine', () => {
+    for (const segment of board.seaRoutes) {
+      expect(areAdjacent(mapById(mapId), segment.a, segment.b), `${segment.a}-${segment.b}`).toBe(true)
+    }
+  })
+
+  it('only run off the edge from territories of the map', () => {
+    for (const stub of board.wrapStubs) {
+      expect(mapById(mapId).territoryIds).toContain(stub.territory)
+    }
+  })
+})
 
 describe('seaRouteSegments', () => {
   it('has the 21 sea routes of the data', () => {
     expect(seaRouteSegments).toHaveLength(21)
-  })
-
-  it('only links territories that are adjacent in the engine', () => {
-    for (const segment of seaRouteSegments) {
-      expect(areAdjacent(classicMap, segment.a, segment.b), `${segment.a}-${segment.b}`).toBe(true)
-    }
   })
 
   it.each([

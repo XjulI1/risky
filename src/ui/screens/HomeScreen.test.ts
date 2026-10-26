@@ -18,7 +18,7 @@ function saved(status: SaveStatus): SavedGame {
     formatVersion: SAVE_FORMAT_VERSION,
     savedAt: '2026-10-23T08:30:00.000Z',
     status,
-    creation: { players, settings: { ...DEFAULT_SETTINGS } },
+    creation: { players, settings: { ...DEFAULT_SETTINGS }, mapId: 'classic' },
     engineState: created.state,
     journal: [],
     statistics: initialStatistics(created.state, 1),

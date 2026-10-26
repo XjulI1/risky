@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CONQUER_24_TERRITORIES, createGame, type GameEvent, type Player } from '../../engine'
+import { classicMap, CONQUER_24_TERRITORIES, createGame, type GameEvent, type Player } from '../../engine'
 import { groupByTurn, journalBatch, openingJournal, type JournalEntry } from './journal'
 
 const players: Player[] = [
@@ -22,7 +22,7 @@ function roll(attackerDice: number[], defenderDice: number[], attackerLosses: nu
   }
 }
 
-const texts = (events: GameEvent[], turn = 3) => journalBatch(events, players, turn).entries.map((entry) => entry.text)
+const texts = (events: GameEvent[], turn = 3) => journalBatch(events, players, turn, classicMap).entries.map((entry) => entry.text)
 
 describe('journal entries', () => {
   it('reveals the accomplished mission of the winner', () => {
@@ -45,18 +45,19 @@ describe('journal entries', () => {
       ],
       players,
       3,
+      classicMap,
     )
     expect(batch.entries.map((entry) => entry.text)).toEqual(['Bob est éliminé par Alice'])
     expect(batch.revealSteps).toHaveLength(1)
   })
 
   it('opens a turn with a header', () => {
-    const [entry] = journalBatch([{ type: 'turnStarted', playerId: 'p2', reserve: 3 }], players, 4).entries
+    const [entry] = journalBatch([{ type: 'turnStarted', playerId: 'p2', reserve: 3 }], players, 4, classicMap).entries
     expect(entry).toEqual({ turn: 5, playerId: 'p2', text: 'Tour 5 — Bob', header: true, details: [] })
   })
 
   it('attaches an entry to its author and to the turn', () => {
-    const [entry] = journalBatch([{ type: 'armiesDeployed', playerId: 'p1', territory: 'ukraine', armies: 3 }], players, 7).entries
+    const [entry] = journalBatch([{ type: 'armiesDeployed', playerId: 'p1', territory: 'ukraine', armies: 3 }], players, 7, classicMap).entries
     expect(entry).toMatchObject({ turn: 7, playerId: 'p1', header: false })
   })
 
@@ -97,7 +98,7 @@ describe('journal entries', () => {
   })
 
   it('tells a card was drawn without telling which one', () => {
-    const [entry] = journalBatch([{ type: 'cardDrawn', playerId: 'p2', cardId: 9 }], players, 3).entries
+    const [entry] = journalBatch([{ type: 'cardDrawn', playerId: 'p2', cardId: 9 }], players, 3, classicMap).entries
     expect(entry?.text).toBe('Bob pioche une carte')
     expect(entry?.details).toEqual([])
   })
@@ -105,7 +106,7 @@ describe('journal entries', () => {
 
 describe('capitals in the journal', () => {
   it('writes nothing while the capitals are chosen', () => {
-    const batch = journalBatch([{ type: 'capitalChosen', playerId: 'p1' }], players, 0)
+    const batch = journalBatch([{ type: 'capitalChosen', playerId: 'p1' }], players, 0, classicMap)
     expect(batch).toEqual({ entries: [], revealSteps: [] })
   })
 
@@ -118,6 +119,7 @@ describe('capitals in the journal', () => {
       ],
       players,
       0,
+      classicMap,
     )
     expect(entries.map((entry) => [entry.turn, entry.text])).toEqual([
       [0, 'Capitales : Alice — Égypte, Bob — Brésil'],
@@ -139,14 +141,14 @@ describe('capitals in the journal', () => {
   })
 
   it('shows the bonified die of the defender of a capital in the detail of a roll', () => {
-    const [entry] = journalBatch([roll([6, 2], [5, 1], 1, 1, 1)], players, 3).entries
+    const [entry] = journalBatch([roll([6, 2], [5, 1], 1, 1, 1)], players, 3, classicMap).entries
     expect(entry?.details).toEqual(['6-2 contre 5+1-1 — Alice perd 1 armée, Bob perd 1 armée'])
   })
 })
 
 describe('condensed attack', () => {
   it('sums up an attack won in a single roll', () => {
-    const [entry] = journalBatch([roll([6, 5, 1], [4, 4], 0, 2)], players, 3).entries
+    const [entry] = journalBatch([roll([6, 5, 1], [4, 4], 0, 2)], players, 3, classicMap).entries
     expect(entry?.text).toBe('Alice attaque Brésil depuis Afrique du Nord : 1 lancer — Bob perd 2 armées')
     expect(entry?.details).toEqual(['6-5-1 contre 4-4 — Bob perd 2 armées'])
   })
@@ -156,6 +158,7 @@ describe('condensed attack', () => {
       [roll([6, 2, 1], [5, 3], 1, 1), roll([4, 3, 1], [6, 5], 2, 0), roll([6, 6, 2], [3, 1], 0, 2), roll([6, 4], [2, 1], 0, 2)],
       players,
       3,
+      classicMap,
     )
     expect(entries).toHaveLength(1)
     expect(entries[0]?.text).toBe('Alice attaque Brésil depuis Afrique du Nord : 4 lancers — Alice perd 3 armées, Bob perd 5 armées')
@@ -179,12 +182,13 @@ describe('reveal steps', () => {
       ],
       players,
       3,
+      classicMap,
     )
     expect(batch.revealSteps).toEqual([2, 3, 3])
   })
 
   it('reveals at once the entries without animation', () => {
-    expect(journalBatch([{ type: 'armiesDeployed', playerId: 'p1', territory: 'ukraine', armies: 3 }], players, 3).revealSteps).toEqual([0])
+    expect(journalBatch([{ type: 'armiesDeployed', playerId: 'p1', territory: 'ukraine', armies: 3 }], players, 3, classicMap).revealSteps).toEqual([0])
   })
 })
 

@@ -1,4 +1,4 @@
-import { classicMap, type GameState } from '../engine'
+import { isMapId, mapById, type GameState } from '../engine'
 import { browserStorage } from './animationSpeed'
 import type { GameSetup } from './gameForm'
 import type { JournalEntry } from './history/journal'
@@ -58,19 +58,30 @@ function isStatistics(value: unknown): value is GameStatistics {
   )
 }
 
-function isCreation(value: unknown): value is GameSetup {
+/** A creation as saved: without map when written before the choice of map. */
+type SavedCreation = Omit<GameSetup, 'mapId'> & Partial<Pick<GameSetup, 'mapId'>>
+
+function isCreation(value: unknown): value is SavedCreation {
   return (
     isRecord(value) &&
     Array.isArray(value.players) &&
     value.players.every((player) => isRecord(player) && typeof player.id === 'string' && typeof player.name === 'string') &&
-    isRecord(value.settings)
+    isRecord(value.settings) &&
+    (value.mapId === undefined || isMapId(value.mapId))
   )
 }
 
 function isEngineState(value: unknown): value is GameState {
-  if (!isRecord(value) || !Array.isArray(value.players) || !isRecord(value.territories) || !isRecord(value.phase)) {
+  if (
+    !isRecord(value) ||
+    !isMapId(value.mapId) ||
+    !Array.isArray(value.players) ||
+    !isRecord(value.territories) ||
+    !isRecord(value.phase)
+  ) {
     return false
   }
+  const map = mapById(value.mapId)
   const playerIds = new Set(value.players.flatMap((player) => (isRecord(player) && typeof player.id === 'string' ? [player.id] : [])))
   const territories = value.territories
   return (
@@ -79,8 +90,8 @@ function isEngineState(value: unknown): value is GameState {
     typeof value.currentPlayerIndex === 'number' &&
     (value.missions === null || isRecord(value.missions)) &&
     (value.capitals === null || isRecord(value.capitals)) &&
-    Object.keys(territories).length === classicMap.territoryIds.length &&
-    classicMap.territoryIds.every((id) => {
+    Object.keys(territories).length === map.territoryIds.length &&
+    map.territoryIds.every((id) => {
       const territory = territories[id]
       return (
         isRecord(territory) &&
@@ -92,7 +103,10 @@ function isEngineState(value: unknown): value is GameState {
   )
 }
 
-function isSavedGame(value: unknown): value is SavedGame {
+/** A saved game as stored, its creation possibly without map. */
+type StoredGame = Omit<SavedGame, 'creation'> & { creation: SavedCreation }
+
+function isSavedGame(value: unknown): value is StoredGame {
   return (
     isRecord(value) &&
     value.formatVersion === SAVE_FORMAT_VERSION &&
@@ -131,7 +145,7 @@ export function loadSavedGame(storage: SaveStorage | null = browserStorage()): L
   }
   const value = parse(text)
   if (isSavedGame(value)) {
-    return { kind: 'saved', game: value }
+    return { kind: 'saved', game: { ...value, creation: { ...value.creation, mapId: value.creation.mapId ?? 'classic' } } }
   }
   deleteSavedGame(storage)
   return { kind: 'unreadable' }

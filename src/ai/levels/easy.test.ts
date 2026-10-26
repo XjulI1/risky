@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { CONQUER_24_TERRITORIES, GENERAL_MISSIONS, type Mission } from '../../engine'
+import { classicMap, CONQUER_24_TERRITORIES, generalMissions, type Mission } from '../../engine'
 import { isBorder } from '../evaluation'
 import { playerView } from '../playerView'
 import { decide, newAiGame, playWhile, scenario, territoryCard } from '../testScenarios'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 const DEFENDED_INDONESIA = (originArmies: number, siamArmies: number) =>
   scenario({

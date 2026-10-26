@@ -1,6 +1,6 @@
 import board from '../../../data/maps/classic/board.json'
 import geometry from '../../../data/maps/classic/territories.json'
-import type { Continent, ContinentId, GameMap, Territory, TerritoryId } from '../types'
+import type { Continent, ContinentId, GameMap, Mission, Territory, TerritoryId } from '../types'
 
 const TERRITORY_NAMES: Record<TerritoryId, string> = {
   alaska: 'Alaska',
@@ -56,6 +56,25 @@ const CONTINENT_NAMES: Record<ContinentId, string> = {
   australia: 'Océanie',
 }
 
+const CONTINENT_NAMES_WITH_ARTICLE: Record<ContinentId, string> = {
+  northAmerica: "l'Amérique du Nord",
+  southAmerica: "l'Amérique du Sud",
+  europe: "l'Europe",
+  africa: "l'Afrique",
+  asia: "l'Asie",
+  australia: "l'Océanie",
+}
+
+/** The 6 continent missions of the classic rules, in their order. */
+const CONTINENT_MISSIONS: Mission[] = [
+  { kind: 'continents', required: ['northAmerica', 'africa'], extraContinents: 0 },
+  { kind: 'continents', required: ['northAmerica', 'australia'], extraContinents: 0 },
+  { kind: 'continents', required: ['asia', 'southAmerica'], extraContinents: 0 },
+  { kind: 'continents', required: ['asia', 'africa'], extraContinents: 0 },
+  { kind: 'continents', required: ['europe', 'southAmerica'], extraContinents: 1 },
+  { kind: 'continents', required: ['europe', 'australia'], extraContinents: 1 },
+]
+
 function requireName(names: Record<string, string>, id: string): string {
   const name = names[id]
   if (name === undefined) {
@@ -85,12 +104,21 @@ function buildClassicMap(): GameMap {
     continents[id] = {
       id,
       name: requireName(CONTINENT_NAMES, id),
+      nameWithArticle: requireName(CONTINENT_NAMES_WITH_ARTICLE, id),
       bonus: continentBonuses[id]?.bonus ?? 0,
       territories: territoryIds.filter((t) => territories[t]?.continent === id),
     }
   }
 
-  return { territoryIds, continentIds, territories, continents }
+  return {
+    id: 'classic',
+    territoryIds,
+    continentIds,
+    territories,
+    continents,
+    continentTerm: { singular: 'continent', feminine: false },
+    continentMissions: CONTINENT_MISSIONS,
+  }
 }
 
 /** The classic 42-territory Risk board, with French display names. */
