@@ -1,6 +1,4 @@
-import type { TerritoryId } from '../../engine'
 import { CAPITAL_MARKER_RADIUS, PAWN_RADIUS } from '../boardLayout'
-import { largestOutline, territoryAnchor } from './anchors'
 import { distanceToPolygon, pointInPolygon, type MapPoint } from './polygon'
 
 /** Where the army pawn and the capital marker of a capital stand, side by side. */
@@ -36,29 +34,18 @@ function arrangements(anchor: MapPoint): CapitalLayout[] {
   )
 }
 
-function layoutOf(id: TerritoryId): CapitalLayout {
-  const outline = largestOutline(id)
+/**
+ * Pawn and marker positions of a capital whose largest piece is `outline` and usual pawn position `anchor`:
+ * the marker beside the pawn, east of it when the territory leaves room, the pawn moving away from its
+ * anchor by less than their combined width.
+ */
+export function capitalLayout(outline: MapPoint[], anchor: MapPoint): CapitalLayout {
   const margin = ({ pawn, marker }: CapitalLayout) =>
     Math.min(room(pawn, PAWN_RADIUS, outline), room(marker, CAPITAL_MARKER_RADIUS, outline))
-  const candidates = arrangements(territoryAnchor(id))
+  const candidates = arrangements(anchor)
   const comfortable = candidates.find((candidate) => margin(candidate) >= COMFORTABLE_MARGIN)
   return (
     comfortable ??
     candidates.reduce((best, candidate) => (margin(candidate) > margin(best) ? candidate : best))
   )
-}
-
-const layouts = new Map<TerritoryId, CapitalLayout>()
-
-/**
- * Pawn and marker positions of a capital: the marker beside the pawn, east of it when the territory
- * leaves room, the pawn moving away from its usual anchor by less than their combined width.
- */
-export function capitalLayout(id: TerritoryId): CapitalLayout {
-  let layout = layouts.get(id)
-  if (layout === undefined) {
-    layout = layoutOf(id)
-    layouts.set(id, layout)
-  }
-  return layout
 }

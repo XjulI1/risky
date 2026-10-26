@@ -1,4 +1,4 @@
-import { classicMap, defenderBonusOn, fortifyDestinations, type PlayerId, type TerritoryId } from '../../engine'
+import { defenderBonusOn, fortifyDestinations, mapOf, type PlayerId, type TerritoryId } from '../../engine'
 import { capitalAttack, capitalDefense, safestTerritory } from '../capitalObjective'
 import { conquestProbability } from '../combatOdds'
 import {
@@ -39,13 +39,13 @@ const COMPLETION_BONUS = 1
 const MISSION_TARGET_BONUS = 3
 const OTHER_ELIMINATION_MALUS = 2
 
-function continentOf(territory: TerritoryId): string | undefined {
-  return classicMap.territories[territory]?.continent
+function continentOf(view: PlayerView, territory: TerritoryId): string | undefined {
+  return mapOf(view).territories[territory]?.continent
 }
 
 function claimValue(view: PlayerView, me: PlayerId, territory: TerritoryId): number {
-  const continentId = continentOf(territory)
-  const continent = continentId === undefined ? undefined : classicMap.continents[continentId]
+  const continentId = continentOf(view, territory)
+  const continent = continentId === undefined ? undefined : mapOf(view).continents[continentId]
   if (continentId === undefined || continent === undefined) {
     return 0
   }
@@ -76,7 +76,7 @@ export function frontOrigin(view: PlayerView, me: PlayerId, reserve: number): Te
   const continentId = goalContinent(view, me)
   const borders = borderTerritories(view, me)
   const continentTargets = (origin: TerritoryId) =>
-    enemyNeighbors(view, origin).filter((target) => continentOf(target) === continentId)
+    enemyNeighbors(view, origin).filter((target) => continentOf(view, target) === continentId)
   const front = borders.filter((origin) => continentTargets(origin).length > 0)
   const best =
     front.length > 0
@@ -90,7 +90,7 @@ export function planScore(view: PlayerView, me: PlayerId, option: AttackOption):
   const continentId = goalContinent(view, me)
   return (
     option.probability +
-    (continentOf(option.to) === continentId ? TARGET_CONTINENT_BONUS : 0) +
+    (continentOf(view, option.to) === continentId ? TARGET_CONTINENT_BONUS : 0) +
     (completesContinent(view, me, option.to) ? COMPLETION_BONUS : 0) +
     (isMissionTarget(view, option.to) ? MISSION_TARGET_BONUS : 0) -
     (eliminatesAnotherPlayer(view, option.to) ? OTHER_ELIMINATION_MALUS : 0)

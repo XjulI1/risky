@@ -6,6 +6,8 @@ export const wrongPhase = (): RuleError =>
 
 export const unknownTerritory = (): RuleError => ruleError('UNKNOWN_TERRITORY', "Ce territoire n'existe pas.")
 
+export const unknownMap = (mapId: string): RuleError => ruleError('UNKNOWN_MAP', `Carte inconnue : ${mapId}`)
+
 export const notOwner = (): RuleError => ruleError('NOT_OWNER', 'Ce territoire ne vous appartient pas.')
 
 export const invalidArmyCount = (): RuleError =>

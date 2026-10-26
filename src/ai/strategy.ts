@@ -2,8 +2,8 @@ import {
   attackOrigins,
   attackTargets,
   bonusTerritory,
-  classicMap,
   defenderBonusOn,
+  mapOf,
   FORCED_TRADE_HAND_SIZE,
   tradeableSets,
   tradeValue,
@@ -68,7 +68,7 @@ export type Strategy = {
 
 /** Territories nobody has claimed yet, in map order. */
 export function freeTerritories(view: PlayerView): TerritoryId[] {
-  return classicMap.territoryIds.filter((id) => view.territories[id] === undefined)
+  return mapOf(view).territoryIds.filter((id) => view.territories[id] === undefined)
 }
 
 /** Whether the hand is full enough to force a trade. */
@@ -115,12 +115,13 @@ export function attackOptions(view: PlayerView, playerId: PlayerId): AttackOptio
 
 /** Whether conquering `territory` would give `playerId` the whole continent. */
 export function completesContinent(view: PlayerView, playerId: PlayerId, territory: TerritoryId): boolean {
-  const continentId = classicMap.territories[territory]?.continent
+  const map = mapOf(view)
+  const continentId = map.territories[territory]?.continent
   if (continentId === undefined) {
     return false
   }
   return (
-    classicMap.continents[continentId]?.territories.every((id) => id === territory || ownerOf(view, id) === playerId) ??
+    map.continents[continentId]?.territories.every((id) => id === territory || ownerOf(view, id) === playerId) ??
     false
   )
 }
@@ -128,7 +129,7 @@ export function completesContinent(view: PlayerView, playerId: PlayerId, territo
 /** Whether `territory` belongs to a continent held entirely by its owner. */
 export function inHeldContinent(view: PlayerView, territory: TerritoryId): boolean {
   const owner = ownerOf(view, territory)
-  const continentId = classicMap.territories[territory]?.continent
+  const continentId = mapOf(view).territories[territory]?.continent
   return owner !== undefined && continentId !== undefined && holdsContinent(view, owner, continentId)
 }
 

@@ -1,5 +1,5 @@
 import type { TerritoryId } from '../engine'
-import { mapGeometry, type TerritoryGeometry } from './geometry/mapGeometry'
+import type { TerritoryGeometry } from './geometry/mapGeometry'
 import { distanceToPolygon, pointInPolygon, type MapPoint } from './geometry/polygon'
 
 /** Position of a pointer, in CSS pixels, at a given time in milliseconds. */
@@ -25,11 +25,11 @@ export function isTap(down: PointerSample, up: PointerSample): boolean {
   )
 }
 
-/** Territory under `point`, or the closest one within `tolerance` when the point is on the ocean. */
+/** Territory of `territories` under `point`, or the closest one within `tolerance` when the point is on the ocean. */
 export function nearestTerritory(
   point: MapPoint,
+  territories: Record<TerritoryId, TerritoryGeometry>,
   tolerance = TOUCH_TOLERANCE,
-  territories: Record<TerritoryId, TerritoryGeometry> = mapGeometry,
 ): TerritoryId | null {
   let closest: { id: TerritoryId; distance: number } | null = null
   for (const territory of Object.values(territories)) {

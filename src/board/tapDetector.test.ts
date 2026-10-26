@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { mapGeometry } from './geometry/mapGeometry'
 import { distanceToPolygon, pointInPolygon, type MapPoint } from './geometry/polygon'
+import { boardMapFor } from './maps'
 import { isTap, nearestTerritory, TOUCH_TOLERANCE } from './tapDetector'
+
+const mapGeometry = boardMapFor('classic').geometry
 
 describe('isTap', () => {
   const down = { x: 100, y: 100, time: 0 }
@@ -29,7 +31,7 @@ describe('nearestTerritory', () => {
       (sum, p) => ({ x: sum.x + p.x / egyptOutline.length, z: sum.z + p.z / egyptOutline.length }),
       { x: 0, z: 0 },
     )
-    expect(nearestTerritory(inside)).toBe('egypt')
+    expect(nearestTerritory(inside, mapGeometry)).toBe('egypt')
   })
 
   it('snaps an ocean tap within the tolerance to the closest territory', () => {
@@ -37,12 +39,12 @@ describe('nearestTerritory', () => {
     const northernmost = iceland.reduce((best, p) => (p.z < best.z ? p : best))
     const offshore = { x: northernmost.x, z: northernmost.z - 0.5 }
     expect(isOcean(offshore)).toBe(true)
-    expect(nearestTerritory(offshore)).toBe('iceland')
+    expect(nearestTerritory(offshore, mapGeometry)).toBe('iceland')
   })
 
   it('returns nothing beyond the tolerance', () => {
     const farOffshore = { x: -45, z: 30 }
     expect(allOutlines.every((outline) => distanceToPolygon(farOffshore, outline) > TOUCH_TOLERANCE)).toBe(true)
-    expect(nearestTerritory(farOffshore)).toBeNull()
+    expect(nearestTerritory(farOffshore, mapGeometry)).toBeNull()
   })
 })

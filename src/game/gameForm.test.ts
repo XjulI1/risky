@@ -8,6 +8,7 @@ import {
   chooseControl,
   chooseVariant,
   defaultSetup,
+  gameFromSetup,
   isLevelAvailable,
   levelForSettings,
   MAX_NAME_LENGTH,
@@ -113,3 +114,13 @@ describe('chooseVariant', () => {
     expect(chooseVariant({ ...DEFAULT_SETTINGS, capitals: true }, 'secretMissions', false)).toEqual({ ...DEFAULT_SETTINGS, capitals: true })
   })
 })
+
+describe('gameFromSetup', () => {
+  it('starts a game again on the map of its setup, as « Rejouer » does from the end screen', () => {
+    const setup = { ...defaultSetup(sequence(0)), mapId: 'france' as const }
+    const replayed = gameFromSetup(setup, 7)
+    expect(replayed.ok && replayed.state.mapId).toBe('france')
+    expect(replayed.ok && replayed.state.players.map((player) => player.name)).toEqual(setup.players.map((player) => player.name))
+  })
+})
+

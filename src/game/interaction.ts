@@ -1,8 +1,8 @@
 import {
   attackOrigins,
   attackTargets,
-  classicMap,
   fortifyDestinations,
+  mapOf,
   mustTrade,
   type Action,
   type GameState,
@@ -67,7 +67,7 @@ function armiesOn(state: GameState, territory: TerritoryId): number {
 }
 
 function ownTerritories(state: GameState): TerritoryId[] {
-  return classicMap.territoryIds.filter((id) => owns(state, id))
+  return mapOf(state).territoryIds.filter((id) => owns(state, id))
 }
 
 function isDeploying(state: GameState): boolean {
@@ -82,8 +82,8 @@ function clampAmount(amount: number | undefined, min: number, max: number): numb
   return Math.min(max, Math.max(min, Math.round(amount ?? max)))
 }
 
-function territoryName(territory: TerritoryId): string {
-  return classicMap.territories[territory]?.name ?? territory
+function territoryName(state: GameState, territory: TerritoryId): string {
+  return mapOf(state).territories[territory]?.name ?? territory
 }
 
 /** Drops a selection that no longer fits the state (phase over, origin exhausted, territory lost). */
@@ -254,7 +254,7 @@ function capitalChoiceView(state: GameState, interaction: Interaction): Pick<Int
     panel: {
       kind: 'capitalConfirm',
       territory: interaction.territory,
-      label: `Faire de ${territoryName(interaction.territory)} votre capitale ?`,
+      label: `Faire de ${territoryName(state, interaction.territory)} votre capitale ?`,
     },
   }
 }
@@ -292,7 +292,7 @@ function attackView(state: GameState, interaction: Interaction): Pick<Interactio
       to: interaction.to,
       fromArmies,
       toArmies,
-      label: `Attaquer ${territoryName(interaction.to)} (${toArmies}) depuis ${territoryName(interaction.from)} (${fromArmies})`,
+      label: `Attaquer ${territoryName(state, interaction.to)} (${toArmies}) depuis ${territoryName(state, interaction.from)} (${fromArmies})`,
     },
   }
 }
@@ -322,7 +322,7 @@ export function viewOf(state: GameState, current: Interaction): InteractionView 
     case 'claim':
       return {
         ...base,
-        highlights: mark(classicMap.territoryIds.filter((id) => state.territories[id] === undefined), 'selectable'),
+        highlights: mark(mapOf(state).territoryIds.filter((id) => state.territories[id] === undefined), 'selectable'),
         panel: NO_PANEL,
         armiesToPlace: phase.remaining[currentPlayerId(state)] ?? 0,
       }

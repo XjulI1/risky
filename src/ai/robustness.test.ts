@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { applyAction, type AiLevel, type GameSettings, type GameState } from '../engine'
+import { applyAction, type AiLevel, type GameSettings, type GameState, type MapId } from '../engine'
 import { NEW_TURN, nextAiAction, playUntilHumanOrEnd, progressAfter, type AutoPlay } from './index'
 import { newAiGame } from './testScenarios'
 
@@ -26,8 +26,8 @@ function levelsFor(game: number): AiLevel[] {
   return Array.from({ length: playerCount }, (_, i) => LEVELS[(game * 7 + i * 5 + Math.floor(game / 5)) % 3] as AiLevel)
 }
 
-function gameFor(game: number): GameState {
-  return newAiGame(levelsFor(game), 1000 + game * 37, settingsFor(game))
+function gameFor(game: number, mapId: MapId): GameState {
+  return newAiGame(levelsFor(game), 1000 + game * 37, settingsFor(game), mapId)
 }
 
 function slowestDecision(state: GameState): number {
@@ -56,7 +56,7 @@ type GameResult = AutoPlay & {
   settings: GameSettings
 }
 
-describe('games between AIs', () => {
+describe.each<MapId>(['classic', 'france'])('games between AIs on the %s map', (mapId) => {
   let results: GameResult[] = []
 
   beforeAll(() => {
@@ -64,9 +64,13 @@ describe('games between AIs', () => {
       game,
       levels: levelsFor(game),
       settings: settingsFor(game),
-      ...playUntilHumanOrEnd(gameFor(game), { maxTurns: MAX_TURNS }),
+      ...playUntilHumanOrEnd(gameFor(game, mapId), { maxTurns: MAX_TURNS }),
     }))
   }, 60_000)
+
+  it('are played on that map', () => {
+    expect(results.every((result) => result.state.mapId === mapId)).toBe(true)
+  })
 
   it('covers 2 to 6 players, every level and varied settings', () => {
     expect(new Set(results.map((result) => result.levels.length))).toEqual(new Set([2, 3, 4, 5, 6]))
@@ -88,14 +92,14 @@ describe('games between AIs', () => {
 
   it('replay identically from the same seed', () => {
     for (const game of [0, 13, 42, 77]) {
-      const replay = playUntilHumanOrEnd(gameFor(game), { maxTurns: MAX_TURNS })
+      const replay = playUntilHumanOrEnd(gameFor(game, mapId), { maxTurns: MAX_TURNS })
       expect(replay.actions).toEqual(results[game]?.actions)
       expect(replay.state.winner).toBe(results[game]?.state.winner)
     }
   })
 
   it(`decide in less than ${MAX_DECISION_MS} ms`, () => {
-    const slowest = Math.max(...[3, 4, 9].map((game) => slowestDecision(gameFor(game))))
+    const slowest = Math.max(...[3, 4, 9].map((game) => slowestDecision(gameFor(game, mapId))))
     expect(slowest).toBeLessThan(MAX_DECISION_MS)
   })
 })

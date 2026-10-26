@@ -22,7 +22,9 @@ SOFTWARE.
 
 ---
 
-## Exceptions : données de la carte
+## Exceptions : données des cartes
+
+### Carte classique
 
 Les fichiers du dossier `data/maps/classic/` ne sont **pas** couverts par la licence MIT ci-dessus.
 Ils proviennent d'un projet tiers et gardent leurs propres licences :
@@ -38,6 +40,19 @@ Ils proviennent d'un projet tiers et gardent leurs propres licences :
 Le détail de la provenance et le texte de ces licences figurent dans
 [`data/maps/classic/SOURCE.md`](data/maps/classic/SOURCE.md) et
 [`data/maps/classic/LICENSE-map-geometry.md`](data/maps/classic/LICENSE-map-geometry.md).
+
+### Carte de France
+
+Les fichiers du dossier `data/maps/france/` ne sont pas non plus couverts par la licence MIT. Leurs
+contours sont dérivés des limites départementales de l'**IGN** (ADMIN EXPRESS COG, édition 2018),
+reprises de la version simplifiée du projet
+[france-geojson](https://github.com/gregoiredavid/france-geojson), et sont distribués sous la
+[Licence Ouverte / Open Licence version 2.0](https://www.data.gouv.fr/pages/legal/licences/etalab-2.0)
+d'Etalab, qui impose de mentionner la source et la date de mise à jour :
+
+> Source : IGN, ADMIN EXPRESS COG, édition 2018 ; simplification par le projet france-geojson.
+
+Le détail figure dans [`data/maps/france/SOURCE.md`](data/maps/france/SOURCE.md).
 
 ## Marque
 

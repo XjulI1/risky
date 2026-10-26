@@ -1,7 +1,8 @@
-import { classicMap } from './maps/classic'
 import { CONQUER_24_TERRITORIES, missionDeck } from './missions'
 import { placeRemainingArmiesAtRandom } from './placement'
-import { rollInt, ruleError, shuffleWithState } from './state'
+import { unknownMap } from './errors'
+import { isMapId } from './maps'
+import { mapOf, rollInt, ruleError, shuffleWithState } from './state'
 import type {
   AiLevel,
   Card,
@@ -182,7 +183,11 @@ export function createGame(config: GameConfig): CreateGameResult {
     return { ok: false, error: settings }
   }
 
-  const map = classicMap
+  const mapId = config.mapId ?? 'classic'
+  if (!isMapId(mapId)) {
+    return { ok: false, error: unknownMap(mapId) }
+  }
+  const map = mapOf({ mapId })
   const withNeutral = config.players.length === MIN_PLAYERS
   const players: Player[] = [
     ...config.players.map((player) => ({ ...player, isNeutral: false, eliminated: false })),
@@ -195,7 +200,7 @@ export function createGame(config: GameConfig): CreateGameResult {
 
   const state: GameState = {
     settings,
-    mapId: 'classic',
+    mapId,
     players,
     territories: {},
     firstPlayerIndex: 0,
@@ -234,7 +239,7 @@ export function createGame(config: GameConfig): CreateGameResult {
 
   if (settings.secretMissions) {
     const playerIds = config.players.map((player) => player.id)
-    state.missions = dealMissions(shuffleWithState(state, missionDeck(playerIds)), playerIds)
+    state.missions = dealMissions(shuffleWithState(state, missionDeck(map, playerIds)), playerIds)
   }
 
   return { ok: true, state }

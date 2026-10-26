@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { CONQUER_24_TERRITORIES, missionText, type Player } from '../../engine'
+import { CONQUER_24_TERRITORIES, mapById, missionText, type MapId, type Player } from '../../engine'
 
-defineProps<{
+const props = defineProps<{
   player: Player
+  mapId: MapId
 }>()
 
 const emit = defineEmits<{
   dismiss: []
 }>()
 
-const MESSAGE = `Votre cible a été éliminée par un autre joueur : votre mission devient ${missionText(CONQUER_24_TERRITORIES, [])}`
+const MESSAGE = `Votre cible a été éliminée par un autre joueur : votre mission devient ${missionText(CONQUER_24_TERRITORIES, [], mapById(props.mapId))}`
 </script>
 
 <template>

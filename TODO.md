@@ -143,6 +143,27 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [ ] Vérifier sur iPad une partie Expert, en ligne puis hors ligne (tâche 7.4) : la plupart des
   décisions sous la seconde, des pics rares de 2 à 3 s au plus.
 
+### 10. `support-multiple-maps` — jeu indépendant de la carte
+
+- [x] Implémenter les [tâches](openspec/changes/archive/2026-10-26-support-multiple-maps/tasks.md).
+- [x] Archiver le change.
+
+### 11. `add-france-map` — carte de France
+
+- [x] Lancer `pnpm add -D mapshaper` (tâche 1.1).
+- [x] Équilibrage (`pnpm test:balance:france`, 480 parties entre trois IA difficiles) : les bonus
+  provisoires (3, 3, 3, 4, 4, 4, 5) sont gardés.
+- [x] Tournoi de progression sur la France : facile 0, normal 17, difficile 43 victoires sur 60.
+- [x] Tournoi expert sur la France, à titre indicatif (`EXPERT_MAP=france pnpm test:expert`) :
+  l'expert gagne 51 parties sur 60 contre deux IA difficiles, en 40 ms par décision en moyenne
+  (p95 130 ms, max 387 ms).
+- [x] Vérifier le plateau de France avec `pnpm dev` en 1024 × 768 et 1920 × 1080 (tâche 5.3) :
+  limites de région en trait clair, Corse et ses liaisons, étiquettes toutes en mer (Île-de-France,
+  Est et Centre sur la droite de la carte).
+- [x] Jouer une partie sur la France sur ordinateur et une sur iPad, dont une avec missions
+  secrètes (tâche 8.3).
+- [ ] Archiver le change.
+
 ## Pistes après la V1
 
 Écartées du périmètre de la V1, à reconsidérer ensuite :

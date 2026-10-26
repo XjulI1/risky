@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { useLoop } from '@tresjs/core'
 import { onBeforeUnmount } from 'vue'
-import { MAP_WORLD_DEPTH, MAP_WORLD_WIDTH } from './geometry/mapGeometry'
+import type { WorldSize } from './geometry/mapGeometry'
 import { createOceanMaterial } from './oceanMaterial'
+
+defineProps<{
+  size: WorldSize
+}>()
 
 const OCEAN_MARGIN = 1.6
 
@@ -24,6 +28,6 @@ onBeforeUnmount(() => material.dispose())
     :rotation-x="-Math.PI / 2"
     :material="material"
   >
-    <TresPlaneGeometry :args="[MAP_WORLD_WIDTH * OCEAN_MARGIN, MAP_WORLD_DEPTH * OCEAN_MARGIN]" />
+    <TresPlaneGeometry :args="[size.width * OCEAN_MARGIN, size.depth * OCEAN_MARGIN]" />
   </TresMesh>
 </template>

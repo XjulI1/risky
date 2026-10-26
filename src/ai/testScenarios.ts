@@ -7,6 +7,7 @@ import {
   type AiLevel,
   type Card,
   type GameSettings,
+  type MapId,
   type GameState,
   type Mission,
   type Phase,
@@ -30,8 +31,8 @@ export function aiPlayers(levels: AiLevel[]): PlayerConfig[] {
   }))
 }
 
-export function newAiGame(levels: AiLevel[], seed = 1, settings: Partial<GameSettings> = {}): GameState {
-  const created = createGame({ players: aiPlayers(levels), seed, settings })
+export function newAiGame(levels: AiLevel[], seed = 1, settings: Partial<GameSettings> = {}, mapId: MapId = 'classic'): GameState {
+  const created = createGame({ players: aiPlayers(levels), seed, settings, mapId })
   if (!created.ok) {
     throw new Error(created.error.message)
   }

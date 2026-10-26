@@ -1,4 +1,4 @@
-import { classicMap, defenderBonusOn, type PlayerId, type TerritoryId } from '../../engine'
+import { defenderBonusOn, mapOf, type PlayerId, type TerritoryId } from '../../engine'
 import { capitalAttack, capitalDefense, lastCapitalStaging, safestTerritory } from '../capitalObjective'
 import { conquestProbability } from '../combatOdds'
 import {
@@ -51,7 +51,7 @@ type Opening = {
 }
 
 function ownNeighbors(view: PlayerView, me: PlayerId, target: TerritoryId): TerritoryId[] {
-  return neighborsOf(target).filter((id) => ownerOf(view, id) === me)
+  return neighborsOf(view, target).filter((id) => ownerOf(view, id) === me)
 }
 
 function bestOrigin(view: PlayerView, me: PlayerId, target: TerritoryId, extraArmies: number) {
@@ -95,7 +95,7 @@ function priorityOf(view: PlayerView, me: PlayerId, target: TerritoryId, extraAr
 }
 
 function openings(view: PlayerView, me: PlayerId, extraArmies: number): Opening[] {
-  return classicMap.territoryIds.flatMap((target) => {
+  return mapOf(view).territoryIds.flatMap((target) => {
     const priority = priorityOf(view, me, target, extraArmies)
     const best = priority === 0 ? undefined : bestOrigin(view, me, target, extraArmies)
     return best === undefined || best.probability < PRIORITY_THRESHOLD ? [] : [{ ...best, target, priority }]
@@ -156,8 +156,9 @@ function needsCardsForOpening(view: PlayerView, me: PlayerId, armies: number): b
 
 function blockingClaim(view: PlayerView, me: PlayerId): TerritoryId | undefined {
   const free = new Set(freeTerritories(view))
-  return classicMap.continentIds
-    .map((continentId) => classicMap.continents[continentId]?.territories ?? [])
+  const map = mapOf(view)
+  return map.continentIds
+    .map((continentId) => map.continents[continentId]?.territories ?? [])
     .flatMap((territories) => {
       const missing = territories.filter((id) => free.has(id))
       const owners = new Set(territories.flatMap((id) => (free.has(id) ? [] : [ownerOf(view, id)])))

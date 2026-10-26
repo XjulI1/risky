@@ -1,11 +1,33 @@
-import { AI_LEVELS, DEFAULT_SETTINGS, type AiLevel, type GameSettings, type PlayerConfig, type PlayerControl } from '../engine'
+import {
+  AI_LEVELS,
+  createGame,
+  DEFAULT_SETTINGS,
+  type CreateGameResult,
+  type AiLevel,
+  type GameSettings,
+  type MapId,
+  type PlayerConfig,
+  type PlayerControl,
+} from '../engine'
 
 export { AI_LEVELS }
 
-/** Players and rules of a game, without the random seed: enough to start it again. */
+/** Players, map and rules of a game, without the random seed: enough to start it again. */
 export type GameSetup = {
   players: PlayerConfig[]
   settings: GameSettings
+  mapId: MapId
+}
+
+/** The maps offered by the form, in their order, with their name. */
+export const MAP_CHOICES: readonly { id: MapId; label: string }[] = [
+  { id: 'classic', label: 'Monde' },
+  { id: 'france', label: 'France' },
+]
+
+/** Creates the game described by `setup`, on its map, with `seed`: for a new game as for « Rejouer ». */
+export function gameFromSetup(setup: GameSetup, seed: number): CreateGameResult {
+  return createGame({ players: setup.players, settings: setup.settings, mapId: setup.mapId, seed })
 }
 
 /** Six player colors, all distinct from the grey of the neutral army. */
@@ -76,7 +98,7 @@ function newPlayer(
   return { id, name, color, ...control }
 }
 
-/** The form as it opens: a human player, two normal AIs named at random and the default rules. */
+/** The form as it opens: a human player, two normal AIs named at random, the classic map and the default rules. */
 export function defaultSetup(random: RandomSource = Math.random): GameSetup {
   const players = [0, 1, 2].reduce<PlayerConfig[]>(
     (created, index) => [
@@ -85,7 +107,7 @@ export function defaultSetup(random: RandomSource = Math.random): GameSetup {
     ],
     [],
   )
-  return { players, settings: { ...DEFAULT_SETTINGS } }
+  return { players, settings: { ...DEFAULT_SETTINGS }, mapId: 'classic' }
 }
 
 /** Adds a normal AI with the next free number and color and a free historical name, up to 6 players. */

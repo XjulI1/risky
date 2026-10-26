@@ -1,4 +1,4 @@
-import { classicMap, isCapital, type PlayerId, type TerritoryId } from '../engine'
+import { isCapital, type PlayerId, type TerritoryId } from '../engine'
 import { armiesOn, isBorder, neighborsOf, opponentsOf, ownerOf, territoriesOwnedBy, threat } from './evaluation'
 import type { PlayerView } from './playerView'
 import { attackOptions, maxBy, type AttackOption, type Deployment } from './strategy'
@@ -37,7 +37,7 @@ export function ownCapital(view: PlayerView, me: PlayerId): TerritoryId | null {
 
 function opponentArmiesAround(view: PlayerView, me: PlayerId, territory: TerritoryId): number {
   const opponents = new Set(opponentsOf(view, me))
-  return neighborsOf(territory)
+  return neighborsOf(view, territory)
     .filter((neighbor) => opponents.has(ownerOf(view, neighbor) ?? ''))
     .reduce((sum, neighbor) => sum + armiesOn(view, neighbor), 0)
 }
@@ -68,12 +68,12 @@ export function lastMissingCapital(view: PlayerView, me: PlayerId): TerritoryId 
   return missing.length === 1 ? (missing[0] ?? null) : null
 }
 
-function distancesFrom(origin: TerritoryId): Map<TerritoryId, number> {
+function distancesFrom(view: PlayerView, origin: TerritoryId): Map<TerritoryId, number> {
   const distances = new Map([[origin, 0]])
   const queue = [origin]
   for (let territory = queue.shift(); territory !== undefined; territory = queue.shift()) {
     const distance = (distances.get(territory) ?? 0) + 1
-    for (const neighbor of classicMap.territories[territory]?.neighbors ?? []) {
+    for (const neighbor of neighborsOf(view, territory)) {
       if (!distances.has(neighbor)) {
         distances.set(neighbor, distance)
         queue.push(neighbor)
@@ -89,7 +89,7 @@ export function lastCapitalStaging(view: PlayerView, me: PlayerId): TerritoryId 
   if (target === null) {
     return null
   }
-  const distances = distancesFrom(target)
+  const distances = distancesFrom(view, target)
   const distance = (territory: TerritoryId) => distances.get(territory) ?? Infinity
   const closest = Math.min(...territoriesOwnedBy(view, me).map(distance))
   return maxBy(

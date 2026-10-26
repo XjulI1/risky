@@ -8,6 +8,7 @@ describe('CapitalLostAlert', () => {
       props: {
         player: { id: 'p1', name: 'Alice', color: '#d64541', kind: 'human', isNeutral: false, eliminated: false },
         territory: 'egypt',
+        mapId: 'classic',
       },
     })
     expect(wrapper.get('[role="alert"]').text()).toContain('Votre capitale Égypte est tombée')

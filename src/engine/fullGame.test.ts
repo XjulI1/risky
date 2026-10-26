@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { applyAction } from './index'
-import { classicMap } from './maps/classic'
 import { attackOrigins, attackTargets, tradeableSets } from './queries'
-import { currentPlayer, territoriesOf } from './state'
+import { currentPlayer, mapOf, territoriesOf } from './state'
 import { createTestGame } from './testUtils'
-import type { Action, GameEvent, GameState, TerritoryId } from './types'
+import type { Action, GameConfig, GameEvent, GameState, TerritoryId } from './types'
 
 const MAX_ACTIONS = 20000
 
@@ -17,7 +16,7 @@ function strongest(state: GameState, territories: TerritoryId[]): TerritoryId | 
 }
 
 function facesEnemy(state: GameState, playerId: string, territory: TerritoryId): boolean {
-  return (classicMap.territories[territory]?.neighbors ?? []).some(
+  return (mapOf(state).territories[territory]?.neighbors ?? []).some(
     (neighbor) => state.territories[neighbor]?.owner !== playerId,
   )
 }
@@ -84,8 +83,8 @@ function armyDelta(events: GameEvent[]): number {
   }, 0)
 }
 
-function playToTheEnd(seed: number): { state: GameState; actions: number } {
-  let state = createTestGame(3, { seed })
+function playToTheEnd(seed: number, config: Partial<GameConfig> = {}): { state: GameState; actions: number } {
+  let state = createTestGame(3, { seed, ...config })
   let actions = 0
   while (state.phase.kind !== 'gameOver') {
     if (actions >= MAX_ACTIONS) {
@@ -118,5 +117,25 @@ describe('full simulated game', () => {
 
   it.each([1, 7, 42, 99])('also finishes with seed %i', (seed) => {
     expect(playToTheEnd(seed).state.winner).not.toBeNull()
+  })
+})
+
+describe('full simulated game on the France map', () => {
+  it('reaches a victory by domination', () => {
+    const { state } = playToTheEnd(2026, { mapId: 'france' })
+    expect(state.mapId).toBe('france')
+    expect(territoriesOf(state, state.winner ?? '')).toHaveLength(42)
+  })
+
+  it('reaches a victory with secret missions', () => {
+    const { state } = playToTheEnd(2026, { mapId: 'france', settings: { secretMissions: true } })
+    expect(state.winner).not.toBeNull()
+    expect(state.missions).not.toBeNull()
+  })
+
+  it('reaches a victory in the capitals mode', () => {
+    const { state } = playToTheEnd(2026, { mapId: 'france', settings: { capitals: true } })
+    expect(state.winner).not.toBeNull()
+    expect(state.capitals).not.toBeNull()
   })
 })

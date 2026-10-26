@@ -1,4 +1,4 @@
-import { classicMap, tradeValue, type GameState, type PlayerId } from '../../engine'
+import { mapOf, tradeValue, type GameState, type PlayerId } from '../../engine'
 
 const INCOME_WEIGHT = 3
 const TERRITORIES_PER_ARMY = 3
@@ -19,8 +19,9 @@ function armiesOf(state: GameState, playerId: PlayerId): number {
  */
 function incomeOf(state: GameState, playerId: PlayerId): number {
   const territories = Object.values(state.territories).filter((territory) => territory.owner === playerId).length
-  const continentBonus = classicMap.continentIds.reduce((sum, continentId) => {
-    const continent = classicMap.continents[continentId]
+  const map = mapOf(state)
+  const continentBonus = map.continentIds.reduce((sum, continentId) => {
+    const continent = map.continents[continentId]
     const held = continent?.territories.every((id) => state.territories[id]?.owner === playerId) ?? false
     return held && continent !== undefined ? sum + continent.bonus : sum
   }, 0)

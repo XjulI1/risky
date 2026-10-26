@@ -31,7 +31,7 @@ function savedGame(overrides: Partial<SavedGame> = {}): SavedGame {
     formatVersion: SAVE_FORMAT_VERSION,
     savedAt: '2026-10-23T08:30:00.000Z',
     status: 'inProgress',
-    creation: { players, settings: { ...DEFAULT_SETTINGS } },
+    creation: { players, settings: { ...DEFAULT_SETTINGS }, mapId: 'classic' },
     engineState: state,
     journal: [{ turn: 1, playerId: 'p1', text: 'Tour 1 — Alice', header: true, details: [] }],
     statistics: initialStatistics(state, 1),
@@ -75,7 +75,7 @@ describe('saved game', () => {
   it('keeps the missions of a game saved then resumed', () => {
     const storage = memoryStorage()
     const state = engineState(true)
-    const game = savedGame({ engineState: state, creation: { players, settings: { ...DEFAULT_SETTINGS, secretMissions: true } } })
+    const game = savedGame({ engineState: state, creation: { players, settings: { ...DEFAULT_SETTINGS, secretMissions: true }, mapId: 'classic' } })
     writeSavedGame(game, storage)
     const loaded = loadSavedGame(storage)
     expect(loaded.kind === 'saved' && loaded.game.engineState.missions).toEqual(state.missions)
@@ -111,6 +111,38 @@ describe('saved game', () => {
     const unknownOwner = structuredClone(game)
     unknownOwner.engineState.territories.peru = { owner: 'p9', armies: 3 }
     expect(loadSavedGame(storageWith(unknownOwner))).toEqual({ kind: 'unreadable' })
+  })
+
+  it('resumes on the classic map a save written before the choice of map', () => {
+    const game: { creation: Record<string, unknown> } = structuredClone(savedGame())
+    delete game.creation.mapId
+    const loaded = loadSavedGame(storageWith(game))
+    expect(loaded.kind === 'saved' && loaded.game.creation.mapId).toBe('classic')
+    expect(loaded.kind === 'saved' && loaded.game.engineState.mapId).toBe('classic')
+  })
+
+  it('treats an engine state on an unknown map as unreadable', () => {
+    const game = savedGame()
+    expect(loadSavedGame(storageWith({ ...game, engineState: { ...game.engineState, mapId: 'atlantide' } }))).toEqual({
+      kind: 'unreadable',
+    })
+    const withoutMap: { engineState: Record<string, unknown> } = structuredClone(game)
+    delete withoutMap.engineState.mapId
+    expect(loadSavedGame(storageWith(withoutMap))).toEqual({ kind: 'unreadable' })
+  })
+
+  it('treats a save naming an unknown map in its creation as unreadable', () => {
+    const game = savedGame()
+    expect(loadSavedGame(storageWith({ ...game, creation: { ...game.creation, mapId: 'atlantide' } }))).toEqual({
+      kind: 'unreadable',
+    })
+  })
+
+  it('treats a classic save holding the territories of another map as unreadable', () => {
+    const game = structuredClone(savedGame())
+    const { peru, ...territories } = game.engineState.territories
+    game.engineState.territories = { ...territories, paris: peru ?? { owner: 'p1', armies: 1 } }
+    expect(loadSavedGame(storageWith(game))).toEqual({ kind: 'unreadable' })
   })
 
   it('reports a failed write, such as a full storage, without throwing', () => {

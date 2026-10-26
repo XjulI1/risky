@@ -1,4 +1,4 @@
-import { classicMap, type PlayerId } from '../engine'
+import { mapOf, type PlayerId } from '../engine'
 import { armiesOn, holdsContinent, opponentsOf, ownerOf, territoriesOwnedBy } from './evaluation'
 import type { PlayerView } from './playerView'
 import { attackOptions, inHeldContinent, maxBy, type AttackOption } from './strategy'
@@ -20,9 +20,10 @@ const BREAK_BONUS = 1
 export function visibleStrength(view: PlayerView, playerId: PlayerId): number {
   const territories = territoriesOwnedBy(view, playerId)
   const armies = territories.reduce((sum, territory) => sum + armiesOn(view, territory), 0)
-  const continentBonus = classicMap.continentIds.reduce(
+  const map = mapOf(view)
+  const continentBonus = map.continentIds.reduce(
     (sum, continentId) =>
-      holdsContinent(view, playerId, continentId) ? sum + (classicMap.continents[continentId]?.bonus ?? 0) : sum,
+      holdsContinent(view, playerId, continentId) ? sum + (map.continents[continentId]?.bonus ?? 0) : sum,
     0,
   )
   const income = Math.max(MIN_REINFORCEMENT, Math.floor(territories.length / TERRITORIES_PER_ARMY)) + continentBonus

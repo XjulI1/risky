@@ -1,21 +1,13 @@
-import { classicMap } from './maps/classic'
 import { mapOf, playerById } from './state'
-import type { ContinentId, Mission, Player, PlayerId, PublicState } from './types'
+import type { ContinentId, ContinentTerm, GameMap, Mission, Player, PlayerId, PublicState } from './types'
 
 /** The mission given instead of an elimination that can no longer be carried out. */
 export const CONQUER_24_TERRITORIES: Mission = { kind: 'territories', count: 24, minArmies: 1 }
 
-/** The 8 missions of the deck that do not depend on the players, in the order of the rules. */
-export const GENERAL_MISSIONS: readonly Mission[] = [
-  { kind: 'continents', required: ['northAmerica', 'africa'], extraContinents: 0 },
-  { kind: 'continents', required: ['northAmerica', 'australia'], extraContinents: 0 },
-  { kind: 'continents', required: ['asia', 'southAmerica'], extraContinents: 0 },
-  { kind: 'continents', required: ['asia', 'africa'], extraContinents: 0 },
-  { kind: 'continents', required: ['europe', 'southAmerica'], extraContinents: 1 },
-  { kind: 'continents', required: ['europe', 'australia'], extraContinents: 1 },
-  CONQUER_24_TERRITORIES,
-  { kind: 'territories', count: 18, minArmies: 2 },
-]
+/** The missions of the deck that do not depend on the players: the continent missions of `map`, then the two territory counts. */
+export function generalMissions(map: GameMap): Mission[] {
+  return [...map.continentMissions, CONQUER_24_TERRITORIES, { kind: 'territories', count: 18, minArmies: 2 }]
+}
 
 /** Territories of a required continent held by the player. */
 export type ContinentProgress = {
@@ -36,9 +28,9 @@ export type MissionProgress =
   | { kind: 'territories'; count: number; minArmies: number; owned: number; qualifying: number; accomplished: boolean }
   | { kind: 'eliminate'; target: PlayerId; remaining: number; accomplished: boolean }
 
-/** The general missions followed by one elimination mission per player, before shuffling. */
-export function missionDeck(playerIds: readonly PlayerId[]): Mission[] {
-  return [...GENERAL_MISSIONS, ...playerIds.map((target): Mission => ({ kind: 'eliminate', target }))]
+/** The general missions of `map` followed by one elimination mission per player, before shuffling. */
+export function missionDeck(map: GameMap, playerIds: readonly PlayerId[]): Mission[] {
+  return [...generalMissions(map), ...playerIds.map((target): Mission => ({ kind: 'eliminate', target }))]
 }
 
 function listed(items: string[]): string {
@@ -46,16 +38,17 @@ function listed(items: string[]): string {
   return items.length < 2 ? last : `${items.slice(0, -1).join(', ')} et ${last}`
 }
 
-function continentLabel(continent: ContinentId): string {
-  return `l'${classicMap.continents[continent]?.name ?? continent}`
+/** « un troisième continent au choix », in the words of the map. */
+export function extraContinentText(term: ContinentTerm): string {
+  return term.feminine ? `une troisième ${term.singular} au choix` : `un troisième ${term.singular} au choix`
 }
 
-/** French wording of a mission, as shown to its holder, in the journal and on the end screen. */
-export function missionText(mission: Mission, players: readonly Pick<Player, 'id' | 'name'>[]): string {
+/** French wording of a mission on `map`, as shown to its holder, in the journal and on the end screen. */
+export function missionText(mission: Mission, players: readonly Pick<Player, 'id' | 'name'>[], map: GameMap): string {
   switch (mission.kind) {
     case 'continents': {
-      const continents = mission.required.map(continentLabel)
-      const extras = Array.from({ length: mission.extraContinents }, () => 'un troisième continent au choix')
+      const continents = mission.required.map((continent) => map.continents[continent]?.nameWithArticle ?? continent)
+      const extras = Array.from({ length: mission.extraContinents }, () => extraContinentText(map.continentTerm))
       return `Conquérir ${listed([...continents, ...extras])}`
     }
     case 'territories':

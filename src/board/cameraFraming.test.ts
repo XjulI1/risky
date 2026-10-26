@@ -9,7 +9,10 @@ import {
   fitDistance,
   maxZoomDistance,
 } from './cameraFraming'
-import { MAP_WORLD_DEPTH, MAP_WORLD_WIDTH } from './geometry/mapGeometry'
+import { boardMapFor } from './maps'
+
+const board = boardMapFor('classic')
+const { width: MAP_WORLD_WIDTH, depth: MAP_WORLD_DEPTH } = board.size
 
 const corners = [
   new Vector3(-MAP_WORLD_WIDTH / 2, 0, -MAP_WORLD_DEPTH / 2),
@@ -43,7 +46,7 @@ describe('fitDistance', () => {
     ['1920 × 1080', 1920 / 1080],
     ['1024 × 768', 1024 / 768],
   ])('frames the whole map in a %s window, tightly', (_, aspect) => {
-    const distance = fitDistance(aspect)
+    const distance = fitDistance(aspect, board.size)
     expect(fits(projectedCorners(aspect, distance))).toBe(true)
     expect(fits(projectedCorners(aspect, distance * 0.85))).toBe(false)
   })
@@ -51,22 +54,22 @@ describe('fitDistance', () => {
 
 describe('clampTarget', () => {
   it('keeps a target inside the map unchanged', () => {
-    expect(clampTarget({ x: 10, z: -5 })).toEqual({ x: 10, z: -5 })
+    expect(clampTarget({ x: 10, z: -5 }, board.size)).toEqual({ x: 10, z: -5 })
   })
 
   it('brings a target back to the map edge', () => {
-    expect(clampTarget({ x: 500, z: -500 })).toEqual({ x: MAP_WORLD_WIDTH / 2, z: -MAP_WORLD_DEPTH / 2 })
+    expect(clampTarget({ x: 500, z: -500 }, board.size)).toEqual({ x: MAP_WORLD_WIDTH / 2, z: -MAP_WORLD_DEPTH / 2 })
   })
 })
 
 describe('maxZoomDistance', () => {
   it('lets an average territory fill about a third of the view height', () => {
-    const distance = maxZoomDistance()
+    const distance = maxZoomDistance(averageTerritorySize(board.geometry))
     const visibleHeight = 2 * distance * Math.tan(((CAMERA_FOV / 2) * Math.PI) / 180)
-    expect(averageTerritorySize() / visibleHeight).toBeCloseTo(1 / 3, 1)
+    expect(averageTerritorySize(board.geometry) / visibleHeight).toBeCloseTo(1 / 3, 1)
   })
 
   it('is closer than the framing distance', () => {
-    expect(maxZoomDistance()).toBeLessThan(fitDistance(1024 / 768))
+    expect(maxZoomDistance(board.averageTerritorySize)).toBeLessThan(fitDistance(1024 / 768, board.size))
   })
 })

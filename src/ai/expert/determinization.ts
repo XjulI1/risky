@@ -1,4 +1,4 @@
-import { buildDeck, classicMap, type Card, type GameState, type PlayerId } from '../../engine'
+import { buildDeck, mapOf, type Card, type GameState, type PlayerId } from '../../engine'
 import type { AiRandom } from '../aiRandom'
 import type { PlayerView } from '../playerView'
 
@@ -31,7 +31,7 @@ function dealHands(view: PlayerView, unknown: Card[]): Record<PlayerId, Card[]> 
 export function determinize(view: PlayerView, random: AiRandom): GameState {
   const known = new Set(view.hand.map((card) => card.id))
   const unknown = shuffled(
-    buildDeck(classicMap).filter((card) => !known.has(card.id)),
+    buildDeck(mapOf(view)).filter((card) => !known.has(card.id)),
     random,
   )
   const hands = dealHands(view, unknown)

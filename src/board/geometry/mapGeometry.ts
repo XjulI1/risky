@@ -1,5 +1,4 @@
 import { Shape } from 'three'
-import geometry from '../../../data/maps/classic/territories.json'
 import type { TerritoryId } from '../../engine'
 import { parsePathData, type SubPath } from './pathData'
 import type { MapPoint } from './polygon'
@@ -11,23 +10,52 @@ export type TerritoryGeometry = {
   outlines: MapPoint[][]
 }
 
-const [VIEW_MIN_X, VIEW_MIN_Y, VIEW_WIDTH, VIEW_HEIGHT] = geometry.viewBox as [number, number, number, number]
+/** The outline of one territory in the SVG data of a map. */
+export type RawTerritory = {
+  id: TerritoryId
+  d: string
+}
+
+/** The territory outlines of a map, as drawn in its SVG view box. */
+export type RawTerritories = {
+  viewBox: number[]
+  territories: RawTerritory[]
+}
+
+/** Width and depth (north to south) of a board, in world units. */
+export type WorldSize = {
+  width: number
+  depth: number
+}
+
+/** Converts SVG map coordinates to the world plane. */
+export type SvgToWorld = (x: number, y: number) => MapPoint
+
 const CURVE_SEGMENTS = 8
 
-/** Width of the board in world units. */
+/** Width of every board in world units. */
 export const MAP_WORLD_WIDTH = 100
 
-/** Depth (north to south) of the board in world units. */
-export const MAP_WORLD_DEPTH = (VIEW_HEIGHT * MAP_WORLD_WIDTH) / VIEW_WIDTH
+function viewBoxOf(viewBox: readonly number[]): [number, number, number, number] {
+  const [minX = 0, minY = 0, width = 1, height = 1] = viewBox
+  return [minX, minY, width, height]
+}
 
-const SCALE = MAP_WORLD_WIDTH / VIEW_WIDTH
+/** Size of the board drawn in `viewBox`: 100 units wide, as deep as the view box ratio makes it. */
+export function worldSize(viewBox: readonly number[]): WorldSize {
+  const [, , width, height] = viewBoxOf(viewBox)
+  return { width: MAP_WORLD_WIDTH, depth: (height * MAP_WORLD_WIDTH) / width }
+}
 
-/** Converts SVG map coordinates to the world plane, centered on the origin, SVG y becoming world z. */
-export function svgToWorld(x: number, y: number): MapPoint {
-  return {
-    x: (x - VIEW_MIN_X) * SCALE - MAP_WORLD_WIDTH / 2,
-    z: (y - VIEW_MIN_Y) * SCALE - MAP_WORLD_DEPTH / 2,
-  }
+/** The conversion of SVG coordinates of `viewBox` to the world plane, centered on the origin, SVG y becoming world z. */
+export function svgProjection(viewBox: readonly number[]): SvgToWorld {
+  const [minX, minY, width] = viewBoxOf(viewBox)
+  const { depth } = worldSize(viewBox)
+  const scale = MAP_WORLD_WIDTH / width
+  return (x, y) => ({
+    x: (x - minX) * scale - MAP_WORLD_WIDTH / 2,
+    z: (y - minY) * scale - depth / 2,
+  })
 }
 
 function cubicPoint(p0: number, p1: number, p2: number, p3: number, t: number): number {
@@ -35,7 +63,7 @@ function cubicPoint(p0: number, p1: number, p2: number, p3: number, t: number): 
   return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3
 }
 
-function toShape(subPath: SubPath): Shape {
+function toShape(subPath: SubPath, svgToWorld: SvgToWorld): Shape {
   const shape = new Shape()
   for (const command of subPath) {
     const end = svgToWorld(command.x, command.y)
@@ -53,7 +81,7 @@ function toShape(subPath: SubPath): Shape {
   return shape
 }
 
-function toOutline(subPath: SubPath): MapPoint[] {
+function toOutline(subPath: SubPath, svgToWorld: SvgToWorld): MapPoint[] {
   const outline: MapPoint[] = []
   let previous = { x: 0, y: 0 }
   for (const command of subPath) {
@@ -75,14 +103,22 @@ function toOutline(subPath: SubPath): MapPoint[] {
   return outline
 }
 
-function buildMapGeometry(): Record<TerritoryId, TerritoryGeometry> {
+/** Shapes and outlines of the territories of a map, keyed by engine territory id. */
+export function buildMapGeometry(
+  territories: readonly RawTerritory[],
+  svgToWorld: SvgToWorld,
+): Record<TerritoryId, TerritoryGeometry> {
   return Object.fromEntries(
-    geometry.territories.map(({ id, d }) => {
+    territories.map(({ id, d }) => {
       const subPaths = parsePathData(d)
-      return [id, { id, shapes: subPaths.map(toShape), outlines: subPaths.map(toOutline) }]
+      return [
+        id,
+        {
+          id,
+          shapes: subPaths.map((subPath) => toShape(subPath, svgToWorld)),
+          outlines: subPaths.map((subPath) => toOutline(subPath, svgToWorld)),
+        },
+      ]
     }),
   )
 }
-
-/** Shapes and outlines of the 42 territories of the classic board, keyed by engine territory id. */
-export const mapGeometry: Record<TerritoryId, TerritoryGeometry> = buildMapGeometry()

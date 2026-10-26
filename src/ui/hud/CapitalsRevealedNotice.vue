@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { classicMap, type Player, type PlayerId, type TerritoryId } from '../../engine'
+import { mapById, type MapId, type Player, type PlayerId, type TerritoryId } from '../../engine'
 
 const props = defineProps<{
   capitals: Record<PlayerId, TerritoryId>
   players: Player[]
+  mapId: MapId
 }>()
 
 const emit = defineEmits<{
@@ -14,7 +15,7 @@ const emit = defineEmits<{
 const rows = computed(() =>
   props.players.flatMap((player) => {
     const territory = props.capitals[player.id]
-    return territory === undefined ? [] : [{ player, territory: classicMap.territories[territory]?.name ?? territory }]
+    return territory === undefined ? [] : [{ player, territory: mapById(props.mapId).territories[territory]?.name ?? territory }]
   }),
 )
 </script>

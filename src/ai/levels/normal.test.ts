@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { classicMap, GENERAL_MISSIONS, type GameState, type Mission } from '../../engine'
+import { classicMap, generalMissions, type GameState, type Mission } from '../../engine'
 import { isBorder } from '../evaluation'
 import { playerView } from '../playerView'
 import { decide, mustEliminateCarol, newAiGame, playWhile, scenario, territoryCard, type Scenario } from '../testScenarios'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 function indonesiaAgainstSiam(originArmies: number, siamArmies: number) {
   return scenario({

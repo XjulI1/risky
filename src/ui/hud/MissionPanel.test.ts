@@ -4,12 +4,14 @@ import {
   classicMap,
   CONQUER_24_TERRITORIES,
   createGame,
-  GENERAL_MISSIONS,
+  generalMissions,
   type GameState,
   type Mission,
   type PlayerControl,
 } from '../../engine'
 import MissionPanel from './MissionPanel.vue'
+
+const GENERAL_MISSIONS = generalMissions(classicMap)
 
 const HUMAN: PlayerControl = { kind: 'human' }
 const AI: PlayerControl = { kind: 'ai', level: 'normal' }

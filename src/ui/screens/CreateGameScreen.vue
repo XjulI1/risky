@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { createGame, type AiLevel, type GameSettings, type GameState } from '../../engine'
+import type { AiLevel, GameSettings, GameState, MapId } from '../../engine'
 import {
   addPlayer,
   AI_LEVEL_LABELS,
@@ -10,8 +10,10 @@ import {
   chooseControl,
   chooseVariant,
   defaultSetup,
+  gameFromSetup,
   isLevelAvailable,
   levelForSettings,
+  MAP_CHOICES,
   MAX_FORM_PLAYERS,
   MAX_NAME_LENGTH,
   MIN_FORM_PLAYERS,
@@ -62,6 +64,10 @@ function addAiPlayer() {
   setup.value.players = applyAiLevel(addPlayer(setup.value.players), aiLevel.value)
 }
 
+function updateMap(mapId: MapId) {
+  setup.value.mapId = mapId
+}
+
 function updateSetting<K extends keyof GameSettings>(key: K, value: GameSettings[K]) {
   setup.value.settings = { ...setup.value.settings, [key]: value }
 }
@@ -80,12 +86,12 @@ function removePlayerRow(id: string) {
 
 function start() {
   const players = setup.value.players.map((player) => ({ ...player, name: player.name.trim() }))
-  const result = createGame({ players, settings: setup.value.settings, seed: Date.now() })
+  const result = gameFromSetup({ ...setup.value, players }, Date.now())
   if (!result.ok) {
     engineError.value = result.error.message
     return
   }
-  emit('start', result.state, { players, settings: { ...setup.value.settings } })
+  emit('start', result.state, { players, settings: { ...setup.value.settings }, mapId: setup.value.mapId })
 }
 </script>
 
@@ -217,12 +223,116 @@ function start() {
             Mode classique uniquement pour le niveau Expert
           </p>
         </div>
+        <div class="grid gap-4 pt-2 sm:grid-cols-2">
+          <label
+            class="variant-card"
+            :class="[
+              setup.settings.secretMissions ? 'border-accent' : 'border-transparent',
+              missionsAllowed ? 'cursor-pointer hover:border-parchment/30' : 'cursor-not-allowed opacity-60',
+            ]"
+          >
+            <span class="variant-icon">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="5"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="1.5"
+                />
+              </svg>
+            </span>
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span class="font-semibold">Missions secrètes</span>
+              <span class="text-sm text-parchment/70">
+                {{ missionsAllowed ? 'Un objectif secret par joueur' : '3 joueurs minimum' }}
+              </span>
+            </span>
+            <input
+              data-testid="setting-secretMissions"
+              type="checkbox"
+              class="size-5 shrink-0 accent-accent"
+              :checked="setup.settings.secretMissions"
+              :disabled="!missionsAllowed"
+              @change="updateVariant('secretMissions', ($event.target as HTMLInputElement).checked)"
+            >
+          </label>
+          <label
+            class="variant-card cursor-pointer"
+            :class="setup.settings.capitals ? 'border-accent' : 'border-transparent hover:border-parchment/30'"
+          >
+            <span class="variant-icon">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M3 21h18" />
+                <path d="M5 21V10l2-1V5h2v2h2V5h2v2h2V5h2v4l2 1v11" />
+                <path d="M10 21v-4a2 2 0 0 1 4 0v4" />
+              </svg>
+            </span>
+            <span class="flex min-w-0 flex-1 flex-col">
+              <span class="font-semibold">Mode capitales</span>
+              <span class="text-sm text-parchment/70">Tenir toutes les capitales</span>
+            </span>
+            <input
+              data-testid="setting-capitals"
+              type="checkbox"
+              class="size-5 shrink-0 accent-accent"
+              :checked="setup.settings.capitals"
+              @change="updateVariant('capitals', ($event.target as HTMLInputElement).checked)"
+            >
+          </label>
+        </div>
         <p
           v-if="withNeutral"
           class="text-sm text-parchment/80"
         >
           À 2 joueurs, une armée neutre est ajoutée : elle occupe 14 territoires et se défend, sans jouer.
         </p>
+      </section>
+
+      <section class="space-y-3">
+        <h2
+          id="map-title"
+          class="text-lg font-semibold"
+        >
+          Carte
+        </h2>
+        <div
+          role="radiogroup"
+          aria-labelledby="map-title"
+          class="flex gap-2"
+        >
+          <label
+            v-for="choice in MAP_CHOICES"
+            :key="choice.id"
+            class="flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 bg-ink px-3 font-semibold"
+            :class="setup.mapId === choice.id ? 'border-accent' : 'border-transparent hover:border-parchment/30'"
+          >
+            <input
+              :data-testid="`map-${choice.id}`"
+              type="radio"
+              name="map"
+              class="accent-accent"
+              :value="choice.id"
+              :checked="setup.mapId === choice.id"
+              @change="updateMap(choice.id)"
+            >
+            {{ choice.label }}
+          </label>
+        </div>
       </section>
 
       <section class="grid gap-4 sm:grid-cols-2">
@@ -310,76 +420,6 @@ function start() {
             <option value="connected">Par chemin de territoires possédés</option>
             <option value="adjacent">Vers un territoire voisin</option>
           </select>
-        </label>
-        <label
-          class="variant-card"
-          :class="[
-            setup.settings.secretMissions ? 'border-accent' : 'border-transparent',
-            missionsAllowed ? 'cursor-pointer hover:border-parchment/30' : 'cursor-not-allowed opacity-60',
-          ]"
-        >
-          <span class="variant-icon">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="5"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="1.5"
-              />
-            </svg>
-          </span>
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span class="font-semibold">Missions secrètes</span>
-            <span class="text-sm text-parchment/70">
-              {{ missionsAllowed ? 'Un objectif secret par joueur' : '3 joueurs minimum' }}
-            </span>
-          </span>
-          <input
-            data-testid="setting-secretMissions"
-            type="checkbox"
-            class="size-5 shrink-0 accent-accent"
-            :checked="setup.settings.secretMissions"
-            :disabled="!missionsAllowed"
-            @change="updateVariant('secretMissions', ($event.target as HTMLInputElement).checked)"
-          >
-        </label>
-        <label
-          class="variant-card cursor-pointer"
-          :class="setup.settings.capitals ? 'border-accent' : 'border-transparent hover:border-parchment/30'"
-        >
-          <span class="variant-icon">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M3 21h18" />
-              <path d="M5 21V10l2-1V5h2v2h2V5h2v2h2V5h2v4l2 1v11" />
-              <path d="M10 21v-4a2 2 0 0 1 4 0v4" />
-            </svg>
-          </span>
-          <span class="flex min-w-0 flex-1 flex-col">
-            <span class="font-semibold">Mode capitales</span>
-            <span class="text-sm text-parchment/70">Tenir toutes les capitales</span>
-          </span>
-          <input
-            data-testid="setting-capitals"
-            type="checkbox"
-            class="size-5 shrink-0 accent-accent"
-            :checked="setup.settings.capitals"
-            @change="updateVariant('capitals', ($event.target as HTMLInputElement).checked)"
-          >
         </label>
       </section>
 

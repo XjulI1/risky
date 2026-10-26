@@ -1,6 +1,7 @@
 import { MOUSE, TOUCH, type PerspectiveCamera } from 'three'
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js'
 import { cameraPosition, clampTarget, fitDistance, maxZoomDistance } from './cameraFraming'
+import type { BoardMap } from './maps'
 
 /** Camera controls of the board: pan and zoom only, bounded to the map. */
 export type BoardCamera = {
@@ -14,8 +15,8 @@ function aspectOf(element: HTMLElement): number {
   return element.clientHeight === 0 ? 16 / 9 : element.clientWidth / element.clientHeight
 }
 
-/** Sets up map-style controls on `camera`: no rotation, zoom towards the cursor, target kept on the map. */
-export function useBoardCamera(camera: PerspectiveCamera, element: HTMLElement): BoardCamera {
+/** Sets up map-style controls on `camera`: no rotation, zoom towards the cursor, target kept on the map of `board`. */
+export function useBoardCamera(camera: PerspectiveCamera, element: HTMLElement, board: BoardMap): BoardCamera {
   const controls = new MapControls(camera, element)
   controls.enableRotate = false
   controls.screenSpacePanning = false
@@ -24,14 +25,14 @@ export function useBoardCamera(camera: PerspectiveCamera, element: HTMLElement):
   controls.dampingFactor = 0.12
   controls.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }
   controls.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }
-  controls.minDistance = maxZoomDistance()
+  controls.minDistance = maxZoomDistance(board.averageTerritorySize)
 
   const updateBounds = () => {
-    controls.maxDistance = fitDistance(aspectOf(element))
+    controls.maxDistance = fitDistance(aspectOf(element), board.size)
   }
 
   const keepTargetOnMap = () => {
-    const clamped = clampTarget({ x: controls.target.x, z: controls.target.z })
+    const clamped = clampTarget({ x: controls.target.x, z: controls.target.z }, board.size)
     const dx = clamped.x - controls.target.x
     const dz = clamped.z - controls.target.z
     if (dx !== 0 || dz !== 0) {

@@ -31,12 +31,13 @@ describe('borders', () => {
 
 describe('continents', () => {
   it('counts the territories of a continent reachable from outside', () => {
-    expect(continentEntries('australia')).toBe(1)
-    expect(continentEntries('southAmerica')).toBe(2)
-    expect(continentEntries('africa')).toBe(3)
-    expect(continentEntries('northAmerica')).toBe(3)
-    expect(continentEntries('europe')).toBe(4)
-    expect(continentEntries('asia')).toBe(5)
+    const VIEW = view({})
+    expect(continentEntries(VIEW, 'australia')).toBe(1)
+    expect(continentEntries(VIEW, 'southAmerica')).toBe(2)
+    expect(continentEntries(VIEW, 'africa')).toBe(3)
+    expect(continentEntries(VIEW, 'northAmerica')).toBe(3)
+    expect(continentEntries(VIEW, 'europe')).toBe(4)
+    expect(continentEntries(VIEW, 'asia')).toBe(5)
   })
 
   it('favors a continent that is almost complete', () => {

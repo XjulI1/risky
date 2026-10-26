@@ -2,8 +2,7 @@
 import { TresCanvas } from '@tresjs/core'
 import { DirectionalLight, PCFSoftShadowMap } from 'three'
 import { computed, ref } from 'vue'
-import continentLabels from '../../data/maps/classic/continent-labels.json'
-import { classicMap, type GameState, type TerritoryId } from '../engine'
+import { mapOf, type GameState, type TerritoryId } from '../engine'
 import ArmyPawn from './ArmyPawn.vue'
 import ArmyTransit from './ArmyTransit.vue'
 import BoardControls, { type HoveredTerritory } from './BoardControls.vue'
@@ -11,11 +10,8 @@ import CapitalMarker from './CapitalMarker.vue'
 import { boardViewModel, HIGHLIGHT_STYLES, type Highlights } from './boardViewModel'
 import { CAMERA_FOV } from './cameraFraming'
 import ContinentLabel from './ContinentLabel.vue'
-import { territoryAnchor } from './geometry/anchors'
-import { capitalLayout } from './geometry/capitalLayout'
-import { mapGeometry, svgToWorld } from './geometry/mapGeometry'
-import { seaRouteSegments, wrapStubs } from './geometry/seaRoutes'
 import { HOVER_LIFT } from './boardLayout'
+import { boardMapFor } from './maps'
 import OceanPlane from './OceanPlane.vue'
 import SeaLink from './SeaLink.vue'
 import TerritoryMesh from './TerritoryMesh.vue'
@@ -52,17 +48,19 @@ light.shadow.camera.top = SHADOW_EXTENT
 light.shadow.camera.bottom = -SHADOW_EXTENT
 light.shadow.bias = -0.0005
 
+const map = computed(() => mapOf(props.state))
+const board = computed(() => boardMapFor(props.state.mapId))
 const view = computed(() => boardViewModel(props.state, props.highlights ?? {}))
 const hovered = ref<HoveredTerritory | null>(null)
 const controls = ref<InstanceType<typeof BoardControls> | null>(null)
 
 function pawnPosition(id: TerritoryId) {
-  return props.capitals?.[id] === undefined ? territoryAnchor(id) : capitalLayout(id).pawn
+  return props.capitals?.[id] === undefined ? board.value.anchor(id) : board.value.capitalLayout(id).pawn
 }
 
 const territories = computed(() =>
-  classicMap.territoryIds.flatMap((id) => {
-    const geometry = mapGeometry[id]
+  map.value.territoryIds.flatMap((id) => {
+    const geometry = board.value.geometry[id]
     const territoryView = view.value[id]
     if (geometry === undefined || territoryView === undefined) {
       return []
@@ -75,25 +73,25 @@ const territories = computed(() =>
         geometry,
         view: territoryView,
         anchor: pawnPosition(id),
-        capital: capitalColor === undefined ? null : { color: capitalColor, position: capitalLayout(id).marker },
+        capital: capitalColor === undefined ? null : { color: capitalColor, position: board.value.capitalLayout(id).marker },
         lift: HIGHLIGHT_STYLES[territoryView.highlight].lift + hoverLift,
       },
     ]
   }),
 )
 
-const labelPositions: Record<string, number[]> = continentLabels
-
-const continents = classicMap.continentIds.flatMap((id) => {
-  const continent = classicMap.continents[id]
-  const [x, y] = labelPositions[id] ?? []
-  return continent === undefined || x === undefined || y === undefined
-    ? []
-    : [{ id, name: continent.name, bonus: continent.bonus, position: svgToWorld(x, y) }]
-})
+const continents = computed(() =>
+  map.value.continentIds.flatMap((id) => {
+    const continent = map.value.continents[id]
+    const position = board.value.continentLabels[id]
+    return continent === undefined || position === undefined
+      ? []
+      : [{ id, name: continent.name, bonus: continent.bonus, position }]
+  }),
+)
 
 const hoveredName = computed(() =>
-  hovered.value === null ? null : (classicMap.territories[hovered.value.id]?.name ?? null),
+  hovered.value === null ? null : (map.value.territories[hovered.value.id]?.name ?? null),
 )
 </script>
 
@@ -114,7 +112,7 @@ const hoveredName = computed(() =>
       <TresHemisphereLight :args="['#fff6e5', '#24485f', 1.1]" />
       <primitive :object="light" />
 
-      <OceanPlane />
+      <OceanPlane :size="board.size" />
 
       <TerritoryMesh
         v-for="territory in territories"
@@ -122,6 +120,7 @@ const hoveredName = computed(() =>
         :geometry="territory.geometry"
         :view="territory.view"
         :hovered="hovered?.id === territory.id"
+        :region-borders="board.regionBorders[territory.id] ?? []"
       />
 
       <template
@@ -144,13 +143,13 @@ const hoveredName = computed(() =>
       </template>
 
       <SeaLink
-        v-for="link in seaRouteSegments"
+        v-for="link in board.seaRoutes"
         :key="`${link.a}-${link.b}`"
         :from="link.from"
         :to="link.to"
       />
       <SeaLink
-        v-for="stub in wrapStubs"
+        v-for="stub in board.wrapStubs"
         :key="`wrap-${stub.territory}`"
         :from="stub.from"
         :to="stub.to"
@@ -174,7 +173,9 @@ const hoveredName = computed(() =>
       />
 
       <BoardControls
+        :key="board.id"
         ref="controls"
+        :board="board"
         @select="emit('select', $event)"
         @hover="hovered = $event"
       />

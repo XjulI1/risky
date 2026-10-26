@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { classicMap, type Card, type CardSymbol, type GameState, type PlayerId } from '../../engine'
+import { mapOf, type Card, type CardSymbol, type GameState, type PlayerId } from '../../engine'
 import { bestTrade, tradeOffer } from '../../game/cardAdvice'
 
 const props = defineProps<{
@@ -41,7 +41,7 @@ const offer = computed(() =>
 )
 
 function territoryName(card: Card): string {
-  return card.territory === null ? '' : (classicMap.territories[card.territory]?.name ?? card.territory)
+  return card.territory === null ? '' : (mapOf(props.state).territories[card.territory]?.name ?? card.territory)
 }
 
 function ownsTerritoryOf(card: Card): boolean {

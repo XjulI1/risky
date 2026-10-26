@@ -1,4 +1,4 @@
-import { classicMap, missionText, type GameEvent, type GameState, type Player, type PlayerId } from '../../engine'
+import { missionText, type GameEvent, type GameMap, type GameState, type Player, type PlayerId } from '../../engine'
 import { armiesLabel } from '../labels'
 import { presentationSteps } from '../presentation'
 
@@ -23,9 +23,6 @@ type SecretEvent = Extract<GameEvent, { type: 'missionConverted' | 'capitalChose
 const SECRET_EVENTS: ReadonlySet<GameEvent['type']> = new Set(['missionConverted', 'capitalChosen'])
 type JournaledEvent = Exclude<GameEvent, DiceRolled | SecretEvent>
 
-function territoryName(id: string): string {
-  return classicMap.territories[id]?.name ?? id
-}
 
 function lossesText(rolls: DiceRolled[], nameOf: (id: PlayerId) => string): string {
   const [first] = rolls
@@ -51,7 +48,12 @@ function rollLine(roll: DiceRolled, nameOf: (id: PlayerId) => string): string {
   return `${roll.attackerDice.join('-')} contre ${defenderDiceText(roll)} — ${lossesText([roll], nameOf)}`
 }
 
-function capitalsText(capitals: Record<PlayerId, string>, players: Player[], nameOf: (id: PlayerId) => string): string {
+function capitalsText(
+  capitals: Record<PlayerId, string>,
+  players: Player[],
+  nameOf: (id: PlayerId) => string,
+  territoryName: (id: string) => string,
+): string {
   const listed = players.flatMap((player) => {
     const territory = capitals[player.id]
     return territory === undefined ? [] : [`${nameOf(player.id)} — ${territoryName(territory)}`]
@@ -59,7 +61,12 @@ function capitalsText(capitals: Record<PlayerId, string>, players: Player[], nam
   return `Capitales : ${listed.join(', ')}`
 }
 
-function attackEntry(rolls: DiceRolled[], nameOf: (id: PlayerId) => string, turn: number): JournalEntry | null {
+function attackEntry(
+  rolls: DiceRolled[],
+  nameOf: (id: PlayerId) => string,
+  territoryName: (id: string) => string,
+  turn: number,
+): JournalEntry | null {
   const [first] = rolls
   if (first === undefined) {
     return null
@@ -74,7 +81,12 @@ function attackEntry(rolls: DiceRolled[], nameOf: (id: PlayerId) => string, turn
   }
 }
 
-function eventText(event: JournaledEvent, players: Player[], nameOf: (id: PlayerId) => string, turn: number): string {
+type Names = {
+  nameOf: (id: PlayerId) => string
+  territoryName: (id: string) => string
+}
+
+function eventText(event: JournaledEvent, players: Player[], map: GameMap, { nameOf, territoryName }: Names, turn: number): string {
   switch (event.type) {
     case 'turnStarted':
       return `Tour ${turn} — ${nameOf(event.playerId)}`
@@ -83,7 +95,7 @@ function eventText(event: JournaledEvent, players: Player[], nameOf: (id: Player
     case 'initialArmyPlaced':
       return `${nameOf(event.playerId)} place 1 armée en ${territoryName(event.territory)}`
     case 'capitalsRevealed':
-      return capitalsText(event.capitals, players, nameOf)
+      return capitalsText(event.capitals, players, nameOf, territoryName)
     case 'capitalCaptured':
       return event.by === event.from
         ? `${nameOf(event.by)} reprend sa capitale (${territoryName(event.territory)})`
@@ -103,7 +115,7 @@ function eventText(event: JournaledEvent, players: Player[], nameOf: (id: Player
     case 'playerEliminated':
       return `${nameOf(event.playerId)} est éliminé par ${nameOf(event.by)}`
     case 'missionAccomplished':
-      return `${nameOf(event.playerId)} accomplit sa mission : ${missionText(event.mission, players)}`
+      return `${nameOf(event.playerId)} accomplit sa mission : ${missionText(event.mission, players, map)}`
     case 'gameWon':
       return `${nameOf(event.playerId)} remporte la partie`
   }
@@ -126,11 +138,12 @@ function isSecret(event: GameEvent): event is SecretEvent {
 }
 
 /**
- * Journal entries of the events of one engine answer, `turn` being the turn number before them.
+ * Journal entries of the events of one engine answer on `map`, `turn` being the turn number before them.
  * The rolls of an attack make a single entry; drawn cards stay anonymous, converted missions and capital choices secret.
  */
-export function journalBatch(events: GameEvent[], players: Player[], turn: number): JournalBatch {
+export function journalBatch(events: GameEvent[], players: Player[], turn: number, map: GameMap): JournalBatch {
   const nameOf = (id: PlayerId) => players.find((player) => player.id === id)?.name ?? id
+  const territoryName = (id: string) => map.territories[id]?.name ?? id
   const entries: JournalEntry[] = []
   const revealSteps: number[] = []
   const stepsThrough = (index: number) => presentationSteps(events.slice(0, index + 1)).length
@@ -138,7 +151,7 @@ export function journalBatch(events: GameEvent[], players: Player[], turn: numbe
   let rolls: DiceRolled[] = []
 
   const flushAttack = (lastIndex: number) => {
-    const entry = attackEntry(rolls, nameOf, currentTurn)
+    const entry = attackEntry(rolls, nameOf, territoryName, currentTurn)
     if (entry !== null) {
       entries.push(entry)
       revealSteps.push(stepsThrough(lastIndex))
@@ -161,7 +174,7 @@ export function journalBatch(events: GameEvent[], players: Player[], turn: numbe
     entries.push({
       turn: currentTurn,
       playerId: authorOf(event),
-      text: eventText(event, players, nameOf, currentTurn),
+      text: eventText(event, players, map, { nameOf, territoryName }, currentTurn),
       header: event.type === 'turnStarted',
       details: [],
     })
