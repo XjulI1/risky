@@ -119,7 +119,7 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 
 ## Fin de la V1
 
-- [ ] Jouer plusieurs parties complètes sur ordinateur et sur tablette en paysage, avec chaque variante.
+- [x] Jouer plusieurs parties complètes sur ordinateur et sur tablette en paysage, avec chaque variante.
 - [x] Ajouter des captures d'écran au README (la liste des fonctionnalités livrées est à jour).
 - [x] Déployer sur le serveur personnel : `pnpm build` en local, puis copie manuelle du dossier
   `dist/` ; régler l'option `base` de Vite si l'application est servie sous un sous-chemin.
@@ -138,9 +138,9 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - [x] Implémenter les [tâches](openspec/changes/archive/2026-10-23-add-expert-ai/tasks.md) : l'expert
   gagne 41 parties sur 60 au tournoi expert, en 77 ms par décision en moyenne.
 - [x] Archiver le change.
-- [ ] Vérifier sur ordinateur une partie Expert (tâche 7.3) : plateau fluide pendant la réflexion,
+- [x] Vérifier sur ordinateur une partie Expert (tâche 7.3) : plateau fluide pendant la réflexion,
   indicateur sur les décisions longues, Expert grisé avec une variante.
-- [ ] Vérifier sur iPad une partie Expert, en ligne puis hors ligne (tâche 7.4) : la plupart des
+- [x] Vérifier sur iPad une partie Expert, en ligne puis hors ligne (tâche 7.4) : la plupart des
   décisions sous la seconde, des pics rares de 2 à 3 s au plus.
 
 ### 10. `support-multiple-maps` — jeu indépendant de la carte
@@ -162,7 +162,7 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
   Est et Centre sur la droite de la carte).
 - [x] Jouer une partie sur la France sur ordinateur et une sur iPad, dont une avec missions
   secrètes (tâche 8.3).
-- [ ] Archiver le change.
+- [x] Archiver le change.
 
 ## Pistes après la V1
 
@@ -171,6 +171,3 @@ Un change ne doit être commencé qu'une fois le précédent archivé.
 - Multijoueur en ligne.
 - Sons et musique.
 - Brouillard de guerre.
-- Relecture pas à pas d'une partie terminée.
-- Plusieurs emplacements de sauvegarde, export et import de partie.
-- Interface en anglais.
