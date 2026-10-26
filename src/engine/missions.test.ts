@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { mapById } from './maps'
 import { classicMap } from './maps/classic'
 import { CONQUER_24_TERRITORIES, generalMissions, missionDeck, missionProgress, missionText } from './missions'
 import { assignTerritories, createTestGame, giveAllTerritoriesTo } from './testUtils'
@@ -47,6 +48,36 @@ describe('mission deck', () => {
       'Conquérir 24 territoires',
       'Occuper 18 territoires avec au moins 2 armées sur chacun',
     ])
+  })
+
+  it('words the six region missions of the France map', () => {
+    const franceMap = mapById('france')
+    expect(franceMap.continentMissions.map((mission) => missionText(mission, players, franceMap))).toEqual([
+      "Conquérir le Sud-Est et l'Ouest",
+      'Conquérir le Sud-Est et le Nord',
+      "Conquérir le Sud-Ouest et l'Est",
+      'Conquérir le Sud-Ouest et le Nord',
+      "Conquérir le Centre, l'Ouest et une troisième région au choix",
+      "Conquérir l'Est, l'Île-de-France et une troisième région au choix",
+    ])
+  })
+
+  it('deals 12 missions to 4 players on the France map: its regions, the territory counts, the eliminations', () => {
+    const franceMap = mapById('france')
+    const deck = missionDeck(franceMap, ['p1', 'p2', 'p3', 'p4'])
+    expect(deck).toHaveLength(12)
+    expect(deck.slice(0, 6)).toEqual(franceMap.continentMissions)
+    expect(deck.slice(6, 8).map((mission) => missionText(mission, players, franceMap))).toEqual([
+      'Conquérir 24 territoires',
+      'Occuper 18 territoires avec au moins 2 armées sur chacun',
+    ])
+    const state = createTestGame(4, { mapId: 'france', settings: { secretMissions: true } })
+    const regionIds = new Set(franceMap.continentIds)
+    for (const mission of Object.values(state.missions ?? {})) {
+      if (mission.kind === 'continents') {
+        expect(mission.required.every((region) => regionIds.has(region))).toBe(true)
+      }
+    }
   })
 
   it('adds one elimination mission per player of the game', () => {

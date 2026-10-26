@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
-import { createGame, type GameState } from './engine'
-import type { GameSetup } from './game/gameForm'
+import type { GameState } from './engine'
+import { gameFromSetup, type GameSetup } from './game/gameForm'
 import { deleteSavedGame, loadSavedGame, type SavedGame } from './game/persistence'
 import { setupOf, type GameStart } from './game/useGameSession'
 import { serviceWorkerRegistration } from './pwa/registration'
@@ -55,7 +55,7 @@ function leaveEndScreen() {
 }
 
 function replay(setup: GameSetup) {
-  const result = createGame({ ...setup, seed: Date.now() })
+  const result = gameFromSetup(setup, Date.now())
   if (result.ok) {
     startGame(result.state, setup)
   }

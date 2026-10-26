@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SETTINGS, type GameState } from '../../engine'
-import { AI_NAMES } from '../../game/gameForm'
+import { AI_NAMES, type GameSetup } from '../../game/gameForm'
 import CreateGameScreen from './CreateGameScreen.vue'
 
 function mountForm() {
@@ -273,4 +273,56 @@ describe('CreateGameScreen', () => {
       expect(isChecked(wrapper, 'secretMissions')).toBe(true)
     })
   })
+
+  describe('map choice', () => {
+    const mapRadio = (wrapper: ReturnType<typeof mountForm>, mapId: string) => wrapper.get(`[data-testid="map-${mapId}"]`)
+    const startedState = async (wrapper: ReturnType<typeof mountForm>) => {
+      await startButton(wrapper).trigger('click')
+      return ((wrapper.emitted('start')?.[0] ?? []) as [GameState])[0]
+    }
+
+    it('offers « Monde » and « France » in a section of its own, « Monde » being selected', () => {
+      const wrapper = mountForm()
+      const group = wrapper.get('[role="radiogroup"]')
+      expect(wrapper.get(`#${group.attributes('aria-labelledby')}`).text()).toBe('Carte')
+      expect(group.findAll('input[type="radio"]')).toHaveLength(2)
+      expect(mapRadio(wrapper, 'classic').element.closest('label')?.textContent).toContain('Monde')
+      expect(mapRadio(wrapper, 'france').element.closest('label')?.textContent).toContain('France')
+      expect((mapRadio(wrapper, 'classic').element as HTMLInputElement).checked).toBe(true)
+      expect((mapRadio(wrapper, 'france').element as HTMLInputElement).checked).toBe(false)
+    })
+
+    it('starts the game on the classic map by default', async () => {
+      expect((await startedState(mountForm()))?.mapId).toBe('classic')
+    })
+
+    it('starts the game on the France map when chosen, and passes it in the setup', async () => {
+      const wrapper = mountForm()
+      await mapRadio(wrapper, 'france').setValue(true)
+      expect((await startedState(wrapper))?.mapId).toBe('france')
+      expect((wrapper.emitted('start')?.[0] as [GameState, GameSetup])[1].mapId).toBe('france')
+    })
+
+    it('keeps the secret missions, the capitals mode and the expert level on the France map', async () => {
+      const wrapper = mountForm()
+      await mapRadio(wrapper, 'france').setValue(true)
+      expect(wrapper.get('[data-testid="setting-secretMissions"]').attributes('disabled')).toBeUndefined()
+      expect(wrapper.get('[data-testid="setting-capitals"]').attributes('disabled')).toBeUndefined()
+      expect(wrapper.get('[data-testid="ai-level-expert"]').attributes('disabled')).toBeUndefined()
+      await chooseAiLevel(wrapper, 'expert')
+      await wrapper.get('[data-testid="setting-secretMissions"]').setValue(true)
+      const state = await startedState(wrapper)
+      expect(state?.mapId).toBe('france')
+      expect(state?.missions).not.toBeNull()
+    })
+
+    it('does not change the players nor the settings', async () => {
+      const wrapper = mountForm()
+      const before = names(wrapper)
+      await mapRadio(wrapper, 'france').setValue(true)
+      expect(names(wrapper)).toEqual(before)
+      expect((await startedState(wrapper))?.settings).toEqual(DEFAULT_SETTINGS)
+    })
+  })
 })
+

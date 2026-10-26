@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { useLoop } from '@tresjs/core'
+import { useLoop, useTres } from '@tresjs/core'
 import { Color, ExtrudeGeometry, MeshStandardMaterial } from 'three'
-import { computed, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, watchEffect } from 'vue'
 import { HOVER_LIFT, TILE_HEIGHT } from './boardLayout'
 import { DIMMED_BRIGHTNESS, HIGHLIGHT_STYLES, type TerritoryView } from './boardViewModel'
 import type { TerritoryGeometry } from './geometry/mapGeometry'
+import type { MapPoint } from './geometry/polygon'
+import { createRegionBorderLines, disposeRegionBorderLines, setRegionLineResolution } from './regionBorderLines'
 import { createTerritoryBorders, disposeTerritoryBorders } from './territoryBorders'
 
 const COLOR_EASING_PER_SECOND = 9
@@ -13,6 +15,8 @@ const props = defineProps<{
   geometry: TerritoryGeometry
   view: TerritoryView
   hovered: boolean
+  /** The stretches of region limit along this territory, drawn thick; none on the classic map. */
+  regionBorders: MapPoint[][]
 }>()
 
 const extrusion = new ExtrudeGeometry(props.geometry.shapes, {
@@ -21,6 +25,9 @@ const extrusion = new ExtrudeGeometry(props.geometry.shapes, {
   curveSegments: 6,
 })
 const borders = createTerritoryBorders(props.geometry.shapes)
+const regionLines = createRegionBorderLines(props.regionBorders)
+const { sizes } = useTres()
+watchEffect(() => setRegionLineResolution(sizes.width.value, sizes.height.value))
 
 const style = computed(() => HIGHLIGHT_STYLES[props.view.highlight])
 const lift = computed(() => style.value.lift + (props.hovered ? HOVER_LIFT : 0))
@@ -44,6 +51,7 @@ onBeforeUnmount(() => {
   extrusion.dispose()
   material.dispose()
   disposeTerritoryBorders(borders)
+  disposeRegionBorderLines(regionLines)
 })
 </script>
 
@@ -57,5 +65,6 @@ onBeforeUnmount(() => {
     receive-shadow
   >
     <primitive :object="borders" />
+    <primitive :object="regionLines" />
   </TresMesh>
 </template>

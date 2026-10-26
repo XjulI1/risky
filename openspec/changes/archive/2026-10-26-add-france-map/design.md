@@ -81,9 +81,13 @@ directement depuis Node 24). Il enchaîne, avec l'API de mapshaper :
    avec conservation des formes, et suppression des îles de moins de 40 km² (Ré, Oléron et
    Belle-Île restent ; les îlots disparaissent).
 6. Conversion en chemins SVG : mise à l'échelle sur un `viewBox` de 1000 unités de large, axe Y
-   inversé, un sous-chemin `M … L … Z` par anneau, coordonnées arrondies au dixième. Arrêt en erreur
-   si un territoire comporte un trou : le plateau n'extrude pas de formes trouées, et aucun
-   regroupement de la spec n'en crée.
+   inversé, un sous-chemin `M … L … Z` par anneau, coordonnées arrondies au dixième. Le plateau
+   n'extrude pas de formes trouées, or la source en contient : l'étang de Berre, Llívia, et des
+   enclaves d'un département dans un autre (Enclave des Papes dans la Drôme, enclaves des
+   Hautes-Pyrénées dans les Pyrénées-Atlantiques, enclave dans le Pas-de-Calais). Pour le dessin
+   seulement, les trous sont bouchés et chaque enclave est dessinée comme une partie du territoire
+   qui l'entoure ; les adjacences, calculées à l'étape 4 sur les vrais départements, et le
+   regroupement de la spec n'en dépendent pas. Arrêt en erreur s'il reste un trou.
 7. Point d'étiquette `cx`/`cy` de chaque territoire au pôle d'inaccessibilité de son plus grand
    morceau, comme le calcul déjà fait par le plateau, pour garder le format de la carte classique.
 8. Contours de région par fusion des territoires de chaque région, simplifiés de la même façon.
@@ -112,36 +116,52 @@ connaître ses territoires, n'est pas modifiée.
   carte classique.
 - Les limites de région utilisent `Line2` et `LineMaterial` des modules d'exemple de three.js
   (déjà dans la dépendance `three`) : `LineBasicMaterial` ignore toute épaisseur supérieure à 1
-  pixel en WebGL. Trait d'environ 3 pixels, plus opaque que les frontières de territoire, tracé
-  juste au-dessus d'elles ; la largeur de `LineMaterial` suit la résolution du canvas.
-- Étiquettes : Ouest, Nord, Sud-Ouest et Sud-Est en mer, Est au-delà de la frontière est (zone vide
-  de la carte). Centre et Île-de-France sur terre ; un test vérifie qu'aucune étiquette n'est à moins
-  d'une distance de sécurité d'un pion, et la position est validée visuellement au zoom minimal.
+  pixel en WebGL. Trait d'environ 3 pixels, de la couleur des frontières de territoire mais plus
+  opaque, tracé juste au-dessus d'elles ; la largeur de `LineMaterial` suit la résolution du canvas.
+  Seules les limites entre deux régions sont tracées, pas les côtes : ce sont les arêtes que deux
+  contours de région ont en commun. Chaque territoire porte les tronçons de limite qui le bordent et
+  les dessine sur sa propre tuile, comme ses frontières fines : un territoire surligné, donc
+  surélevé, ne recouvre plus la limite, qu'il emporte avec lui. Un premier essai d'un tracé unique à
+  hauteur fixe disparaissait sous les territoires surélevés.
+- Étiquettes, toutes en mer : Ouest, Nord, Sud-Ouest et Sud-Est près de leur côte ; Île-de-France
+  en haut à droite, Est au-delà de la frontière est et Centre à mi-hauteur sur la droite, dans la
+  zone vide de la carte. Une étiquette est plus large que l'Île-de-France : posée sur terre, elle
+  masquait des pions. Un test vérifie que chaque étiquette est en mer et ne recouvre ni pion ni
+  compteur au zoom minimal, et la position est validée visuellement.
 - La carte de France est presque carrée : la profondeur du monde avoisine sa largeur. Le cadrage
   calculé par `support-multiple-maps` s'en charge ; l'étendue des ombres (60 unités de part et
   d'autre) couvre encore toute la carte.
 
 ### Interface
 
-Un groupe de deux boutons radio « Monde » / « France » en tête des réglages de `CreateGameScreen`,
-lié à `GameSetup.mapId`. Rien d'autre ne dépend de la carte dans le formulaire.
+Une section « Carte » de `CreateGameScreen`, entre « Joueurs » et « Règles », avec un groupe de deux
+boutons radio « Monde » / « France » lié à `GameSetup.mapId`. Rien d'autre ne dépend de la carte dans le formulaire.
 
 ### Équilibrage des bonus
 
 Un test lancé à la demande (`pnpm test:balance:france`, sur le modèle de `test:expert`) joue
-120 parties à trois IA difficiles sur la carte de France et affiche pour chaque région : part des
-parties où elle a été tenue entière au moins une fois, tour moyen de la première prise complète,
-part des victoires du premier joueur à la tenir, nombre moyen de changements de propriétaire de
-l'Île-de-France. Objectifs :
+480 parties à trois IA difficiles sur la carte de France et affiche pour chaque région : part des
+parties où elle a été prise entière par une conquête (la tenir dès la distribution ne compte pas),
+tour moyen de cette première prise, part des victoires du premier joueur à l'avoir prise au plus
+tard au 6ᵉ tour, nombre moyen de conquêtes par territoire de la région. Objectifs :
 
-- chaque région est tenue entière dans au moins 20 % des parties ;
-- aucune région ne donne la victoire à son premier détenteur dans plus de 60 % des parties ;
+- chaque région est prise entière dans au moins 20 % des parties ;
+- aucune région prise au plus tard au 6ᵉ tour ne donne la victoire à son premier conquérant dans
+  plus de 60 % des parties (seuil appliqué aux régions prises ainsi dans au moins 10 parties) ;
 - l'Île-de-France change de mains plus souvent que toute autre région (elle doit attirer les
-  attaques).
+  attaques), mesuré en conquêtes par territoire.
 
-Les bonus sont ajustés d'une unité à la fois jusqu'à atteindre ces objectifs, puis reportés dans
-la spec `world-map` du change et dans `france.ts`. Le tournoi de progression de difficulté
-(spec `ai-strategy`) est relancé avec les bonus définitifs.
+La victoire du premier conquérant n'est comptée que pour une prise précoce : une grande région
+prise tard (vers le 10ᵉ tour pour le Centre) tombe surtout chez le joueur qui gagne déjà, quel que
+soit son bonus, et cet indicateur ne réagissait à aucun réglage. 480 parties plutôt que 120 : à
+120, les prises précoces d'une région ne sont qu'une trentaine et l'indicateur varie de ±9 points
+d'un tirage à l'autre.
+
+Résultat : les bonus provisoires (3, 3, 3, 4, 4, 4, 5) remplissent les trois objectifs et sont
+gardés. Aucune région ne dépasse 56 % de victoires après une prise précoce (Centre), toutes sont
+prises entières dans chaque partie, et l'Île-de-France compte 18 conquêtes par territoire contre 8
+au plus ailleurs. Baisser ou relever le bonus du Sud-Est d'une unité n'améliore rien. Le tournoi
+de progression de difficulté (spec `ai-strategy`) est lancé avec ces bonus.
 
 ## Risks / Trade-offs
 

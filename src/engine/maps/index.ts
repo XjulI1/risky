@@ -1,9 +1,11 @@
 import type { GameMap, MapId } from '../types'
 import { classicMap } from './classic'
+import { franceMap } from './france'
 
 /** Every map a game can be played on, by identifier. */
 export const MAPS: Record<MapId, GameMap> = {
   classic: classicMap,
+  france: franceMap,
 }
 
 /** Whether `value` names a map of the catalog. */

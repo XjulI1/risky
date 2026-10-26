@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest'
-import { applyActionInPlace, type AiLevel } from '../../engine'
+import { applyActionInPlace, isMapId, type AiLevel } from '../../engine'
 import { NEW_TURN, nextAiAction, progressAfter } from '../index'
 import { newAiGame } from '../testScenarios'
 
@@ -11,6 +11,8 @@ const MIN_EXPERT_WINS = 30
 const MAX_MEAN_MS = 250
 const MAX_P95_MS = 500
 const MAX_DECISION_MS = 1500
+/** The map of the tournament: the classic one unless `EXPERT_MAP` names another, for an indicative run. */
+const MAP_ID = isMapId(process.env.EXPERT_MAP) ? process.env.EXPERT_MAP : 'classic'
 
 type GameResult = {
   expertWon: boolean
@@ -24,7 +26,7 @@ function levelsFor(game: number): AiLevel[] {
 }
 
 function playGame(game: number): GameResult {
-  const state = newAiGame(levelsFor(game), FIRST_SEED + game)
+  const state = newAiGame(levelsFor(game), FIRST_SEED + game, {}, MAP_ID)
   const expertId = state.players.find((player) => player.kind === 'ai' && player.level === 'expert')?.id
   const decisionMs: number[] = []
   let turn = NEW_TURN
@@ -62,7 +64,7 @@ describe.runIf(process.env.EXPERT_TOURNAMENT !== undefined)('expert tournament',
     decisions = results.flatMap((result) => result.decisionMs).sort((a, b) => a - b)
     const mean = decisions.reduce((sum, ms) => sum + ms, 0) / decisions.length
     console.info(
-      `Expert: ${results.filter((result) => result.expertWon).length}/${GAME_COUNT} wins; ` +
+      `Expert (${MAP_ID}): ${results.filter((result) => result.expertWon).length}/${GAME_COUNT} wins; ` +
         `${decisions.length} decisions, mean ${mean.toFixed(0)} ms, p95 ${percentile(decisions, 0.95).toFixed(0)} ms, ` +
         `max ${(decisions.at(-1) ?? 0).toFixed(0)} ms`,
     )

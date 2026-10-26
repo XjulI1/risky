@@ -1,6 +1,8 @@
 import {
   AI_LEVELS,
+  createGame,
   DEFAULT_SETTINGS,
+  type CreateGameResult,
   type AiLevel,
   type GameSettings,
   type MapId,
@@ -15,6 +17,17 @@ export type GameSetup = {
   players: PlayerConfig[]
   settings: GameSettings
   mapId: MapId
+}
+
+/** The maps offered by the form, in their order, with their name. */
+export const MAP_CHOICES: readonly { id: MapId; label: string }[] = [
+  { id: 'classic', label: 'Monde' },
+  { id: 'france', label: 'France' },
+]
+
+/** Creates the game described by `setup`, on its map, with `seed`: for a new game as for « Rejouer ». */
+export function gameFromSetup(setup: GameSetup, seed: number): CreateGameResult {
+  return createGame({ players: setup.players, settings: setup.settings, mapId: setup.mapId, seed })
 }
 
 /** Six player colors, all distinct from the grey of the neutral army. */

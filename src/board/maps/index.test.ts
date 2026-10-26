@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import classicTerritories from '../../../data/maps/classic/territories.json'
+import franceTerritories from '../../../data/maps/france/territories.json'
 import { mapById, MAPS } from '../../engine'
 import { BOARD_MAP_IDS, boardMapFor } from './index'
 
-const VIEW_BOXES: Record<string, number[]> = { classic: classicTerritories.viewBox }
+const VIEW_BOXES: Record<string, number[]> = { classic: classicTerritories.viewBox, france: franceTerritories.viewBox }
 
 describe('board map catalog', () => {
   it('draws every map of the engine catalog', () => {

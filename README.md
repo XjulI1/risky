@@ -5,12 +5,16 @@ sur ordinateur ou tablette en mode paysage (1024 px de large minimum).
 
 ## Le jeu
 
-- **Règles classiques** : 42 territoires, 6 continents, renforts, attaques aux dés menées jusqu'à la
-  conquête ou à l'épuisement de l'attaquant, fortification, cartes territoire.
+- **Règles classiques** : renforts, attaques aux dés menées jusqu'à la conquête ou à l'épuisement de
+  l'attaquant, fortification, cartes territoire.
+- **Deux cartes** de 42 territoires : le **monde** classique et ses 6 continents, et la **France**
+  métropolitaine, dont les territoires regroupent les départements en 7 régions, de
+  l'Île-de-France, petite et disputée, au grand Sud-Est. Les variantes et tous les niveaux d'IA
+  sont disponibles sur les deux.
 - **2 à 6 joueurs**, humains sur le même appareil ou IA, avec une armée neutre à 2 joueurs.
   Entre deux humains, un écran de passage de main cache les informations secrètes.
-- **Adversaires IA** en quatre niveaux : facile, normal, difficile et expert. L'expert, réservé à la
-  partie classique, simule la suite de la partie avant de déployer et d'attaquer. Leur façon de
+- **Adversaires IA** en quatre niveaux : facile, normal, difficile et expert. L'expert, réservé aux
+  parties sans variante, simule la suite de la partie avant de déployer et d'attaquer. Leur façon de
   jouer est décrite dans [`docs/ia.md`](docs/ia.md).
 - **Réglages** : barème d'échange des cartes (progressif ou fixe), nombre de dés en attaque et en
   défense, fortification par chemin connexe ou adjacente, répartition des territoires aléatoire ou
@@ -50,6 +54,13 @@ la géométrie est dérivée de
 licence [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Provenance et licences en
 détail : [`data/maps/classic/SOURCE.md`](data/maps/classic/SOURCE.md).
 
+La carte de France se trouve dans `data/maps/france/`. Ses contours sont dérivés des limites
+départementales de l'IGN (ADMIN EXPRESS COG 2018, via le projet
+[france-geojson](https://github.com/gregoiredavid/france-geojson)), sous
+[Licence Ouverte](https://www.data.gouv.fr/pages/legal/licences/etalab-2.0) ; ses données sont
+produites une fois par `pnpm build:map:france`. Provenance, regroupement des départements et
+vérifications : [`data/maps/france/SOURCE.md`](data/maps/france/SOURCE.md).
+
 ## Démarrage
 
 Les commandes du projet :
@@ -86,6 +97,8 @@ Les changes doivent être appliqués dans l'ordre :
 | 7 | `add-secret-missions` | Variante missions secrètes | Terminé |
 | 8 | `add-capitals-mode` | Variante capitales | Terminé |
 | 9 | `add-expert-ai` | IA experte par simulation (Monte-Carlo) | Terminé |
+| 10 | `support-multiple-maps` | Jeu indépendant de la carte | Terminé |
+| 11 | `add-france-map` | Carte de la France métropolitaine | Terminé |
 
 Les changes terminés sont archivés dans `openspec/changes/archive/` ; les spécifications de
 référence qui en résultent se trouvent dans `openspec/specs/`. Il reste à tester l'application sur
@@ -106,8 +119,8 @@ En ligne de commande, `openspec list` affiche l'avancement des changes et
 
 ## Licence
 
-Le code est distribué sous licence MIT, à l'exception des données de la carte
-(`data/maps/classic/`), qui gardent leurs propres licences. Voir [`LICENSE.md`](LICENSE.md).
+Le code est distribué sous licence MIT, à l'exception des données des cartes
+(`data/maps/classic/` et `data/maps/france/`), qui gardent leurs propres licences. Voir [`LICENSE.md`](LICENSE.md).
 
 ## Conventions
 

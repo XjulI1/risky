@@ -1,0 +1,455 @@
+{
+ "regions": [
+  "ile_de_france",
+  "nord",
+  "ouest",
+  "centre",
+  "sud_ouest",
+  "est",
+  "sud_est"
+ ],
+ "territories": [
+  {
+   "id": "paris",
+   "region": "ile_de_france"
+  },
+  {
+   "id": "brie_hurepoix",
+   "region": "ile_de_france"
+  },
+  {
+   "id": "flandre",
+   "region": "nord"
+  },
+  {
+   "id": "artois",
+   "region": "nord"
+  },
+  {
+   "id": "picardie",
+   "region": "nord"
+  },
+  {
+   "id": "haute_normandie",
+   "region": "nord"
+  },
+  {
+   "id": "basse_normandie",
+   "region": "nord"
+  },
+  {
+   "id": "bretagne_occidentale",
+   "region": "ouest"
+  },
+  {
+   "id": "bretagne_orientale",
+   "region": "ouest"
+  },
+  {
+   "id": "pays_nantais",
+   "region": "ouest"
+  },
+  {
+   "id": "maine",
+   "region": "ouest"
+  },
+  {
+   "id": "anjou",
+   "region": "ouest"
+  },
+  {
+   "id": "beauce",
+   "region": "centre"
+  },
+  {
+   "id": "touraine",
+   "region": "centre"
+  },
+  {
+   "id": "berry",
+   "region": "centre"
+  },
+  {
+   "id": "limousin",
+   "region": "centre"
+  },
+  {
+   "id": "bourbonnais",
+   "region": "centre"
+  },
+  {
+   "id": "haute_auvergne",
+   "region": "centre"
+  },
+  {
+   "id": "poitou",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "charentes",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "guyenne",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "landes_bearn",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "gascogne",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "toulousain",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "quercy_rouergue",
+   "region": "sud_ouest"
+  },
+  {
+   "id": "champagne",
+   "region": "est"
+  },
+  {
+   "id": "aube_haute_marne",
+   "region": "est"
+  },
+  {
+   "id": "lorraine",
+   "region": "est"
+  },
+  {
+   "id": "alsace",
+   "region": "est"
+  },
+  {
+   "id": "bourgogne_nord",
+   "region": "est"
+  },
+  {
+   "id": "bourgogne_sud",
+   "region": "est"
+  },
+  {
+   "id": "franche_comte",
+   "region": "est"
+  },
+  {
+   "id": "lyonnais",
+   "region": "sud_est"
+  },
+  {
+   "id": "savoie",
+   "region": "sud_est"
+  },
+  {
+   "id": "dauphine",
+   "region": "sud_est"
+  },
+  {
+   "id": "alpes_du_sud",
+   "region": "sud_est"
+  },
+  {
+   "id": "provence",
+   "region": "sud_est"
+  },
+  {
+   "id": "cote_d_azur",
+   "region": "sud_est"
+  },
+  {
+   "id": "languedoc",
+   "region": "sud_est"
+  },
+  {
+   "id": "roussillon",
+   "region": "sud_est"
+  },
+  {
+   "id": "haute_corse",
+   "region": "sud_est"
+  },
+  {
+   "id": "corse_du_sud",
+   "region": "sud_est"
+  }
+ ],
+ "adjacency": {
+  "paris": [
+   "brie_hurepoix",
+   "picardie",
+   "haute_normandie",
+   "beauce"
+  ],
+  "brie_hurepoix": [
+   "paris",
+   "picardie",
+   "beauce",
+   "champagne",
+   "aube_haute_marne",
+   "bourgogne_nord"
+  ],
+  "flandre": [
+   "artois",
+   "picardie"
+  ],
+  "artois": [
+   "flandre",
+   "picardie"
+  ],
+  "picardie": [
+   "paris",
+   "brie_hurepoix",
+   "flandre",
+   "artois",
+   "haute_normandie",
+   "champagne"
+  ],
+  "haute_normandie": [
+   "paris",
+   "picardie",
+   "basse_normandie",
+   "beauce"
+  ],
+  "basse_normandie": [
+   "haute_normandie",
+   "bretagne_orientale",
+   "maine",
+   "beauce"
+  ],
+  "bretagne_occidentale": [
+   "bretagne_orientale"
+  ],
+  "bretagne_orientale": [
+   "basse_normandie",
+   "bretagne_occidentale",
+   "pays_nantais",
+   "maine",
+   "anjou"
+  ],
+  "pays_nantais": [
+   "bretagne_orientale",
+   "anjou",
+   "poitou",
+   "charentes"
+  ],
+  "maine": [
+   "basse_normandie",
+   "bretagne_orientale",
+   "anjou",
+   "beauce",
+   "touraine"
+  ],
+  "anjou": [
+   "bretagne_orientale",
+   "pays_nantais",
+   "maine",
+   "touraine",
+   "poitou"
+  ],
+  "beauce": [
+   "paris",
+   "brie_hurepoix",
+   "haute_normandie",
+   "basse_normandie",
+   "maine",
+   "touraine",
+   "berry",
+   "bourgogne_nord",
+   "bourgogne_sud"
+  ],
+  "touraine": [
+   "maine",
+   "anjou",
+   "beauce",
+   "berry",
+   "poitou"
+  ],
+  "berry": [
+   "beauce",
+   "touraine",
+   "limousin",
+   "bourbonnais",
+   "poitou",
+   "bourgogne_sud"
+  ],
+  "limousin": [
+   "berry",
+   "bourbonnais",
+   "haute_auvergne",
+   "poitou",
+   "charentes",
+   "guyenne",
+   "quercy_rouergue"
+  ],
+  "bourbonnais": [
+   "berry",
+   "limousin",
+   "haute_auvergne",
+   "bourgogne_sud",
+   "lyonnais"
+  ],
+  "haute_auvergne": [
+   "limousin",
+   "bourbonnais",
+   "quercy_rouergue",
+   "lyonnais",
+   "dauphine",
+   "languedoc"
+  ],
+  "poitou": [
+   "pays_nantais",
+   "anjou",
+   "touraine",
+   "berry",
+   "limousin",
+   "charentes"
+  ],
+  "charentes": [
+   "pays_nantais",
+   "limousin",
+   "poitou",
+   "guyenne"
+  ],
+  "guyenne": [
+   "limousin",
+   "charentes",
+   "landes_bearn",
+   "quercy_rouergue"
+  ],
+  "landes_bearn": [
+   "guyenne",
+   "gascogne",
+   "toulousain",
+   "quercy_rouergue"
+  ],
+  "gascogne": [
+   "landes_bearn",
+   "toulousain"
+  ],
+  "toulousain": [
+   "landes_bearn",
+   "gascogne",
+   "quercy_rouergue",
+   "roussillon"
+  ],
+  "quercy_rouergue": [
+   "limousin",
+   "haute_auvergne",
+   "guyenne",
+   "landes_bearn",
+   "toulousain",
+   "languedoc",
+   "roussillon"
+  ],
+  "champagne": [
+   "brie_hurepoix",
+   "picardie",
+   "aube_haute_marne",
+   "lorraine"
+  ],
+  "aube_haute_marne": [
+   "brie_hurepoix",
+   "champagne",
+   "lorraine",
+   "bourgogne_nord",
+   "franche_comte"
+  ],
+  "lorraine": [
+   "champagne",
+   "aube_haute_marne",
+   "alsace",
+   "franche_comte"
+  ],
+  "alsace": [
+   "lorraine",
+   "franche_comte"
+  ],
+  "bourgogne_nord": [
+   "brie_hurepoix",
+   "beauce",
+   "aube_haute_marne",
+   "bourgogne_sud",
+   "franche_comte"
+  ],
+  "bourgogne_sud": [
+   "beauce",
+   "berry",
+   "bourbonnais",
+   "bourgogne_nord",
+   "franche_comte",
+   "lyonnais"
+  ],
+  "franche_comte": [
+   "aube_haute_marne",
+   "lorraine",
+   "alsace",
+   "bourgogne_nord",
+   "bourgogne_sud",
+   "lyonnais"
+  ],
+  "lyonnais": [
+   "bourbonnais",
+   "haute_auvergne",
+   "bourgogne_sud",
+   "franche_comte",
+   "savoie",
+   "dauphine"
+  ],
+  "savoie": [
+   "lyonnais",
+   "dauphine",
+   "alpes_du_sud"
+  ],
+  "dauphine": [
+   "haute_auvergne",
+   "lyonnais",
+   "savoie",
+   "alpes_du_sud",
+   "provence",
+   "languedoc"
+  ],
+  "alpes_du_sud": [
+   "savoie",
+   "dauphine",
+   "provence",
+   "cote_d_azur"
+  ],
+  "provence": [
+   "dauphine",
+   "alpes_du_sud",
+   "cote_d_azur",
+   "languedoc",
+   "corse_du_sud"
+  ],
+  "cote_d_azur": [
+   "alpes_du_sud",
+   "provence",
+   "haute_corse"
+  ],
+  "languedoc": [
+   "haute_auvergne",
+   "quercy_rouergue",
+   "dauphine",
+   "provence",
+   "roussillon"
+  ],
+  "roussillon": [
+   "toulousain",
+   "quercy_rouergue",
+   "languedoc"
+  ],
+  "haute_corse": [
+   "corse_du_sud",
+   "cote_d_azur"
+  ],
+  "corse_du_sud": [
+   "haute_corse",
+   "provence"
+  ]
+ }
+}

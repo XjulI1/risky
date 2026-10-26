@@ -2,9 +2,9 @@
 
 ### Requirement: Progression de difficulté sur la carte de France
 
-Sur un ensemble fixe de parties à trois joueurs sur la carte de France opposant une IA de chaque
-niveau, avec des graines fixées et l'ordre des niveaux permuté, l'IA difficile SHALL gagner plus de
-parties que l'IA normale, qui SHALL elle-même gagner plus de parties que l'IA facile.
+L'IA difficile SHALL gagner plus de parties que l'IA normale, qui SHALL elle-même gagner plus de
+parties que l'IA facile, sur un ensemble fixe de parties à trois joueurs sur la carte de France
+opposant une IA de chaque niveau, avec des graines fixées et l'ordre des niveaux permuté.
 
 #### Scenario: Tournoi sur la carte de France
 

@@ -120,6 +120,7 @@ const hoveredName = computed(() =>
         :geometry="territory.geometry"
         :view="territory.view"
         :hovered="hovered?.id === territory.id"
+        :region-borders="board.regionBorders[territory.id] ?? []"
       />
 
       <template

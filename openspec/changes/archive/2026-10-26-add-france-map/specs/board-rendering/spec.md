@@ -3,10 +3,10 @@
 ### Requirement: Noms des continents
 
 Le nom français de chaque continent et son bonus SHALL être affichés près du continent. Sur la carte
-classique, chaque étiquette SHALL être placée en pleine mer, sans recouvrir de territoire. Sur une
-autre carte, l'étiquette d'un continent qui touche le bord de la carte SHALL être placée en mer près
-de lui ; celle d'un continent entièrement entouré d'autres continents SHALL être placée sur lui ou à
-proximité, sans recouvrir aucun pion ni compteur au zoom minimal.
+classique, chaque étiquette SHALL être placée en pleine mer, sans recouvrir de territoire. Sur la
+carte de France, chaque étiquette SHALL aussi être placée en mer, sans recouvrir de territoire ni
+aucun pion ou compteur au zoom minimal : près de sa région quand celle-ci touche la mer, à l'est de
+la carte pour les régions qui ne la touchent pas (Île-de-France en haut, Centre à mi-hauteur).
 
 #### Scenario: Étiquette de l'Océanie
 
@@ -21,15 +21,16 @@ proximité, sans recouvrir aucun pion ni compteur au zoom minimal.
 #### Scenario: Étiquette d'une région intérieure
 
 - **WHEN** on calcule la position des étiquettes du Centre et de l'Île-de-France sur la carte de France
-- **THEN** aucune n'est à moins d'une distance de sécurité de la position d'un pion
+- **THEN** elles sont en mer, à l'est de la carte, et aucune n'est à moins d'une distance de sécurité de la position d'un pion
 
 ## ADDED Requirements
 
 ### Requirement: Limites de régions
 
-Sur la carte de France, la limite de chaque région SHALL être tracée au-dessus des territoires d'un
+Sur la carte de France, la limite entre deux régions SHALL être tracée au-dessus des territoires d'un
 trait nettement plus épais et plus contrasté que les frontières entre territoires d'une même région,
-pour que les régions se lisent d'un coup d'œil au zoom minimal.
+lisible sur toutes les couleurs de joueur, pour que les régions se lisent d'un coup d'œil au zoom
+minimal. Les côtes ne sont pas tracées de ce trait.
 
 #### Scenario: Limite entre deux régions
 

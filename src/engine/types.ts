@@ -19,7 +19,7 @@ export type Continent = {
 }
 
 /** Identifier of a map of the catalog. */
-export type MapId = 'classic'
+export type MapId = 'classic' | 'france'
 
 /** The word a map uses for its continents in texts, with its grammatical gender. */
 export type ContinentTerm = {
